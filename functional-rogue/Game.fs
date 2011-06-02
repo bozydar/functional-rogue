@@ -129,15 +129,17 @@ let commandToSize command =
     | Right -> new Size(1, 0)
     | _ -> invalidArg "command" ("bad command " + (repr command))
 
-type Avatar(position: Point) = 
+type Avatar(board: Board, position: Point, ?previous: Avatar) = 
+    let putOnTile = board @ position
     interface IModifier with
-        member this.Modify board =
+        member this.Modify board =            
             Array2D.set board position.X position.Y Tile.Avatar
+            if previous.IsSome then Array2D.set board previous.Value.Position.X previous.Value.Position.Y putOnTile            
             board
 
     member this.Move command =
         let size = commandToSize command            
-        new Avatar(position + size)
+        new Avatar(board, position + size, this)
     
     member this.Position 
         with get() = position
@@ -174,10 +176,11 @@ let mainLoop() =
                 let newState = { state with OldBoard = state.Board; Board = board; Avatar = state.Avatar.Move command }
                 loop false newState
 
+    let board = generateLevel
     let entryState = { 
         OldBoard = Array2D.create boardWidth boardHeight Tile.None;
-        Board = generateLevel; 
-        Avatar = new Avatar(new Point(1, 1)) 
+        Board = board; 
+        Avatar = new Avatar(board, new Point(1, 1)) 
     }
     loop true entryState
 
