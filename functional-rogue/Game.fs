@@ -139,21 +139,31 @@ type Avatar(board: Board, position: Point, ?previous: Avatar) =
 
     member this.Move command =
         let size = commandToSize command            
-        new Avatar(board, position + size, this)
+        match board @ (position + commandToSize command) with
+            | Wall -> this
+            | _ -> new Avatar(board, position + size, this)
     
     member this.Position 
         with get() = position
 
 type State = {
-    OldBoard: Board; Board: Board; Avatar: Avatar
+    Board: Board; Avatar: Avatar
 }
 
+
+
 let mainLoop() =
-    let rec loop printAll (state: State) =                
-        let board = (state.Board.Clone() :?> Board) |> (state.Avatar :> IModifier).Modify 
+    let rec loop printAll (states: State list) =                
+        let nextTurn command = 
+            let last = states.Head
+            // Something... Something...
+            let avatar = last.Avatar.Move command
+            let board = last.Board.Clone() :?> Board |> (avatar :> IModifier).Modify
+            {Board = board; Avatar = avatar}
+
         // problem is that new state is bitored by new state and old avatar is not cleared
         // consider using events for each of state elements to trace all changes and indicate them on board
-        board |> if printAll then printBoard (Array2D.create boardWidth boardHeight Tile.None) else printBoard state.Board 
+        states.Head.Board |> if printAll then printBoard (Array2D.create boardWidth boardHeight Tile.None) else printBoard states.[1].Board
 
         let char = System.Console.ReadKey(true)        
         
@@ -168,21 +178,15 @@ let mainLoop() =
         
         match command with
         | Quit -> ()
-        | Unknown -> loop false state
-        | _ ->    
-            match board @ (state.Avatar.Position + commandToSize command) with
-            | Wall -> loop false state
-            | _ -> 
-                let newState = { state with OldBoard = state.Board; Board = board; Avatar = state.Avatar.Move command }
-                loop false newState
+        | Unknown -> loop false states
+        | Up | Down | Left | Right -> loop false ((nextTurn command) :: states)
 
     let board = generateLevel
-    let entryState = { 
-        OldBoard = Array2D.create boardWidth boardHeight Tile.None;
+    let entryState = {         
         Board = board; 
         Avatar = new Avatar(board, new Point(1, 1)) 
     }
-    loop true entryState
+    loop true [entryState]
 
         
 [<EntryPoint>]
