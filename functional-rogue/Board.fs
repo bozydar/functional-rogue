@@ -102,35 +102,24 @@ type Room(rect: Rectangle) =
             Array2D.blit room 0 0 result rect.X rect.Y width height
             result
             
-let printBoard (oldBoard: Board) (newBoard: Board) = 
-    
-    let compareBoard() = seq {
-        let height = boardHeight - 1
-        let width = boardWidth - 1
-        for x = 0 to width do
-            for y = 0 to height do        
-                let newItem = newBoard.[x, y]
-                if not (oldBoard.[x, y] = newItem) then 
-                    yield (x, y, newItem)
-    }
-
-    let printItem = fun item -> 
-        let char =             
-            match item.Character with
-            | Some(character1) -> 
-                match character1.Type with
-                | Avatar -> "@"
-                | Monster -> "s"
-                | NPC -> "P"
+let printBoard (board: Board) = seq {
+    let char item =             
+        match item.Character with
+        | Some(character1) -> 
+            match character1.Type with
+            | Avatar -> "@"
+            | Monster -> "s"
+            | NPC -> "P"
+        | _ -> 
+            match item.Items with
+            | h::_ -> "i"
             | _ -> 
-                match item.Items with
-                | h::_ -> "i"
-                | _ -> 
-                    match item.Tile with
-                    | Wall ->  "#"
-                    | Floor -> "."
-                    | _ -> " "
-        Console.Write char
-    for x, y, item in compareBoard() do        
-        Console.SetCursorPosition(x, y)
-        printItem item
+                match item.Tile with
+                | Wall ->  "#"
+                | Floor -> "."
+                | _ -> " "
+
+    for x in 0..boardWidth - 1 do
+        for y in 0..boardHeight - 1 do
+            yield Presenter.putChar (point x y) (char board.[x, y]).[0]
+}

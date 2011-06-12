@@ -2,6 +2,7 @@
 module Utils
 
 open System
+open System.Drawing
 open Microsoft.FSharp.Reflection
 
 let repr (x:'a) =
@@ -18,3 +19,7 @@ let rnd max =
 
 let rnd2 min max = 
     r.Next(min, max)
+
+let point x y  = new Point(x, y)
+
+let (|>>) v l = Seq.fold (|>) v l

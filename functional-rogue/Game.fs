@@ -36,23 +36,25 @@ let moveCharacter character command board =
         board |> moveCharacter character newPosition
 
 type State = {
-    Board: Board
+    Board: Board;
+    ScreenState: Presenter.ScreenState
 }
 
 
 let mainLoop() =
-    let rec loop printAll (states: State list) =                
+    let rec loop printAll (state: State) =                
         let nextTurn command = 
-            let last = states.Head
             // Something... Something...
             //let avatar = last.Avatar.Move command
             let board = 
-                last.Board  
+                state.Board  
                 |> moveCharacter {Type = Avatar} command
-            {Board = board}
-
-        states.Head.Board 
-        |> if printAll then printBoard Board.emptyBoard else printBoard states.[1].Board
+            let changes = 
+                Presenter.startChangesList 
+                |>> printBoard board
+            let screenState = Presenter.newScreenState state.ScreenState changes
+            Presenter.refreshScreen screenState
+            {Board = board; ScreenState = screenState}
 
         let char = System.Console.ReadKey(true)        
         
@@ -68,8 +70,8 @@ let mainLoop() =
         
         match command with
         | Quit -> ()
-        | Unknown -> loop false states
-        | Up | Down | Left | Right | Wait -> loop false ((nextTurn command) :: states)
+        | Unknown -> loop false state
+        | Up | Down | Left | Right | Wait -> loop false (nextTurn command)
 
     let board = 
         generateLevel 
@@ -77,8 +79,9 @@ let mainLoop() =
 
     let entryState = {         
         Board = board; 
+        ScreenState = Presenter.startScreenState
     }
-    loop true [entryState]
+    loop true entryState
 
         
 [<EntryPoint>]
