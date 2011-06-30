@@ -12,7 +12,7 @@ type ScreenWritterMessage = {
 
 type screen = char[,]
 
-let boardSize = point 40 25
+let boardFrame = point 40 24
 let screenSize = point 79 24
 
 let screenWritter () =    
@@ -34,18 +34,19 @@ let screenWritter () =
                     | _ -> " "
 
         let screen = Array2D.copy oldScreen
-        // fill screen with board items
-        for x = boardFramePosition.X to boardFramePosition.X + boardSize.X do
-            for y = boardFramePosition.Y to boardFramePosition.Y + boardSize.Y do
-                let screenX = x - boardFramePosition.X
-                let screenY = y - boardFramePosition.X
-                screen.[screenX, screenY] <- (char board.[x, y]).[0]
+        // fill screen with board items        
+        for x in 0..boardFrame.X - 1 do
+            for y in 0..boardFrame.Y - 1 do
+                // TODO: Copy board data with shift for boardFramePosition. Show background for out of board items which should be shown on screen
+                let virtualX = x + boardFramePosition.X
+                let virtualY = y + boardFramePosition.Y
+                screen.[x, y] <- (char board.[virtualX, virtualY]).[0]
         screen         
 
     let refreshScreen (oldScreen: screen) (newScreen: screen)= 
         let changes = seq {
-            for x in 0..screenSize.X do
-                for y in 0..screenSize.Y do
+            for x in 0..screenSize.X - 1 do
+                for y in 0..screenSize.Y - 1 do
                     if oldScreen.[x, y] <> newScreen.[x, y] then yield (point x y, newScreen.[x, y])
         }
         changes

@@ -101,25 +101,3 @@ type Room(rect: Rectangle) =
             let result = board
             Array2D.blit room 0 0 result rect.X rect.Y width height
             result
-            
-let printBoard (board: Board) = seq {
-    let char item =             
-        match item.Character with
-        | Some(character1) -> 
-            match character1.Type with
-            | Avatar -> "@"
-            | Monster -> "s"
-            | NPC -> "P"
-        | _ -> 
-            match item.Items with
-            | h::_ -> "i"
-            | _ -> 
-                match item.Tile with
-                | Wall ->  "#"
-                | Floor -> "."
-                | _ -> " "
-
-    for x in 0..boardWidth - 1 do
-        for y in 0..boardHeight - 1 do
-            yield Presenter.putChar (point x y) (char board.[x, y]).[0]
-}

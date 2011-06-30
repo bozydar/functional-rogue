@@ -45,7 +45,6 @@
   <ItemGroup>
     <Compile Include="Utils.fs" />
     <Compile Include="Log.fs" />
-    <Compile Include="CommonTypes.fs" />
     <Compile Include="Board.fs" />
     <Compile Include="Presenter.fs" />
     <Compile Include="LevelGeneration.fs" />

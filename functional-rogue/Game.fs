@@ -5,6 +5,7 @@ open System.Drawing
 open Log
 open Board
 open LevelGeneration
+open ScreenActor
 
 type Command = 
     | Up
@@ -37,7 +38,6 @@ let moveCharacter character command board =
 
 type State = {
     Board: Board;
-    ScreenState: Presenter.ScreenState
 }
 
 
@@ -49,12 +49,9 @@ let mainLoop() =
             let board = 
                 state.Board  
                 |> moveCharacter {Type = Avatar} command
-            let changes = 
-                Presenter.startChangesList 
-                |>> printBoard board
-            let screenState = Presenter.newScreenState state.ScreenState changes
-            Presenter.refreshScreen screenState
-            {Board = board; ScreenState = screenState}
+
+            ScreenActor.refreshScreen {Board = board; BoardFramePosition = point 0 0; Statistics = "Nothing"}
+            {Board = board}
 
         let char = System.Console.ReadKey(true)        
         
@@ -79,7 +76,6 @@ let mainLoop() =
 
     let entryState = {         
         Board = board; 
-        ScreenState = Presenter.startScreenState
     }
     loop true entryState
 
