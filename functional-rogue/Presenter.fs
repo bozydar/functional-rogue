@@ -21,19 +21,12 @@ type ScreenState = {
 let startScreenState = let empty = Array2D.create width height ' ' in {Old = empty; Current = empty}
 
 let newScreenState screenState changeList = 
-    let meaningChanges = Seq.distinctBy (fun z -> z.Position) changeList |> Seq.cache
-    let newScreen = Array2D.init width height (fun x y ->
-        let oldChar = screenState.Current.[x, y]
-        let samePosition = fun z -> z.Position = point x y
-        let change = 
-            if Seq.exists samePosition meaningChanges then
-                Some(Seq.find samePosition meaningChanges)
-            else
-                None
-        match change with
-        | Some(item) when oldChar <> item.Char -> item.Char
-        | _ -> oldChar
-    )
+    let meaningChanges = Seq.distinctBy (fun z -> z.Position) changeList 
+    let newScreen = screenState.Current.Clone() :?> char[,]
+    meaningChanges 
+    |> Seq.iter (fun item -> 
+        newScreen.[item.Position.X, item.Position.Y] <- item.Char
+        Console.SetCursorPosition(item.Position.X, item.Position.Y))
     {Old = screenState.Current; Current = newScreen}
 
 
