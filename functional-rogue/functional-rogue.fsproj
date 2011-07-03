@@ -46,7 +46,6 @@
     <Compile Include="Utils.fs" />
     <Compile Include="Log.fs" />
     <Compile Include="Board.fs" />
-    <Compile Include="Presenter.fs" />
     <Compile Include="LevelGeneration.fs" />
     <Compile Include="ScreenActor.fs" />
     <Compile Include="Game.fs" />

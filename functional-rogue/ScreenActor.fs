@@ -12,7 +12,7 @@ type ScreenWritterMessage = {
 
 type screen = char[,]
 
-let boardFrame = point 40 24
+let boardFrame = point 60 24
 let screenSize = point 79 24
 
 let screenWritter () =    
@@ -37,7 +37,7 @@ let screenWritter () =
         // fill screen with board items        
         for x in 0..boardFrame.X - 1 do
             for y in 0..boardFrame.Y - 1 do
-                // TODO: Copy board data with shift for boardFramePosition. Show background for out of board items which should be shown on screen
+                // move board                                
                 let virtualX = x + boardFramePosition.X
                 let virtualY = y + boardFramePosition.Y
                 screen.[x, y] <- (char board.[virtualX, virtualY]).[0]
@@ -69,13 +69,3 @@ let screenWritter () =
 
 let agent = screenWritter ()
 let refreshScreen message = agent.Post message
-(*
-[<EntryPoint>]
-let main args =    
-    let agent = screenWritter(3)
-    do agent.Post(Set(2)) |> ignore
-    let a = agent.
-    Console.Write("a = " + a.ToString())
-    Console.ReadLine() |> ignore
-    0
-    *)
