@@ -1,10 +1,10 @@
-﻿module ScreenActor
+﻿module Screen
 
 open System
 open System.Drawing
 open Board
 
-type ScreenWritterMessage = {
+type ScreenMessage = {
     Board: Board;
     BoardFramePosition: Point
     Statistics: Statistics
@@ -16,13 +16,13 @@ type ScreenWritterMessage = {
     Gold: int // gold
 }
 
-type screen = char[,]
+type private screen = char[,]
 
 let boardFrame = point 60 24
-let screenSize = point 79 24
-let leftPanelPos = new Rectangle(61, 0, 19, 24)
+let private screenSize = point 79 24
+let private leftPanelPos = new Rectangle(61, 0, 19, 24)
 
-let screenWritter () =    
+let private screenWritter () =    
     let writeBoard (board: Board) (boardFramePosition: Point) (oldScreen: screen) = 
         let char item =             
             match item.Character with
@@ -77,7 +77,7 @@ let screenWritter () =
             Console.Write(char)
         )
 
-    MailboxProcessor<ScreenWritterMessage>.Start(fun inbox ->
+    MailboxProcessor<ScreenMessage>.Start(fun inbox ->
         let rec loop screen = async {
             let! msg = inbox.Receive()
             let newScreen =                 
@@ -90,5 +90,5 @@ let screenWritter () =
         loop <| Array2D.create screenSize.X screenSize.Y ' '
     )
 
-let agent = screenWritter ()
-let refreshScreen message = agent.Post message
+let private agent = screenWritter ()
+let refresh message = agent.Post message
