@@ -7,13 +7,20 @@ open Board
 type ScreenWritterMessage = {
     Board: Board;
     BoardFramePosition: Point
-    Statistics: string
+    Statistics: Statistics
+} and Statistics = {
+    HP: int;  // life
+    MaxHP: int;
+    Magic: int;  // magic
+    MaxMagic: int;
+    Gold: int // gold
 }
 
 type screen = char[,]
 
 let boardFrame = point 60 24
 let screenSize = point 79 24
+let leftPanelPos = new Rectangle(61, 0, 19, 24)
 
 let screenWritter () =    
     let writeBoard (board: Board) (boardFramePosition: Point) (oldScreen: screen) = 
@@ -41,7 +48,22 @@ let screenWritter () =
                 let virtualX = x + boardFramePosition.X
                 let virtualY = y + boardFramePosition.Y
                 screen.[x, y] <- (char board.[virtualX, virtualY]).[0]
-        screen         
+        screen      
+        
+    let writeString (position: Point) text (screen: screen) = 
+        let x = position.X
+        let y = position.Y
+        text
+        |> String.iteri (fun i char -> 
+            screen.[x + i, y] <- char)
+        screen
+
+    let writeStats stat screen =
+        let loc = point leftPanelPos.Location.X (leftPanelPos.Location.Y + 1)
+        screen 
+        |> writeString leftPanelPos.Location (sprintf "HP: %d/%d" stat.HP stat.MaxHP)
+        |> writeString loc (sprintf "Ma: %d/%d" stat.HP stat.MaxHP)
+        
 
     let refreshScreen (oldScreen: screen) (newScreen: screen)= 
         let changes = seq {
@@ -61,6 +83,7 @@ let screenWritter () =
             let newScreen =                 
                 screen
                 |> writeBoard msg.Board msg.BoardFramePosition
+                |> writeStats msg.Statistics
             refreshScreen screen newScreen
             return! loop newScreen
         }

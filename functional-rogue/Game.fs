@@ -50,7 +50,7 @@ let mainLoop() =
                 state.Board  
                 |> moveCharacter {Type = Avatar} command
 
-            ScreenActor.refreshScreen {Board = board; BoardFramePosition = point 0 0; Statistics = "Nothing"}
+            ScreenActor.refreshScreen {Board = board; BoardFramePosition = point 0 0; Statistics = {HP = 10; MaxHP = 10; Magic = 10; MaxMagic = 10; Gold = 0}}
             {Board = board}
 
         let char = System.Console.ReadKey(true)        
