@@ -56,7 +56,7 @@ let moveCharacter (character: Character) (newPosition: Point) (board: Board) =
         match place.Character with 
         | Some(character1) -> character1 = character
         | _ -> false) (places board) with        
-    | Some((oldPosition, oldPlace)) ->             
+    | Some((oldPosition, oldPlace)) when oldPosition <> newPosition ->             
         let newPlace = { oldPlace with Character = (get board oldPosition ).Character }
         board 
         |> set newPosition newPlace 
@@ -101,3 +101,33 @@ type Room(rect: Rectangle) =
             let result = board
             Array2D.blit room 0 0 result rect.X rect.Y width height
             result
+
+
+type private BoardMessage = 
+| GetAt of Point * AsyncReplyChannel<Place>
+| SetAt of Point * Place
+| Apply of (Board -> Board)
+| Set of Board
+
+let private createProcessor board =
+    MailboxProcessor<BoardMessage>.Start(fun inbox ->
+        let rec loop (board: Board) = async {
+            let! msg = inbox.Receive()
+            match msg with 
+            | GetAt(point, outbox) -> 
+                outbox.Reply(Array2D.get board point.X point.Y)
+                return! loop board
+            | SetAt(point, place) ->
+                board.[point.X, point.Y] <- place
+                return! loop board
+            | Apply(func) ->
+                return! loop (func board)
+            | Set(board) ->
+                return! loop board
+        }
+        loop board)
+        
+let private agent = createProcessor <| Array2D.create boardWidth boardHeight Place.EmptyPlace
+
+// TODO: refact functions to use BoardMessage structure
+
