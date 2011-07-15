@@ -2,6 +2,7 @@
 
 open System
 open System.Drawing
+open State
 open Log
 open Board
 open LevelGeneration
@@ -36,22 +37,19 @@ let moveCharacter character command board =
     | _ ->         
         board |> moveCharacter character newPosition
 
-type State = {
-    Board: Board;
-}
-
 
 let mainLoop() =
-    let rec loop printAll (state: State) =                
+    let rec loop printAll =                
         let nextTurn command = 
+            let state = State.get ()
             // Something... Something...
             //let avatar = last.Avatar.Move command
             let board = 
                 state.Board  
                 |> moveCharacter {Type = Avatar} command
+            State.set {Board = board}
 
-            Screen.refresh {Board = board; BoardFramePosition = point 0 0; Statistics = {HP = 10; MaxHP = 10; Magic = 10; MaxMagic = 10; Gold = 0}}
-            {Board = board}
+            Screen.refresh {BoardFramePosition = point 0 0; Statistics = {HP = 10; MaxHP = 10; Magic = 10; MaxMagic = 10; Gold = 0}}
 
         let char = System.Console.ReadKey(true)        
         
@@ -67,8 +65,10 @@ let mainLoop() =
         
         match command with
         | Quit -> ()
-        | Unknown -> loop false state
-        | Up | Down | Left | Right | Wait -> loop false (nextTurn command)
+        | Unknown -> loop false
+        | Up | Down | Left | Right | Wait -> 
+            (nextTurn command)                
+            loop false
 
     let board = 
         generateLevel 
@@ -77,7 +77,8 @@ let mainLoop() =
     let entryState = {         
         Board = board; 
     }
-    loop true entryState
+    State.set entryState
+    loop true 
 
      
 

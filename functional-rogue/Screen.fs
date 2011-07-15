@@ -5,7 +5,6 @@ open System.Drawing
 open Board
 
 type ScreenMessage = {
-    Board: Board;
     BoardFramePosition: Point
     Statistics: Statistics
 } and Statistics = {
@@ -80,9 +79,10 @@ let private screenWritter () =
     MailboxProcessor<ScreenMessage>.Start(fun inbox ->
         let rec loop screen = async {
             let! msg = inbox.Receive()
+            let state = State.get ()
             let newScreen =                 
                 screen
-                |> writeBoard msg.Board msg.BoardFramePosition
+                |> writeBoard state.Board msg.BoardFramePosition
                 |> writeStats msg.Statistics
             refreshScreen screen newScreen
             return! loop newScreen

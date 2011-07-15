@@ -1,6 +1,5 @@
 ﻿module Characters
 
-(*
 open Board
 
 type Command = 
@@ -12,7 +11,7 @@ type Command =
     | Quit
     | Unknown
 
-
+(*
 type CharacterMessage = {
     Command: Commad
 }
