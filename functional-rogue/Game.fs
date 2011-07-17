@@ -36,8 +36,6 @@ let moveCharacter character command board =
     | Wall -> board
     | _ ->         
         board |> moveCharacter character newPosition
-
-// let mainMenu =
     
 
 let mainLoop() =
@@ -76,10 +74,11 @@ let mainLoop() =
         generateLevel 
         |> Board.moveCharacter {Type = CharacterType.Avatar} (new Point(1, 1))
 
+    let mainMenuReply = showMainMenu ()
     let entryState = {         
         Board = board; 
         BoardFramePosition = point 0 0;
-        Player = { Name = "bozy"; HP = 5; MaxHP = 10; Magic = 5; MaxMagic = 10; Gold = 0};
+        Player = { Name = mainMenuReply.Name; HP = 5; MaxHP = 10; Magic = 5; MaxMagic = 10; Gold = 0};
         TurnNumber = 0;
     }
     State.set entryState
