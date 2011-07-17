@@ -51,10 +51,10 @@ let mainLoop() =
 
             Screen.refresh {BoardFramePosition = point 0 0; Statistics = {HP = 10; MaxHP = 10; Magic = 10; MaxMagic = 10; Gold = 0}}
 
-        let char = System.Console.ReadKey(true)        
+        let key = if printAll then ConsoleKey.W else System.Console.ReadKey(true).Key
         
         let command = 
-            match char.Key with 
+            match key with 
             | ConsoleKey.UpArrow -> Up            
             | ConsoleKey.DownArrow -> Down            
             | ConsoleKey.LeftArrow -> Left            
