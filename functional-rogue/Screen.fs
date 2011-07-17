@@ -15,7 +15,15 @@ type ScreenMessage = {
     Gold: int // gold
 }
 
-type private screen = char[,]
+type textel = {
+    Char: char;
+    BGColor: ConsoleColor;
+    FGColor: ConsoleColor
+} 
+    
+let private empty = {Char = ' '; FGColor = ConsoleColor.Gray; BGColor = ConsoleColor.Black}
+
+type private screen = textel[,]
 
 let boardFrame = point 60 24
 let private screenSize = point 79 24
@@ -23,21 +31,21 @@ let private leftPanelPos = new Rectangle(61, 0, 19, 24)
 
 let private screenWritter () =    
     let writeBoard (board: Board) (boardFramePosition: Point) (oldScreen: screen) = 
-        let char item =             
+        let toTextel item =             
             match item.Character with
             | Some(character1) -> 
                 match character1.Type with
-                | Avatar -> "@"
-                | Monster -> "s"
-                | NPC -> "P"
+                | Avatar -> {Char = '@'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
+                | Monster -> {Char = 's'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Red}
+                | NPC -> {Char = 'P'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.White}
             | _ -> 
                 match item.Items with
-                | h::_ -> "i"
+                | h::_ -> {Char = 'i'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
                 | _ -> 
                     match item.Tile with
-                    | Wall ->  "#"
-                    | Floor -> "."
-                    | _ -> " "
+                    | Wall ->  {Char = '#'; FGColor = ConsoleColor.Gray; BGColor = ConsoleColor.Black}
+                    | Floor -> {Char = '.'; FGColor = ConsoleColor.DarkGray; BGColor = ConsoleColor.Black}
+                    | _ -> empty
 
         let screen = Array2D.copy oldScreen
         // fill screen with board items        
@@ -46,7 +54,7 @@ let private screenWritter () =
                 // move board                                
                 let virtualX = x + boardFramePosition.X
                 let virtualY = y + boardFramePosition.Y
-                screen.[x, y] <- (char board.[virtualX, virtualY]).[0]
+                screen.[x, y] <- toTextel board.[virtualX, virtualY]
         screen      
         
     let writeString (position: Point) text (screen: screen) = 
@@ -54,7 +62,7 @@ let private screenWritter () =
         let y = position.Y
         text
         |> String.iteri (fun i char -> 
-            screen.[x + i, y] <- char)
+            screen.[x + i, y] <- {empty with Char = char})
         screen
 
     let writeStats stat screen =
@@ -71,10 +79,13 @@ let private screenWritter () =
                     if oldScreen.[x, y] <> newScreen.[x, y] then yield (point x y, newScreen.[x, y])
         }
         changes
-        |> Seq.iter (fun (position, char) -> 
+        |> Seq.iter (fun (position, textel) -> 
             Console.SetCursorPosition(position.X, position.Y)
-            Console.Write(char)
+            Console.BackgroundColor <- textel.BGColor
+            Console.ForegroundColor <- textel.FGColor
+            Console.Write(textel.Char)
         )
+        Console.SetCursorPosition(screenSize.X, screenSize.Y)
 
     MailboxProcessor<ScreenMessage>.Start(fun inbox ->
         let rec loop screen = async {
@@ -87,7 +98,7 @@ let private screenWritter () =
             refreshScreen screen newScreen
             return! loop newScreen
         }
-        loop <| Array2D.create screenSize.X screenSize.Y ' '
+        loop <| Array2D.create screenSize.X screenSize.Y empty
     )
 
 let private agent = screenWritter ()
