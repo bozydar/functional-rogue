@@ -1,9 +1,21 @@
 ﻿module State
 
 open Board
+open System.Drawing
+
 
 type State = {
     Board: Board;
+    BoardFramePosition: Point;
+    Player: Player;
+    TurnNumber: int;
+} and Player = {
+    Name: string;
+    HP: int;  // life
+    MaxHP: int;
+    Magic: int;  // magic
+    MaxMagic: int;
+    Gold: int // gold
 }
 
 type private StateAgentMessage = 

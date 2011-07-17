@@ -3,17 +3,7 @@
 open System
 open System.Drawing
 open Board
-
-type ScreenMessage = {
-    BoardFramePosition: Point
-    Statistics: Statistics
-} and Statistics = {
-    HP: int;  // life
-    MaxHP: int;
-    Magic: int;  // magic
-    MaxMagic: int;
-    Gold: int // gold
-}
+open State
 
 type textel = {
     Char: char;
@@ -65,11 +55,11 @@ let private screenWritter () =
             screen.[x + i, y] <- {empty with Char = char})
         screen
 
-    let writeStats stat screen =
-        let loc = point leftPanelPos.Location.X (leftPanelPos.Location.Y + 1)
+    let writeStats state screen =
         screen 
-        |> writeString leftPanelPos.Location (sprintf "HP: %d/%d" stat.HP stat.MaxHP)
-        |> writeString loc (sprintf "Ma: %d/%d" stat.HP stat.MaxHP)
+        |> writeString leftPanelPos.Location (sprintf "HP: %d/%d" state.Player.HP state.Player.MaxHP)
+        |> writeString (point leftPanelPos.Location.X (leftPanelPos.Location.Y + 1)) (sprintf "Ma: %d/%d" state.Player.HP state.Player.MaxHP)
+        |> writeString (point leftPanelPos.Location.X (leftPanelPos.Location.Y + 2)) (sprintf "Turn: %d" state.TurnNumber)
         
 
     let refreshScreen (oldScreen: screen) (newScreen: screen)= 
@@ -87,14 +77,14 @@ let private screenWritter () =
         )
         Console.SetCursorPosition(screenSize.X, screenSize.Y)
 
-    MailboxProcessor<ScreenMessage>.Start(fun inbox ->
+    MailboxProcessor<State>.Start(fun inbox ->
         let rec loop screen = async {
             let! msg = inbox.Receive()
-            let state = State.get ()
+
             let newScreen =                 
                 screen
-                |> writeBoard state.Board msg.BoardFramePosition
-                |> writeStats msg.Statistics
+                |> writeBoard msg.Board msg.BoardFramePosition
+                |> writeStats msg
             refreshScreen screen newScreen
             return! loop newScreen
         }
@@ -102,4 +92,4 @@ let private screenWritter () =
     )
 
 let private agent = screenWritter ()
-let refresh message = agent.Post message
+let refresh () = agent.Post (State.get ())

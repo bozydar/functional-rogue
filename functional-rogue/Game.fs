@@ -47,9 +47,9 @@ let mainLoop() =
             let board = 
                 state.Board  
                 |> moveCharacter {Type = Avatar} command
-            State.set {Board = board}
+            State.set {state with Board = board; TurnNumber = state.TurnNumber + 1}
 
-            Screen.refresh {BoardFramePosition = point 0 0; Statistics = {HP = 10; MaxHP = 10; Magic = 10; MaxMagic = 10; Gold = 0}}
+            Screen.refresh ()
 
         let key = if printAll then ConsoleKey.W else System.Console.ReadKey(true).Key
         
@@ -76,6 +76,9 @@ let mainLoop() =
 
     let entryState = {         
         Board = board; 
+        BoardFramePosition = point 0 0;
+        Player = { Name = "bozy"; HP = 5; MaxHP = 10; Magic = 5; MaxMagic = 10; Gold = 0};
+        TurnNumber = 0;
     }
     State.set entryState
     loop true 
