@@ -37,6 +37,8 @@ let moveCharacter character command board =
     | _ ->         
         board |> moveCharacter character newPosition
 
+// let mainMenu =
+    
 
 let mainLoop() =
     let rec loop printAll =                
@@ -49,7 +51,7 @@ let mainLoop() =
                 |> moveCharacter {Type = Avatar} command
             State.set {state with Board = board; TurnNumber = state.TurnNumber + 1}
 
-            Screen.refresh ()
+            Screen.showBoard ()
 
         let key = if printAll then ConsoleKey.W else System.Console.ReadKey(true).Key
         

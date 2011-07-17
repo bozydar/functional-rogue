@@ -5,6 +5,10 @@ open System.Drawing
 open Board
 open State
 
+type ScreenAgentMessage =
+    | ShowBoard of State
+
+
 type textel = {
     Char: char;
     BGColor: ConsoleColor;
@@ -37,7 +41,7 @@ let private screenWritter () =
                     | Floor -> {Char = '.'; FGColor = ConsoleColor.DarkGray; BGColor = ConsoleColor.Black}
                     | _ -> empty
 
-        let screen = Array2D.copy oldScreen
+        let screen: screen = Array2D.copy oldScreen
         // fill screen with board items        
         for x in 0..boardFrame.X - 1 do
             for y in 0..boardFrame.Y - 1 do
@@ -77,19 +81,20 @@ let private screenWritter () =
         )
         Console.SetCursorPosition(screenSize.X, screenSize.Y)
 
-    MailboxProcessor<State>.Start(fun inbox ->
+    MailboxProcessor<ScreenAgentMessage>.Start(fun inbox ->
         let rec loop screen = async {
             let! msg = inbox.Receive()
 
-            let newScreen =                 
-                screen
-                |> writeBoard msg.Board msg.BoardFramePosition
-                |> writeStats msg
-            refreshScreen screen newScreen
-            return! loop newScreen
+            let newScreen = match msg with
+                            | ShowBoard(state) ->                              
+                                screen
+                                |> writeBoard state.Board state.BoardFramePosition
+                                |> writeStats state
+            refreshScreen screen newScreen                
+            return! loop newScreen                        
         }
         loop <| Array2D.create screenSize.X screenSize.Y empty
     )
 
 let private agent = screenWritter ()
-let refresh () = agent.Post (State.get ())
+let showBoard () = agent.Post (ShowBoard(State.get ()))
