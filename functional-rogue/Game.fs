@@ -7,6 +7,7 @@ open Log
 open Board
 open LevelGeneration
 open Screen
+open Sight
 
 type Command = 
     | Up
@@ -76,7 +77,7 @@ let mainLoop() =
     let entryState = {         
         Board = board; 
         BoardFramePosition = point 0 0;
-        Player = { Name = mainMenuReply.Name; HP = 5; MaxHP = 10; Magic = 5; MaxMagic = 10; Gold = 0};
+        Player = { Name = mainMenuReply.Name; HP = 5; MaxHP = 10; Magic = 5; MaxMagic = 10; Gold = 0; SightRadius = 5};
         TurnNumber = 0;
     }
     State.set entryState
@@ -87,4 +88,6 @@ let mainLoop() =
 [<EntryPoint>]
 let main args =    
     mainLoop()
+    //printf "%s" <| Seq.fold (fun acc x -> acc + " " + x.ToString()) "" (circles.[2])
+    System.Console.ReadKey(true) |> ignore
     0

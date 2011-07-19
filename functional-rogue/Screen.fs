@@ -4,6 +4,7 @@ open System
 open System.Drawing
 open Board
 open State
+open Sight
 
 type ScreenAgentMessage =
     | ShowBoard of State
@@ -27,7 +28,7 @@ let private screenSize = point 79 24
 let private leftPanelPos = new Rectangle(61, 0, 19, 24)
 
 let private screenWritter () =    
-    let writeBoard (board: Board) (boardFramePosition: Point) (screen: screen) = 
+    let writeBoard (board: Board) (boardFramePosition: Point) sightRadius (screen: screen)  = 
         let toTextel item =             
             match item.Character with
             | Some(character1) -> 
@@ -45,12 +46,20 @@ let private screenWritter () =
                     | _ -> empty
         
         // fill screen with board items        
+        let visible = 
+            visiblePlaces (getPlayerPosition board) sightRadius board
+            |> Seq.map (fun item -> (item.X, item.Y))        
+            |> Seq.toList
+            
         for x in 0..boardFrame.X - 1 do
             for y in 0..boardFrame.Y - 1 do
                 // move board                                
                 let virtualX = x + boardFramePosition.X
                 let virtualY = y + boardFramePosition.Y
                 screen.[x, y] <- toTextel board.[virtualX, virtualY]
+        // for now enlight textels on sight
+        for x, y in visible do
+            screen.[x, y] <- { screen.[x, y] with BGColor = ConsoleColor.White }
         screen      
         
     let writeString (position: Point) (text: String) (screen: screen) = 
@@ -99,7 +108,7 @@ let private screenWritter () =
             | ShowBoard(state) -> let newScreen = 
                                       screen
                                       |> Array2D.copy
-                                      |> writeBoard state.Board state.BoardFramePosition
+                                      |> writeBoard state.Board state.BoardFramePosition state.Player.SightRadius
                                       |> writeStats state
                                   refreshScreen screen newScreen
                                   return! loop newScreen                        
