@@ -26,11 +26,13 @@ type Place = {
     Tile: Tile; 
     Items: Item list;
     Character: Character option;    
+    IsSeen: bool;
+    WasSeen: bool;
 } with
     static member EmptyPlace = 
-            {Tile = Tile.None; Items = []; Character = Option.None }
+            {Tile = Tile.None; Items = []; Character = Option.None; IsSeen = false; WasSeen = false }
     static member Wall = 
-            {Tile = Tile.Wall; Items = []; Character = Option.None}
+            {Tile = Tile.Wall; Items = []; Character = Option.None; IsSeen = false; WasSeen = false}
 
 let boardHeight = 24
 let boardWidth = 79

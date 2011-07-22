@@ -17,7 +17,7 @@ type State = {
     MaxMagic: int;
     Gold: int // gold
     SightRadius: int // sigh radius
-}
+} 
 
 type private StateAgentMessage = 
     | Set of Option<State>

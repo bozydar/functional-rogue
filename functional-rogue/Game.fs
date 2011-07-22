@@ -45,6 +45,8 @@ let mainLoop() =
             let board = 
                 state.Board  
                 |> moveCharacter {Type = Avatar} command
+                |> setVisibilityStates state.Player
+                    
             State.set {state with Board = board; TurnNumber = state.TurnNumber + 1}
 
             Screen.showBoard ()

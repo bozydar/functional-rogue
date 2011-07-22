@@ -46,8 +46,8 @@
     <Compile Include="Utils.fs" />
     <Compile Include="Log.fs" />
     <Compile Include="Board.fs" />
-    <Compile Include="Sight.fs" />
     <Compile Include="State.fs" />
+    <Compile Include="Sight.fs" />
     <Compile Include="LevelGeneration.fs" />
     <Compile Include="Characters.fs" />
     <Compile Include="Screen.fs" />

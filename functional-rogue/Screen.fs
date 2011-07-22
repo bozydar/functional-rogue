@@ -29,37 +29,30 @@ let private leftPanelPos = new Rectangle(61, 0, 19, 24)
 
 let private screenWritter () =    
     let writeBoard (board: Board) (boardFramePosition: Point) sightRadius (screen: screen)  = 
-        let toTextel item =             
-            match item.Character with
-            | Some(character1) -> 
-                match character1.Type with
-                | Avatar -> {Char = '@'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
-                | Monster -> {Char = 's'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Red}
-                | NPC -> {Char = 'P'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.White}
-            | _ -> 
-                match item.Items with
-                | h::_ -> {Char = 'i'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
-                | _ -> 
-                    match item.Tile with
-                    | Wall ->  {Char = '#'; FGColor = ConsoleColor.Gray; BGColor = ConsoleColor.Black}
-                    | Floor -> {Char = '.'; FGColor = ConsoleColor.DarkGray; BGColor = ConsoleColor.Black}
-                    | _ -> empty
-        
-        // fill screen with board items        
-        let visible = 
-            visiblePlaces (getPlayerPosition board) sightRadius board
-            |> Seq.map (fun item -> (item.X, item.Y))        
-            |> Seq.toList
-            
+        let toTextel item =  
+            if item.WasSeen then
+                let result = match item.Character with
+                                | Some(character1) -> 
+                                    match character1.Type with
+                                    | Avatar -> {Char = '@'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
+                                    | Monster -> {Char = 's'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Red}
+                                    | NPC -> {Char = 'P'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.White}
+                                | _ -> 
+                                    match item.Items with
+                                    | h::_ -> {Char = 'i'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
+                                    | _ -> 
+                                        match item.Tile with
+                                        | Wall ->  {Char = '#'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
+                                        | Floor -> {Char = '.'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
+                                        | _ -> empty
+                if not item.IsSeen then {result with FGColor = ConsoleColor.DarkGray } else result
+            else empty
         for x in 0..boardFrame.X - 1 do
             for y in 0..boardFrame.Y - 1 do
                 // move board                                
                 let virtualX = x + boardFramePosition.X
                 let virtualY = y + boardFramePosition.Y
                 screen.[x, y] <- toTextel board.[virtualX, virtualY]
-        // for now enlight textels on sight
-        for x, y in visible do
-            screen.[x, y] <- { screen.[x, y] with FGColor = ConsoleColor.White }
         screen      
         
     let writeString (position: Point) (text: String) (screen: screen) = 
