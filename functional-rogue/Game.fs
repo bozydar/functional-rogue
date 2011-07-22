@@ -42,8 +42,6 @@ let mainLoop() =
     let rec loop printAll =                
         let nextTurn command = 
             let state = State.get ()
-            // Something... Something...
-            //let avatar = last.Avatar.Move command
             let board = 
                 state.Board  
                 |> moveCharacter {Type = Avatar} command
