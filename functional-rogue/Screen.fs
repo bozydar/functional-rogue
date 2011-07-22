@@ -59,7 +59,7 @@ let private screenWritter () =
                 screen.[x, y] <- toTextel board.[virtualX, virtualY]
         // for now enlight textels on sight
         for x, y in visible do
-            screen.[x, y] <- { screen.[x, y] with BGColor = ConsoleColor.White }
+            screen.[x, y] <- { screen.[x, y] with FGColor = ConsoleColor.White }
         screen      
         
     let writeString (position: Point) (text: String) (screen: screen) = 

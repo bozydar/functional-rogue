@@ -99,44 +99,34 @@ let circles =
 
 // returns points visible by player
 let visiblePlaces (where: Point) distance board = seq {
-    let rec loop r th1 th2 = seq {
-        let circ = Seq.toArray circles.[r]
-        let wasObstacle = ref false
-        let foundClear = ref false
-        for i in 0..circ.Length - 1 do
-            let arcPoint = circ.[i]
-            let position = point (arcPoint.X + where.X) (arcPoint.Y + where.Y)
-            if not (boardContains position)  then
-                wasObstacle := true
-            else 
-                let currentPoint = point arcPoint.X arcPoint.Y
-                if not ((arcPoint.Lagging < th1 || arcPoint.Leading > th2) && arcPoint.Theta <> th1 && arcPoint.Theta <> th2) then                
-                    yield position
-                    let isObstacle = isObstacle board position
-                    if isObstacle then
-                        if not !wasObstacle then
-                            if !foundClear then
-                                let runStartTheta = th1
-                                let runEndTheta = arcPoint.Leading
-                                if r < distance then
-                                    yield! loop (r + 1) runStartTheta runEndTheta
-                                wasObstacle := true
-                            else
-                                let nTh1 = if arcPoint.Theta = 0.0 then 0.0 else arcPoint.Leading
-                                if r < distance then
-                                    yield! loop (r + 1) nTh1 th2
-                    else
-                        foundClear := true
-                        if !wasObstacle then
-                            let last = circ.[i - 1]
-                            if r < distance then
-                                    yield! loop (r + 1) last.Theta th2
-                        else
-                            wasObstacle := false
-                    wasObstacle := isObstacle
+    for j in 1..3..360  do
+        let i = Convert.ToDouble(j)
+        let dist = ref 0
+        let ox = ref(Convert.ToDouble where.X)
+        let oy = ref(Convert.ToDouble where.Y)
+        let xMove = ref(Math.Cos(i * Math.PI / 180.0))
+        let yMove = ref(Math.Sin(i * Math.PI / 180.0))
+        let bre = ref false
+        let j = ref 0
+        while (not !bre) && !j <= distance do            
+            let a = Convert.ToInt32(!ox)
+            let b = Convert.ToInt32(!oy)            
+            let p = point a b
+            if boardContains p then
+                yield p
+            if isObstacle board p then 
+                bre := true
+            else
+                ox := !ox + !xMove
+                oy := !oy + !yMove
+                j := !j + 1
+
     }
-    yield! loop 1 0.0 359.0
-}
+
+
+// returns points visible by player
+let visiblePlaces1 (where: Point) distance board = Seq.empty
+
 
     
 // TODO: http://rlforj.svn.sourceforge.net/viewvc/rlforj/trunk/src/rlforj/los/ShadowCasting.java?revision=12&view=markup

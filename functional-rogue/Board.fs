@@ -29,22 +29,26 @@ type Place = {
 } with
     static member EmptyPlace = 
             {Tile = Tile.None; Items = []; Character = Option.None }
+    static member Wall = 
+            {Tile = Tile.Wall; Items = []; Character = Option.None}
 
 let boardHeight = 24
 let boardWidth = 79
 
 type Board = Place[,]
+    
+    
+let boardContains (point: Point) = 
+    boardWidth > point.X  && boardHeight > point.Y && point.X >= 0 && point.Y >= 0
                     
-let get (board: Board) (point: Point) = Array2D.get board point.X point.Y
+let get (board: Board) (point: Point) = if boardContains point then Array2D.get board point.X point.Y else Place.Wall
+
 let isObstacle (board: Board) (point: Point) = (get board point).Tile = Tile.Wall
 
 let set (point: Point) (value: Place) (board: Board) : Board =
     let result = Array2D.copy board 
     Array2D.set result point.X point.Y value
     result
-
-let boardContains (point: Point) = 
-    boardWidth > point.X  && boardHeight > point.Y && point.X >= 0 && point.Y >= 0
 
 let places (board: Board) = 
     seq {
