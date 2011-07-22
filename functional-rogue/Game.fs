@@ -37,7 +37,6 @@ let moveCharacter character command board =
     | _ ->         
         board |> moveCharacter character newPosition
     
-
 let mainLoop() =
     let rec loop printAll =                
         let nextTurn command = 
@@ -80,9 +79,7 @@ let mainLoop() =
         TurnNumber = 0;
     }
     State.set entryState
-    loop true 
-
-     
+    loop true      
 
 [<EntryPoint>]
 let main args =    
