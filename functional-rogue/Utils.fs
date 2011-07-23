@@ -22,5 +22,16 @@ let rnd2 min max =
 
 let point x y  = new Point(x, y)
 
-let (|>>) v l = Seq.fold (|>) v l
+type FloatingPoint = {
+    X: float;
+    Y: float
+} with
+    member this.ToPoint =
+        let a = Convert.ToInt32 this.X
+        let b = Convert.ToInt32 this.Y
+        point a b
+    static member (+) (left, right) =
+        {X = left.X + right.X; Y = left.Y + right.Y}
+    static member (+) (left, right: Point) =
+        {X = left.X + Convert.ToDouble(right.X); Y = left.Y + Convert.ToDouble(right.Y)}
 

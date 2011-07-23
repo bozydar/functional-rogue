@@ -1,5 +1,6 @@
 ﻿module Sight
 
+open Utils
 open System
 open System.Drawing
 open Board
@@ -7,29 +8,24 @@ open State
 
 // returns points visible by player
 let visiblePositions (where: Point) distance board = 
-    let result = ref []
-    for j in 1..3..360  do
-        let i = Convert.ToDouble(j)
-        let dist = ref 0
-        let ox = ref(Convert.ToDouble where.X)
-        let oy = ref(Convert.ToDouble where.Y)
-        let xMove = ref(Math.Cos(i * Math.PI / 180.0))
-        let yMove = ref(Math.Sin(i * Math.PI / 180.0))        
-        let bre = ref false
-        let j = ref 0
-        while (not !bre) && !j <= distance do            
-            let a = Convert.ToInt32(!ox)
-            let b = Convert.ToInt32(!oy)            
-            let p = point a b
-            if boardContains p then
-                result := p :: !result 
-            if isObstacle board p then 
-                bre := true
-            else
-                ox := !ox + !xMove
-                oy := !oy + !yMove
-                j := !j + 1
-    !result
+    let loop2 degrees = seq {
+        for (degree: int) in degrees do
+            let i = Convert.ToDouble(degree)
+            let move = { X = Math.Cos(i * Math.PI / 180.0); Y = Math.Sin(i * Math.PI / 180.0)}
+
+            let rec loop1 (fPoint: FloatingPoint) (j: int) = seq {            
+                let p = fPoint.ToPoint
+                if boardContains p then
+                    yield p
+                if isObstacle board p then 
+                    ()
+                if j < distance then
+                    yield! loop1 (fPoint + move) (j + 1)
+            }
+
+            yield! loop1 (move + where) 1}
+    
+    loop2 [1..3..360]    
     |> Seq.distinct 
     |> Seq.toList 
     
