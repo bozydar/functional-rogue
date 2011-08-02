@@ -39,7 +39,10 @@ let private screenWritter () =
                                     | NPC -> {Char = 'P'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.White}
                                 | _ -> 
                                     match item.Items with
-                                    | h::_ -> {Char = 'i'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
+                                    | h::_ -> 
+                                           match h with 
+                                           | Gold(value) -> {Char = '$'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
+                                           | _ -> {Char = 'i'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
                                     | _ -> 
                                         match item.Tile with
                                         | Wall ->  {Char = '#'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}

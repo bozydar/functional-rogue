@@ -12,6 +12,7 @@ type Tile =
 type Item = 
     | Sword
     | Vand
+    | Gold of int
 
 type CharacterType = 
     | Avatar
@@ -37,7 +38,7 @@ type Place = {
 let boardHeight = 24
 let boardWidth = 79
 
-type Board = Place[,]
+type Board = Place[,] 
     
     
 let boardContains (point: Point) = 
@@ -51,6 +52,10 @@ let set (point: Point) (value: Place) (board: Board) : Board =
     let result = Array2D.copy board 
     Array2D.set result point.X point.Y value
     result
+
+let modify (point: Point) (modifier: Place -> Place) (board: Board) =
+    let current = get board point 
+    set point (modifier current) board
 
 let places (board: Board) = 
     seq {

@@ -22,6 +22,8 @@ let rnd2 min max =
 
 let point x y  = new Point(x, y)
 
+let (|>>) v l = Seq.fold (|>) v l
+
 type FloatingPoint = {
     X: float;
     Y: float
