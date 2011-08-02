@@ -19,7 +19,7 @@ let visiblePositions (where: Point) distance board =
                     yield p
                 if isObstacle board p then 
                     ()
-                if j < distance then
+                elif j < distance then
                     yield! loop1 (fPoint + move) (j + 1)
             }
 
