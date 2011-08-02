@@ -83,11 +83,9 @@ let moveCharacter (character: Character) (newPosition: Point) (board: Board) =
         board 
         |> set newPosition newPlace 
         |> set oldPosition { oldPlace with Character = Option.None }
-    | _ ->             
-        let oldPlace = get board newPosition
-        let newPlace = { oldPlace with Character = Some character }
+    | _ ->
         board
-        |> set newPosition newPlace
+        |> modify newPosition (fun place -> {place with Character = Some character })
 
 let emptyBoard : Board = Array2D.create boardWidth boardHeight Place.EmptyPlace
 
