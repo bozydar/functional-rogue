@@ -23,11 +23,11 @@ let visiblePositions (where: Point) distance board =
                     yield! loop1 (fPoint + move) (j + 1)
             }
 
-            yield! loop1 (move + where) 1}
+            yield! loop1 (move + where) 1}        
     
-    loop2 [1..3..360]    
+    where :: (loop2 [1..3..360]  
     |> Seq.distinct 
-    |> Seq.toList 
+    |> Seq.toList)
     
 let setVisibilityStates player board  = 
     let playerPosition = getPlayerPosition board
