@@ -24,6 +24,8 @@ let point x y  = new Point(x, y)
 
 let (|>>) v l = Seq.fold (|>) v l
 
+let inBoundary (v: int) max min = Math.Max(Math.Min(v, min), max)
+
 type FloatingPoint = {
     X: float;
     Y: float

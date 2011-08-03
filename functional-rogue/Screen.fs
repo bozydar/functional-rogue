@@ -23,12 +23,12 @@ let private empty = {Char = ' '; FGColor = ConsoleColor.Gray; BGColor = ConsoleC
 
 type private screen = textel[,]
 
-let boardFrame = point 60 24
-let private screenSize = point 79 24
+let boardFrameSize = new Size(60, 24)
+let private screenSize = new Size(79, 24)
 let private leftPanelPos = new Rectangle(61, 0, 19, 24)
 
 let private screenWritter () =    
-    let writeBoard (board: Board) (boardFramePosition: Point) sightRadius (screen: screen)  = 
+    let writeBoard (board: Board) (boardFramePosition: Point) sightRadius (screen: screen) = 
         let toTextel item =  
             if item.WasSeen then
                 let result = 
@@ -51,8 +51,8 @@ let private screenWritter () =
                             | _ -> empty
                 if not item.IsSeen then {result with FGColor = ConsoleColor.DarkGray } else result
             else empty
-        for x in 0..boardFrame.X - 1 do
-            for y in 0..boardFrame.Y - 1 do
+        for x in 0..boardFrameSize.Width - 1 do
+            for y in 0..boardFrameSize.Height - 1 do
                 // move board                                
                 let virtualX = x + boardFramePosition.X
                 let virtualY = y + boardFramePosition.Y
@@ -62,7 +62,7 @@ let private screenWritter () =
     let writeString (position: Point) (text: String) (screen: screen) = 
         let x = position.X
         let y = position.Y
-        let length = min (screenSize.X - x) text.Length
+        let length = min (screenSize.Width - x) text.Length
         text.Substring(0, length)
         |> String.iteri (fun i char -> 
             screen.[x + i, y] <- {empty with Char = char})
@@ -84,8 +84,8 @@ let private screenWritter () =
 
     let refreshScreen (oldScreen: screen) (newScreen: screen)= 
         let changes = seq {
-            for x in 0..screenSize.X - 1 do
-                for y in 0..screenSize.Y - 1 do
+            for x in 0..screenSize.Width - 1 do
+                for y in 0..screenSize.Height - 1 do
                     if oldScreen.[x, y] <> newScreen.[x, y] then yield (point x y, newScreen.[x, y])
         }
         changes
@@ -95,7 +95,7 @@ let private screenWritter () =
             Console.ForegroundColor <- textel.FGColor
             Console.Write(textel.Char)
         )
-        Console.SetCursorPosition(screenSize.X, screenSize.Y)
+        Console.SetCursorPosition(screenSize.Width, screenSize.Height)
 
     MailboxProcessor<ScreenAgentMessage>.Start(fun inbox ->
         let rec loop screen = async {
@@ -120,7 +120,7 @@ let private screenWritter () =
                                      reply.Reply({Name = name})
                                      return! loop newScreen  
         }
-        loop <| Array2D.create screenSize.X screenSize.Y empty
+        loop <| Array2D.create screenSize.Width screenSize.Height empty
     )
 
 let private agent = screenWritter ()
