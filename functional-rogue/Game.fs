@@ -17,6 +17,7 @@ type Command =
     | Quit
     | Unknown
 
+
 let commandToSize command = 
     match command with
     | Up -> new Size(0, -1)
@@ -71,7 +72,7 @@ let mainLoop() =
             loop false
 
     let board = 
-        generateLevel 
+        generateLevel LevelType.Dungeon
         |> Board.moveCharacter {Type = CharacterType.Avatar} (new Point(1, 1))
 
     let mainMenuReply = showMainMenu ()
