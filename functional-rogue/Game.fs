@@ -50,14 +50,10 @@ let mainLoop() =
             // evaluate BoardFramePosition
             let playerPosition = getPlayerPosition board
             let frameView = new Rectangle(state.BoardFramePosition, boardFrameSize)
-            let playerHandyArea = Rectangle.Inflate(frameView, -2, -2)
-            let boardFramePosition = 
-                if not <| playerHandyArea.Contains playerPosition then 
-                    let x = inBoundary (playerPosition.X - (boardFrameSize.Width / 2)) 0 (boardWidth - boardFrameSize.Width)
-                    let y = inBoundary (playerPosition.Y - (boardFrameSize.Height / 2)) 0 (boardHeight - boardFrameSize.Height)
-                    point x y
-                else
-                    state.BoardFramePosition
+            let boardFramePosition =                 
+                let x = inBoundary (playerPosition.X - (boardFrameSize.Width / 2)) 0 (boardWidth - boardFrameSize.Width)
+                let y = inBoundary (playerPosition.Y - (boardFrameSize.Height / 2)) 0 (boardHeight - boardFrameSize.Height)
+                point x y                
             
             State.set {state with Board = board; TurnNumber = state.TurnNumber + 1; BoardFramePosition = boardFramePosition}
 
