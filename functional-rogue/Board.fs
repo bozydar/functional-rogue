@@ -74,15 +74,16 @@ let getPlayerPosition (board: Board) =
     point
 
 let moveCharacter (character: Character) (newPosition: Point) (board: Board) =
-    match Seq.tryFind (fun (point, place) -> 
+    let allBoardPlaces = places board
+    match Seq.tryFind (fun (_, place) -> 
         match place.Character with 
         | Some(character1) -> character1 = character
-        | _ -> false) (places board) with        
-    | Some((oldPosition, oldPlace)) when oldPosition <> newPosition ->             
-        let newPlace = { oldPlace with Character = (get board oldPosition ).Character }
+        | _ -> false) allBoardPlaces with        
+    | Some((oldPosition, oldPlace)) when oldPosition <> newPosition ->           
+        let character = (get board oldPosition ).Character
         board 
-        |> set newPosition newPlace 
-        |> set oldPosition { oldPlace with Character = Option.None }
+        |> modify newPosition (fun place -> { place with Character = character }) 
+        |> modify oldPosition (fun place -> { place with Character = option.None }) 
     | _ ->
         board
         |> modify newPosition (fun place -> {place with Character = Some character })
