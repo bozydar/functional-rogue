@@ -17,6 +17,7 @@ type State = {
     MaxMagic: int;
     Gold: int // gold
     SightRadius: int // sigh radius
+    Items: list<Item>
 } 
 
 type private StateAgentMessage = 
