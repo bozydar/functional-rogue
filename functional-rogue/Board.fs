@@ -107,29 +107,46 @@ type Room(rect: Rectangle) =
             Array2D.blit room 0 0 result rect.X rect.Y width height
             result
 
-type Tunnel(rect: Rectangle) =
+type Tunnel(rect: Rectangle, randomizeSize: bool) =
+    
+    let mutable actualTunnelRect = new Rectangle(0, 0, 0, 0)
+    
+
     let generateTunnel width height = 
-        if width < 2 then invalidArg "width" "Is zero"
-        if height < 2 then invalidArg "height" "Is zero"
+        if width < 1 then invalidArg "width" "Is zero"
+        if height < 1 then invalidArg "height" "Is zero"
 
         let wall = {Place.EmptyPlace with Tile = Tile.Wall}
         let floor = {Place.EmptyPlace with Tile = Tile.Floor}
 
-        let tunnelWidth = rnd2 2 width
-        let tunnelHeight = rnd2 2 height
+        let tunnelWidth = 
+            if(randomizeSize) then rnd2 1 width
+            else width
+        let tunnelHeight = 
+            if(randomizeSize) then rnd2 1 height
+            else height
         let tunnelX = rnd(width - tunnelWidth)
         let tunnelY = rnd(height - tunnelHeight)
+
+        actualTunnelRect <- new Rectangle(tunnelX + rect.X, tunnelY + rect.Y, tunnelWidth, tunnelHeight)
 
         let result = Array2D.create width height wall
         for x = tunnelX to tunnelX + tunnelWidth - 1 do 
             for y = tunnelY to tunnelY + tunnelHeight - 1 do 
                 Array2D.set result x y floor
         result
-
+    
     let generatedTunnel = generateTunnel rect.Width rect.Height
+
+    
+    member this.ActualTunnelRect = actualTunnelRect
+    
 
     member this.GeneratedTunnel
         with get() = generatedTunnel
+
+    member this.GetRandomPointInside
+        with get() = (rnd2 actualTunnelRect.X (actualTunnelRect.X + actualTunnelRect.Width), rnd2 actualTunnelRect.Y (actualTunnelRect.Y + actualTunnelRect.Height))
 
     member this.Rectangle
         with get() = rect
