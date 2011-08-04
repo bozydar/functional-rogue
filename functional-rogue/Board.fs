@@ -2,6 +2,7 @@
 
 open System
 open System.Drawing
+open Config
 
 type Tile =
     | Wall 
@@ -31,9 +32,9 @@ type Place = {
     WasSeen: bool;
 } with
     static member EmptyPlace = 
-            {Tile = Tile.None; Items = []; Character = Option.None; IsSeen = false; WasSeen = false }
+            {Tile = Tile.None; Items = []; Character = Option.None; IsSeen = false; WasSeen = Settings.EntireLevelSeen }
     static member Wall = 
-            {Tile = Tile.Wall; Items = []; Character = Option.None; IsSeen = false; WasSeen = false}
+            {Tile = Tile.Wall; Items = []; Character = Option.None; IsSeen = false; WasSeen = Settings.EntireLevelSeen }
 
 let boardHeight = 24
 let boardWidth = 79
