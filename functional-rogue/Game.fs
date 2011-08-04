@@ -16,6 +16,7 @@ type Command =
     | Right
     | Wait
     | Take
+    | ShowItems
     | Quit
     | Unknown
 
@@ -89,6 +90,7 @@ let mainLoop() =
             | ConsoleKey.RightArrow -> Right
             | ConsoleKey.W -> Wait
             | ConsoleKey.OemComma -> Take
+            | ConsoleKey.I -> ShowItems
             | ConsoleKey.Escape -> Quit
             | _ -> Unknown                        
         
@@ -97,6 +99,9 @@ let mainLoop() =
         | Unknown -> loop false
         | Up | Down | Left | Right | Wait | Take -> 
             (nextTurn command)                
+            loop false
+        | ShowItems ->
+            // showItems ()
             loop false
 
     let board = 
