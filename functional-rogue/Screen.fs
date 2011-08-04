@@ -79,7 +79,8 @@ let private screenWritter () =
         |> writeString leftPanelPos.Location (sprintf "HP: %d/%d" state.Player.HP state.Player.MaxHP)
         |> writeString (point leftPanelPos.Location.X (leftPanelPos.Location.Y + 1)) (sprintf "%s the rogue" state.Player.Name)
         |> writeString (point leftPanelPos.Location.X (leftPanelPos.Location.Y + 2)) (sprintf "Ma: %d/%d" state.Player.HP state.Player.MaxHP)
-        |> writeString (point leftPanelPos.Location.X (leftPanelPos.Location.Y + 3)) (sprintf "Turn: %d" state.TurnNumber)
+        |> writeString (point leftPanelPos.Location.X (leftPanelPos.Location.Y + 3)) (sprintf "Gold: %d" state.Player.Gold)
+        |> writeString (point leftPanelPos.Location.X (leftPanelPos.Location.Y + 4)) (sprintf "Turn: %d" state.TurnNumber)
         
 
     let refreshScreen (oldScreen: screen) (newScreen: screen)= 

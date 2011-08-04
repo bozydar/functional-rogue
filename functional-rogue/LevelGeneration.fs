@@ -38,7 +38,7 @@ let addGold board =
         for i in 0..20 do
             let posX = rnd boardWidth
             let posY = rnd boardHeight
-            let value = rnd 10
+            let value = rnd2 1 10
             yield (fun board -> 
                 Board.modify (point posX posY) (fun place -> 
                     {place with Items = Gold(value) :: place.Items} ) board)
