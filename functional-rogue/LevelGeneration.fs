@@ -41,27 +41,34 @@ let generateTest: Board =
     addRooms rooms board
 
 let generateDungeonRooms sections sectionWidth sectionHeight sectionsHorizontal sectionsVertical = 
-    let rooms : Tunnel [,] = Array2D.create sectionsHorizontal sectionsVertical (new Tunnel(new Rectangle( 0, 0, 2, 2)))
-    let resultRooms = Array2D.mapi ( fun x y i -> new Tunnel(new Rectangle((x*sectionWidth) + 1 + x, (y*sectionHeight) + 1 + y, sectionWidth, sectionHeight))) rooms 
-//    match sections with
-//    | head :: tail -> 
-//        let x, y = head
-//        new Tunnel(new Rectangle((x*sectionWidth) + 1 + x, (y*sectionHeight) + 1 + y, sectionWidth, sectionHeight)) :: (generateDungeonRooms tail sectionWidth sectionHeight)
-//    | [] -> []
+    let rooms : Tunnel [,] = Array2D.create sectionsHorizontal sectionsVertical (new Tunnel(new Rectangle( 0, 0, 2, 2), true))
+    let resultRooms = Array2D.mapi ( fun x y i -> new Tunnel(new Rectangle((x*sectionWidth) + 1 + x, (y*sectionHeight) + 1 + y, sectionWidth, sectionHeight), true)) rooms
     resultRooms
 
-let rec generateDungeonConnections sections rooms sectionWidth sectionHeight =
-    match sections with
-    | head :: tail ->
-        let x, y = head
-        let currentRoom = [List.head<Tunnel> rooms]
-        List.append (generateDungeonConnections (List.tail sections) (List.tail<Tunnel> rooms) sectionWidth sectionHeight) currentRoom
-    | [] -> []
+let generateTunnelConnection x1 y1 x2 y2 =
+    let horizontalPart = [new Tunnel(new Rectangle(min x1 x2, min y1 y2, abs (x2 - x1) + 1, 1), false)]
+    let varticalPart = [new Tunnel(new Rectangle(max x1 x2, min y1 y2, 1, abs (y2 - y1) + 1), false)]
+    List.append horizontalPart varticalPart
+
+let generateDungeonConnections sections (rooms: Tunnel[,]) sectionWidth sectionHeight sectionsHorizontal sectionsVertical =
+    let mutable connectionList = []
+    for x = 0 to sectionsHorizontal - 2 do 
+            for y = 0 to sectionsVertical - 2 do
+                if(x < (sectionsHorizontal - 1)) then
+                    let horx1, hory1 = rooms.[x, y].GetRandomPointInside
+                    let horx2, hory2 = rooms.[x + 1, y].GetRandomPointInside
+                    connectionList <- List.append connectionList (generateTunnelConnection horx1 hory1 horx2 hory2)
+                if(y < (sectionsVertical - 1)) then
+                    let vertx1, verty1 = rooms.[x, y].GetRandomPointInside
+                    let vertx2, verty2 = rooms.[x, y + 1].GetRandomPointInside
+                    connectionList <- List.append connectionList (generateTunnelConnection vertx1 verty1 vertx2 verty2)
+    connectionList
 
 let generateDungeonTunnels sections sectionWidth sectionHeight sectionsHorizontal sectionsVertical = 
     let rooms = generateDungeonRooms sections sectionWidth sectionHeight sectionsHorizontal sectionsVertical
     let roomsList = rooms |> Seq.cast<Tunnel> |> Seq.fold ( fun l n -> n :: l) []
-    generateDungeonConnections sections roomsList sectionWidth sectionHeight
+    let roomsWithConnectionsList = List.append roomsList (generateDungeonConnections sections rooms sectionWidth sectionHeight sectionsHorizontal sectionsVertical)
+    roomsWithConnectionsList
 
 let generateDungeon: Board = 
     let mutable board = Array2D.create boardWidth boardHeight {Place.EmptyPlace with Tile = Tile.Wall}
