@@ -23,6 +23,7 @@ type CharacterType =
 type LevelType = 
     | Test
     | Dungeon
+    | Cave
 
 type Character = {
     Type: CharacterType

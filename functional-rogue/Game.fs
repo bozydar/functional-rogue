@@ -80,7 +80,7 @@ let mainLoop() =
             loop false
 
     let board = 
-        generateLevel LevelType.Dungeon
+        generateLevel LevelType.Cave
         |> Board.moveCharacter {Type = CharacterType.Avatar} (new Point(8, 4))
 
     let mainMenuReply = showMainMenu ()
