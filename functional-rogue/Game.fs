@@ -7,6 +7,7 @@ open Log
 open Board
 open LevelGeneration
 open Screen
+open Sight
 
 type Command = 
     | Up
@@ -38,17 +39,24 @@ let moveCharacter character command board =
     | _ ->         
         board |> moveCharacter character newPosition
     
-
 let mainLoop() =
     let rec loop printAll =                
         let nextTurn command = 
             let state = State.get ()
-            // Something... Something...
-            //let avatar = last.Avatar.Move command
             let board = 
                 state.Board  
                 |> moveCharacter {Type = Avatar} command
-            State.set {state with Board = board; TurnNumber = state.TurnNumber + 1}
+                |> setVisibilityStates state.Player
+                    
+            // evaluate BoardFramePosition
+            let playerPosition = getPlayerPosition board
+            let frameView = new Rectangle(state.BoardFramePosition, boardFrameSize)
+            let boardFramePosition =                 
+                let x = inBoundary (playerPosition.X - (boardFrameSize.Width / 2)) 0 (boardWidth - boardFrameSize.Width)
+                let y = inBoundary (playerPosition.Y - (boardFrameSize.Height / 2)) 0 (boardHeight - boardFrameSize.Height)
+                point x y                
+            
+            State.set {state with Board = board; TurnNumber = state.TurnNumber + 1; BoardFramePosition = boardFramePosition}
 
             Screen.showBoard ()
 
@@ -73,21 +81,21 @@ let mainLoop() =
 
     let board = 
         generateLevel LevelType.Dungeon
-        |> Board.moveCharacter {Type = CharacterType.Avatar} (new Point(1, 1))
+        |> Board.moveCharacter {Type = CharacterType.Avatar} (new Point(8, 4))
 
     let mainMenuReply = showMainMenu ()
     let entryState = {         
         Board = board; 
         BoardFramePosition = point 0 0;
-        Player = { Name = mainMenuReply.Name; HP = 5; MaxHP = 10; Magic = 5; MaxMagic = 10; Gold = 0};
+        Player = { Name = mainMenuReply.Name; HP = 5; MaxHP = 10; Magic = 5; MaxMagic = 10; Gold = 0; SightRadius = 10};
         TurnNumber = 0;
     }
     State.set entryState
-    loop true 
-
-     
+    loop true      
 
 [<EntryPoint>]
 let main args =    
     mainLoop()
+    //printf "%s" <| Seq.fold (fun acc x -> acc + " " + x.ToString()) "" (circles.[2])
+    System.Console.ReadKey(true) |> ignore
     0

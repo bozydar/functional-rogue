@@ -13,6 +13,7 @@ type Tile =
 type Item = 
     | Sword
     | Vand
+    | Gold of int
 
 type CharacterType = 
     | Avatar
@@ -31,22 +32,35 @@ type Place = {
     Tile: Tile; 
     Items: Item list;
     Character: Character option;    
+    IsSeen: bool;
+    WasSeen: bool;
 } with
     static member EmptyPlace = 
-            {Tile = Tile.None; Items = []; Character = Option.None }
-
+            {Tile = Tile.None; Items = []; Character = Option.None; IsSeen = false; WasSeen = false }
+    static member Wall = 
+            {Tile = Tile.Wall; Items = []; Character = Option.None; IsSeen = false; WasSeen = false}
 
 let boardHeight = 24
 let boardWidth = 79
 
-type Board = Place[,]
+type Board = Place[,] 
+    
+    
+let boardContains (point: Point) = 
+    boardWidth > point.X  && boardHeight > point.Y && point.X >= 0 && point.Y >= 0
                     
-let get (board: Board) (point: Point) = Array2D.get board point.X point.Y
+let get (board: Board) (point: Point) = if boardContains point then Array2D.get board point.X point.Y else Place.Wall
+
+let isObstacle (board: Board) (point: Point) = (get board point).Tile = Tile.Wall
 
 let set (point: Point) (value: Place) (board: Board) : Board =
     let result = Array2D.copy board 
     Array2D.set result point.X point.Y value
     result
+
+let modify (point: Point) (modifier: Place -> Place) (board: Board) =
+    let current = get board point 
+    set point (modifier current) board
 
 let places (board: Board) = 
     seq {
@@ -56,21 +70,28 @@ let places (board: Board) =
                 yield (new Point(x, y), item)
     }
 
+let getPlayerPosition (board: Board) = 
+    let preResult = Seq.tryFind (fun (point, place) -> 
+        match place.Character with 
+        | Some(character1) -> character1 = {Type = Avatar}
+        | _ -> false) (places board)
+    let point, _ = preResult.Value
+    point
+
 let moveCharacter (character: Character) (newPosition: Point) (board: Board) =
-    match Seq.tryFind (fun (point, place) -> 
+    let allBoardPlaces = places board
+    match Seq.tryFind (fun (_, place) -> 
         match place.Character with 
         | Some(character1) -> character1 = character
-        | _ -> false) (places board) with        
-    | Some((oldPosition, oldPlace)) when oldPosition <> newPosition ->             
-        let newPlace = { oldPlace with Character = (get board oldPosition ).Character }
+        | _ -> false) allBoardPlaces with        
+    | Some((oldPosition, oldPlace)) when oldPosition <> newPosition ->           
+        let character = (get board oldPosition ).Character
         board 
-        |> set newPosition newPlace 
-        |> set oldPosition { oldPlace with Character = Option.None }
-    | _ ->             
-        let oldPlace = get board newPosition
-        let newPlace = { oldPlace with Character = Some character }
+        |> modify newPosition (fun place -> { place with Character = character }) 
+        |> modify oldPosition (fun place -> { place with Character = option.None }) 
+    | _ ->
         board
-        |> set newPosition newPlace
+        |> modify newPosition (fun place -> {place with Character = Some character })
 
 let emptyBoard : Board = Array2D.create boardWidth boardHeight Place.EmptyPlace
 
