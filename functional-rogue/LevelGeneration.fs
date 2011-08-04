@@ -40,6 +40,8 @@ let generateTest: Board =
         | item::t -> addRooms t <| (item :> IModifier).Modify board 
     addRooms rooms board
 
+// dungeon generation section
+
 let generateDungeonRooms sections sectionWidth sectionHeight sectionsHorizontal sectionsVertical = 
     let rooms : Tunnel [,] = Array2D.create sectionsHorizontal sectionsVertical (new Tunnel(new Rectangle( 0, 0, 2, 2), true))
     let resultRooms = Array2D.mapi ( fun x y i -> new Tunnel(new Rectangle((x*sectionWidth) + 1 + x, (y*sectionHeight) + 1 + y, sectionWidth, sectionHeight), true)) rooms
@@ -84,9 +86,50 @@ let generateDungeon: Board =
         | item::t -> addRooms t <| (item :> IModifier).Modify board 
     addRooms (generateDungeonTunnels sections sectionWidth sectionHeight sectionsHorizontal sectionsVertical) board
 
+//cave generation section
+
+let countCaveTileNeighbours (board: Board) x y =
+    let wall = {Place.EmptyPlace with Tile = Tile.Wall}
+    let mutable count = 0
+    for tmpx in x - 1 .. x + 1 do
+        for tmpy in y - 1 .. y + 1 do
+            if (tmpx = x && tmpy = y) then
+                count <- count
+            else
+                count <- count + (if(board.[tmpx,tmpy] = wall) then 1 else 0)
+    count
+
+let rec smoothOutTheCave board howManyTimes=
+    let floor = {Place.EmptyPlace with Tile = Tile.Floor}
+    let wall = {Place.EmptyPlace with Tile = Tile.Wall}
+    match howManyTimes with
+    | 0 -> board
+    | _ -> smoothOutTheCave 
+            (Array2D.mapi (fun x y i -> 
+            if(x > 0 && x < (boardWidth - 1)  && y > 0 && y < (boardHeight - 1)) then
+                if((countCaveTileNeighbours board x y) < 4 ) then floor
+                elif ((countCaveTileNeighbours board x y) > 5) then wall
+                else i
+            else i
+                ) board)
+            (howManyTimes - 1)
+    
+let generateCave: Board = 
+    let mutable board = Array2D.create boardWidth boardHeight {Place.EmptyPlace with Tile = Tile.Wall}
+    let numberOfTilesWithoutBorders = (boardWidth * boardHeight) - (boardWidth * 2) - (boardHeight * 2) + 2
+    let floor = {Place.EmptyPlace with Tile = Tile.Floor}
+    board <- Array2D.mapi (fun x y i -> 
+        if(x > 0 && x < (boardWidth - 1) && y > 0 && y < (boardHeight - 1)) then
+            if((rnd 10) < 5) then floor else i
+        else i
+           ) board
+    smoothOutTheCave board 3
+
+// main level generation switch
 let generateLevel levelType : Board = 
     match levelType with
     | LevelType.Test -> generateTest
     | LevelType.Dungeon -> generateDungeon
+    | LevelType.Cave -> generateCave
     | _ -> failwith "unknown level type"
 
