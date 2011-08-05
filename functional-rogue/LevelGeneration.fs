@@ -3,6 +3,101 @@
 open System.Drawing
 open Board
 
+
+// level generation utilities
+let floodLocation board (flags: int[,]) x y =
+    Array2D.set flags x y 1
+    flags
+
+type DisjointLocationSet(board: Board) =
+     let mutable flags = Array2D.create (Array2D.length1 board) (Array2D.length2 board) -1
+     let mutable current = 0
+
+     let createSets =
+        let rec floodLocation (board: Board) (flags: int[,]) x y current =
+            let mutable tmpFlags = flags
+            if(not(board.[x,y].Tile = Tile.Wall) && tmpFlags.[x,y] = -1) then
+                Array2D.set tmpFlags x y current
+                for floodx in (max (x - 1) 0) .. (min (x + 1) ((Array2D.length1 board) - 1)) do
+                    for floody in (max (y - 1) 0) .. (min (y + 1) ((Array2D.length2 board) - 1)) do
+                        tmpFlags <- floodLocation board tmpFlags floodx floody current
+            tmpFlags
+
+        for x in 0 .. (Array2D.length1 board) - 1 do
+            for y in 0 .. (Array2D.length2 board) - 1 do
+                if(not(board.[x,y].Tile = Tile.Wall) && flags.[x,y] = -1) then
+                    current <- current + 1
+                    flags <- (floodLocation board flags x y current)
+
+     let mutable setSizes: int[] = Array.create current 0
+     let mutable randomSetPoint = Array.create current (0,0)
+     
+     let countSizes =
+        for x in 0 .. (Array2D.length1 board) - 1 do
+            for y in 0 .. (Array2D.length2 board) - 1 do
+                if(flags.[x,y] > 0) then
+                    setSizes.[flags.[x,y] - 1] <- (setSizes.[flags.[x,y] - 1] + 1)
+                    randomSetPoint.[flags.[x,y] - 1] <- (x,y)
+     
+     
+
+     member this.NumberOfSections
+        with get() = current
+
+     member this.ConnectUnconnected
+        with get() : Board =
+            let rec searchForMainSectionPiont (board: Board) x y i depth =
+                match depth with
+                | 0 -> if (flags.[x,y] = i) then (x,y) else (-1,-1)
+                | _ ->
+                    let mutable result = (-1,-1)
+                    for searchx in (max (x - 1) 0) .. (min (x + 1) ((Array2D.length1 board) - 1)) do
+                        for searchy in (max (y - 1) 0) .. (min (y + 1) ((Array2D.length2 board) - 1)) do
+                            result <- searchForMainSectionPiont board searchx searchy i (depth - 1)
+                    result
+
+            let rec searchForClosesMainSectionPoint (board: Board) x y i trial=
+                let mutable result = (-1,-1)
+                result <- searchForMainSectionPiont board x y i trial
+                if (result = (-1,-1)) then
+                    result <- searchForClosesMainSectionPoint board x y i (trial + 1)
+                result
+
+            let rec digTunnel board x y targetx targety i =
+                let mutable tmpBoard = board
+                if(flags.[x,y] <> i) then
+                    let floor = {Place.EmptyPlace with Tile = Tile.Floor}
+                    let dx = x - targetx
+                    let dy = y - targety
+                    if((abs dx) > (abs dy)) then
+                        let newx = (if(x > targetx) then (x - 1) else (x + 1))
+                        Array2D.set board newx y floor
+                        tmpBoard <- digTunnel board newx y targetx targety i
+                    else
+                        let newy = (if(y > targety) then (y - 1) else (y + 1))
+                        Array2D.set board x newy floor
+                        tmpBoard <- digTunnel board x newy targetx targety i
+                tmpBoard
+
+            let connectPointToSection board x y i =
+                let targetx, targety = searchForClosesMainSectionPoint board x y i 0
+                digTunnel board x y targetx targety i
+
+            let mutable tmpBoard = board
+            let mutable theLargestSectionSize = 0
+            let mutable theLargestSectionIndex = -1
+            for i in 0 .. setSizes.Length - 1 do
+                if(setSizes.[i] > theLargestSectionSize) then
+                    theLargestSectionSize <- setSizes.[i]
+                    theLargestSectionIndex <- i
+            for i in 0 .. setSizes.Length - 1 do
+                if(i <> theLargestSectionIndex) then
+                    let x, y = randomSetPoint.[i]
+                    tmpBoard <- connectPointToSection tmpBoard x y (theLargestSectionIndex + 1)
+            tmpBoard
+
+// test code
+
 let minRoomSize = 3
  
 let isOverlapping room rooms =    
@@ -123,7 +218,10 @@ let generateCave: Board =
             if((rnd 10) < 5) then floor else i
         else i
            ) board
-    smoothOutTheCave board 3
+    board <- smoothOutTheCave board 2
+    let sections = new DisjointLocationSet(board)
+    //sections.ConnectUnconnected
+    board
 
 // main level generation switch
 let generateLevel levelType : Board = 
@@ -132,4 +230,3 @@ let generateLevel levelType : Board =
     | LevelType.Dungeon -> generateDungeon
     | LevelType.Cave -> generateCave
     | _ -> failwith "unknown level type"
-
