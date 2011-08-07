@@ -70,7 +70,7 @@ let mainLoop() =
                         let extractGold items =
                             Seq.sumBy (function | Gold(value) -> value | _ -> 0) items
                         let gold = state.Player.Gold + extractGold takenItems
-                        { state with Player = { state.Player with Items = takenItems; Gold = gold}}
+                        { state with Player = { state.Player with Items =  takenItems @ state.Player.Items; Gold = gold}}
 
                     board1, state1
                 else
@@ -102,7 +102,7 @@ let mainLoop() =
             (nextTurn command)                
             loop false
         | ShowItems ->
-            // showItems ()
+            showChooseItemDialog ()
             loop false
 
     let board = 

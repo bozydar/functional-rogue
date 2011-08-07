@@ -33,8 +33,21 @@ let rec generateRooms rooms =
         yield! generateRooms (newRoom::rooms)
     }
 
-let addGold board =
+let addItems board =
     // returns sequence of board modification functions
+    let modifiers = seq {
+        for i in 0..20 do
+            let posX = rnd boardWidth
+            let posY = rnd boardHeight
+            let itemIndex = rnd (Items.all.Length - 1)
+            yield (fun board -> 
+                Board.modify (point posX posY) (fun place -> 
+                    {place with Items = Items.all.[1] :: place.Items} ) board)
+    }
+    // apply all modification functions on board
+    board |>> modifiers
+
+let addGold board = 
     let modifiers = seq {
         for i in 0..20 do
             let posX = rnd boardWidth
@@ -44,7 +57,6 @@ let addGold board =
                 Board.modify (point posX posY) (fun place -> 
                     {place with Items = Gold(value) :: place.Items} ) board)
     }
-    // apply all modification functions on board
     board |>> modifiers
 
 let generateLevel: Board = 
@@ -56,4 +68,5 @@ let generateLevel: Board =
         | item::t -> addRooms t <| (item :> IModifier).Modify board 
     addRooms rooms board
     |> addGold
+    |> addItems
 
