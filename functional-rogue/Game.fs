@@ -102,7 +102,7 @@ let mainLoop() =
             (nextTurn command)                
             loop false
         | ShowItems ->
-            showChooseItemDialog ()
+            showChooseItemDialog {Items = (State.get ()).Player.Items; CanSelect = false} |> ignore
             loop false
 
     let board = 

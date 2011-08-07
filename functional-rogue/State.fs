@@ -10,7 +10,8 @@ type State = {
     BoardFramePosition: Point;
     Player: Player;
     TurnNumber: int;
-} and Player = {
+} 
+and Player = {
     Name: string;
     HP: int;  // life
     MaxHP: int;

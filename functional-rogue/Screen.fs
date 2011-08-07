@@ -10,12 +10,16 @@ open Items
 type ScreenAgentMessage =
     | ShowBoard of State
     | ShowMainMenu of AsyncReplyChannel<MainMenuReply>
-    | ShowChooseItemDialog of State * AsyncReplyChannel<ChooseItemDialogReply>
+    | ShowChooseItemDialog of ChooseItemDialogRequest * AsyncReplyChannel<ChooseItemDialogReply>
 and MainMenuReply = {
     Name: String
 } 
 and ChooseItemDialogReply = {
     Selected: list<Item>
+} 
+and ChooseItemDialogRequest = {
+    Items: list<Item>
+    CanSelect: bool
 }
 
 type textel = {
@@ -31,6 +35,7 @@ type private screen = textel[,]
 let boardFrameSize = new Size(60, 24)
 let private screenSize = new Size(79, 24)
 let private leftPanelPos = new Rectangle(61, 0, 19, 24)
+let private letterByInt (int: int) = Convert.ToChar(Convert.ToInt32('a') + int - 1)
 
 let private screenWritter () =    
     let writeBoard (board: Board) (boardFramePosition: Point) sightRadius (screen: screen) = 
@@ -87,14 +92,13 @@ let private screenWritter () =
         |> writeString (point leftPanelPos.Location.X (leftPanelPos.Location.Y + 3)) (sprintf "Gold: %d" state.Player.Gold)
         |> writeString (point leftPanelPos.Location.X (leftPanelPos.Location.Y + 4)) (sprintf "Turn: %d" state.TurnNumber)
             
-    let listAllItems state screen = 
-        let player = state.Player
-        let plainItems = player.Items |> Seq.choose (function | Gold(_) -> Option.None | Plain(_, itemProperties) -> Some itemProperties)
+    let listAllItems items screen = 
+        let plainItems = items |> Seq.choose (function | Gold(_) -> Option.None | Plain(_, itemProperties) -> Some itemProperties)
         
         let writeProperties = seq {
             for i, item in Seq.mapi (fun i item -> i, item) plainItems do
                 let pos = point 1 i                
-                yield writeString pos (sprintf "%s - %s" item.Name item.Description)
+                yield writeString pos (sprintf "%c: %s - %s" (letterByInt (i + 1)) item.Name item.Description)
         }
         screen |>> writeProperties
                
@@ -137,14 +141,15 @@ let private screenWritter () =
                 let name = Console.ReadLine()
                 reply.Reply({Name = name})
                 return! loop newScreen  
-            | ShowChooseItemDialog(state, reply) ->                
+            | ShowChooseItemDialog(request, reply) ->                
                 let newScreen =
                     screen
                     |> Array2D.copy
                     |> cleanScreen
-                    |> listAllItems state
+                    |> listAllItems request.Items
                 refreshScreen screen newScreen
-                reply.Reply({Selected = [state.Player.Items.[0]]})
+                //let key = Console.ReadKey()
+                reply.Reply({Selected = [request.Items.[0]]})
                 return! loop newScreen
         }
         loop <| Array2D.create screenSize.Width screenSize.Height empty
@@ -153,6 +158,6 @@ let private screenWritter () =
 let private agent = screenWritter ()
 let showBoard () = agent.Post (ShowBoard(State.get ()))
 let showMainMenu () = agent.PostAndReply(fun reply -> ShowMainMenu(reply))
-let showChooseItemDialog () = agent.PostAndReply(fun reply -> ShowChooseItemDialog(State.get (), reply))
+let showChooseItemDialog items = agent.PostAndReply(fun reply -> ShowChooseItemDialog(items, reply))
 
 
