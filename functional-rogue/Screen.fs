@@ -103,23 +103,25 @@ let private screenWritter () =
             let! msg = inbox.Receive()
 
             match msg with
-            | ShowBoard(state) -> let newScreen = 
-                                      screen
-                                      |> Array2D.copy
-                                      |> writeBoard state.Board state.BoardFramePosition state.Player.SightRadius
-                                      |> writeStats state
-                                  refreshScreen screen newScreen
-                                  return! loop newScreen                        
-            | ShowMainMenu(reply) -> let newScreen = 
-                                         screen
-                                         |> Array2D.copy
-                                         |> cleanScreen
-                                         |> writeString (point 1 1) "What is your name?"
-                                     refreshScreen screen newScreen
-                                     Console.SetCursorPosition(1, 2)
-                                     let name = Console.ReadLine()
-                                     reply.Reply({Name = name})
-                                     return! loop newScreen  
+            | ShowBoard(state) -> 
+                let newScreen = 
+                    screen
+                    |> Array2D.copy
+                    |> writeBoard state.Board state.BoardFramePosition state.Player.SightRadius
+                    |> writeStats state
+                refreshScreen screen newScreen
+                return! loop newScreen                        
+            | ShowMainMenu(reply) -> 
+                let newScreen = 
+                    screen
+                    |> Array2D.copy
+                    |> cleanScreen
+                    |> writeString (point 1 1) "What is your name?"
+                refreshScreen screen newScreen
+                Console.SetCursorPosition(1, 2)
+                let name = Console.ReadLine()
+                reply.Reply({Name = name})
+                return! loop newScreen  
         }
         loop <| Array2D.create screenSize.Width screenSize.Height empty
     )
