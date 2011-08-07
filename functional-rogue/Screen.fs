@@ -5,12 +5,21 @@ open System.Drawing
 open Board
 open State
 open Sight
+open Items
 
 type ScreenAgentMessage =
     | ShowBoard of State
     | ShowMainMenu of AsyncReplyChannel<MainMenuReply>
+    | ShowChooseItemDialog of ChooseItemDialogRequest * AsyncReplyChannel<ChooseItemDialogReply>
 and MainMenuReply = {
     Name: String
+} 
+and ChooseItemDialogReply = {
+    Selected: list<Item>
+} 
+and ChooseItemDialogRequest = {
+    Items: list<Item>
+    CanSelect: bool
 }
 
 type textel = {
@@ -26,6 +35,7 @@ type private screen = textel[,]
 let boardFrameSize = new Size(60, 24)
 let private screenSize = new Size(79, 24)
 let private leftPanelPos = new Rectangle(61, 0, 19, 24)
+let private letterByInt (int: int) = Convert.ToChar(Convert.ToInt32('a') + int - 1)
 
 let private screenWritter () =    
     let writeBoard (board: Board) (boardFramePosition: Point) sightRadius (screen: screen) = 
@@ -70,9 +80,9 @@ let private screenWritter () =
             screen.[x + i, y] <- {empty with Char = char})
         screen
 
-    let cleanScreen screen =
-        for x in 0..Array2D.base1 screen do
-            for y in 0..Array2D.base2 screen do
+    let cleanScreen (screen: screen) =
+        for x in 0..(screenSize.Width - 1)do
+            for y in 0..(screenSize.Height - 1) do
                 screen.[x, y] <- empty
         screen
 
@@ -81,9 +91,19 @@ let private screenWritter () =
         |> writeString leftPanelPos.Location (sprintf "HP: %d/%d" state.Player.HP state.Player.MaxHP)
         |> writeString (point leftPanelPos.Location.X (leftPanelPos.Location.Y + 1)) (sprintf "%s the rogue" state.Player.Name)
         |> writeString (point leftPanelPos.Location.X (leftPanelPos.Location.Y + 2)) (sprintf "Ma: %d/%d" state.Player.HP state.Player.MaxHP)
-        |> writeString (point leftPanelPos.Location.X (leftPanelPos.Location.Y + 3)) (sprintf "Turn: %d" state.TurnNumber)
+        |> writeString (point leftPanelPos.Location.X (leftPanelPos.Location.Y + 3)) (sprintf "Gold: %d" state.Player.Gold)
+        |> writeString (point leftPanelPos.Location.X (leftPanelPos.Location.Y + 4)) (sprintf "Turn: %d" state.TurnNumber)
+            
+    let listAllItems items screen = 
+        let plainItems = items |> Seq.choose (function | Gold(_) -> Option.None | Plain(_, itemProperties) -> Some itemProperties)
         
-
+        let writeProperties = seq {
+            for i, item in Seq.mapi (fun i item -> i, item) plainItems do
+                let pos = point 1 i                
+                yield writeString pos (sprintf "%c: %s - %s" (letterByInt (i + 1)) item.Name item.Description)
+        }
+        screen |>> writeProperties
+               
     let refreshScreen (oldScreen: screen) (newScreen: screen)= 
         let changes = seq {
             for x in 0..screenSize.Width - 1 do
@@ -104,23 +124,35 @@ let private screenWritter () =
             let! msg = inbox.Receive()
 
             match msg with
-            | ShowBoard(state) -> let newScreen = 
-                                      screen
-                                      |> Array2D.copy
-                                      |> writeBoard state.Board state.BoardFramePosition state.Player.SightRadius
-                                      |> writeStats state
-                                  refreshScreen screen newScreen
-                                  return! loop newScreen                        
-            | ShowMainMenu(reply) -> let newScreen = 
-                                         screen
-                                         |> Array2D.copy
-                                         |> cleanScreen
-                                         |> writeString (point 1 1) "What is your name?"
-                                     refreshScreen screen newScreen
-                                     Console.SetCursorPosition(1, 2)
-                                     let name = Console.ReadLine()
-                                     reply.Reply({Name = name})
-                                     return! loop newScreen  
+            | ShowBoard(state) -> 
+                let newScreen = 
+                    screen
+                    |> Array2D.copy
+                    |> writeBoard state.Board state.BoardFramePosition state.Player.SightRadius
+                    |> writeStats state
+                refreshScreen screen newScreen
+                return! loop newScreen                        
+            | ShowMainMenu(reply) -> 
+                let newScreen = 
+                    screen
+                    |> Array2D.copy
+                    |> cleanScreen
+                    |> writeString (point 1 1) "What is your name?"
+                refreshScreen screen newScreen
+                Console.SetCursorPosition(1, 2)
+                let name = Console.ReadLine()
+                reply.Reply({Name = name})
+                return! loop newScreen  
+            | ShowChooseItemDialog(request, reply) ->                
+                let newScreen =
+                    screen
+                    |> Array2D.copy
+                    |> cleanScreen
+                    |> listAllItems request.Items
+                refreshScreen screen newScreen
+                //let key = Console.ReadKey()
+                reply.Reply({Selected = [request.Items.[0]]})
+                return! loop newScreen
         }
         loop <| Array2D.create screenSize.Width screenSize.Height empty
     )
@@ -128,3 +160,6 @@ let private screenWritter () =
 let private agent = screenWritter ()
 let showBoard () = agent.Post (ShowBoard(State.get ()))
 let showMainMenu () = agent.PostAndReply(fun reply -> ShowMainMenu(reply))
+let showChooseItemDialog items = agent.PostAndReply(fun reply -> ShowChooseItemDialog(items, reply))
+
+
