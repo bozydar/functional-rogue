@@ -2,6 +2,7 @@
 
 open System.Drawing
 open Board
+open Items
 
 
 // level generation utilities
@@ -131,6 +132,32 @@ let rec generateRooms rooms =
         yield! generateRooms (newRoom::rooms)
     }
 
+let addItems board =
+    // returns sequence of board modification functions
+    let modifiers = seq {
+        for i in 0..20 do
+            let posX = rnd boardWidth
+            let posY = rnd boardHeight
+            let itemIndex = rnd (Items.all.Length - 1)
+            yield (fun board -> 
+                Board.modify (point posX posY) (fun place -> 
+                    {place with Items = Items.all.[1] :: place.Items} ) board)
+    }
+    // apply all modification functions on board
+    board |>> modifiers
+
+let addGold board = 
+    let modifiers = seq {
+        for i in 0..20 do
+            let posX = rnd boardWidth
+            let posY = rnd boardHeight
+            let value = rnd2 1 10
+            yield (fun board -> 
+                Board.modify (point posX posY) (fun place -> 
+                    {place with Items = Gold(value) :: place.Items} ) board)
+    }
+    board |>> modifiers
+
 let generateTest: Board = 
     let mutable board = Array2D.create boardWidth boardHeight {Place.EmptyPlace with Tile = Tile.Floor}
     let rooms = (generateRooms []) |> Seq.take 4 |> Seq.toList
@@ -139,6 +166,8 @@ let generateTest: Board =
         | [] -> board
         | item::t -> addRooms t <| (item :> IModifier).Modify board 
     addRooms rooms board
+	|> addGold
+    |> addItems
 
 // dungeon generation section
 
@@ -204,6 +233,8 @@ let generateDungeon: Board =
         | item::t -> addRooms t <| (item :> IModifier).Modify board 
     let resultBoard = addRooms (generateDungeonTunnels sections sectionWidth sectionHeight sectionsHorizontal sectionsVertical) board
     addRandomDoors resultBoard
+	|> addGold
+    |> addItems
 
 // dungeon BSP generation method
 
@@ -302,6 +333,8 @@ let generateCave: Board =
     board <- smoothOutTheCave board 2
     let sections = new DisjointLocationSet(board)
     sections.ConnectUnconnected
+	|> addGold
+    |> addItems
 
 // main level generation switch
 let generateLevel levelType : Board = 

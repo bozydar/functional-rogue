@@ -15,6 +15,8 @@ type Command =
     | Left
     | Right
     | Wait
+	| Take
+	| ShowItems
     | Quit
     | Unknown
     | OpenDoor
@@ -74,6 +76,25 @@ let mainLoop() =
                 let y = inBoundary (playerPosition.Y - (boardFrameSize.Height / 2)) 0 (boardHeight - boardFrameSize.Height)
                 point x y                
             
+			// take item
+            let board1, state1 = 
+                if command = Take then
+                    let place = get board playerPosition
+                    let takenItems = place.Items
+                    let board1 = 
+                        board
+                        |> set playerPosition {place with Items = []}
+                    let state1 = 
+                        let extractGold items =
+                            Seq.sumBy (function | Gold(value) -> value | _ -> 0) items
+                        let gold = state.Player.Gold + extractGold takenItems
+                        { state with Player = { state.Player with Items =  takenItems @ state.Player.Items; Gold = gold}}
+
+                    board1, state1
+                else
+                    board, state
+                
+
             State.set {state with Board = board; TurnNumber = state.TurnNumber + 1; BoardFramePosition = boardFramePosition}
 
             Screen.showBoard ()
@@ -87,6 +108,8 @@ let mainLoop() =
             | ConsoleKey.LeftArrow -> Left            
             | ConsoleKey.RightArrow -> Right
             | ConsoleKey.W -> Wait
+			| ConsoleKey.OemComma -> Take
+            | ConsoleKey.I -> ShowItems
             | ConsoleKey.Escape -> Quit
             | ConsoleKey.O -> OpenDoor
             | ConsoleKey.C -> CloseDoor
@@ -95,8 +118,11 @@ let mainLoop() =
         match command with
         | Quit -> ()
         | Unknown -> loop false
-        | Up | Down | Left | Right | Wait | OpenDoor | CloseDoor -> 
+        | Up | Down | Left | Right | Wait | Take | OpenDoor | CloseDoor -> 
             (nextTurn command)                
+            loop false
+		| ShowItems ->
+            showChooseItemDialog {Items = (State.get ()).Player.Items; CanSelect = false} |> ignore
             loop false
 
     let board = 
@@ -107,7 +133,7 @@ let mainLoop() =
     let entryState = {         
         Board = board; 
         BoardFramePosition = point 0 0;
-        Player = { Name = mainMenuReply.Name; HP = 5; MaxHP = 10; Magic = 5; MaxMagic = 10; Gold = 0; SightRadius = 10};
+        Player = { Name = mainMenuReply.Name; HP = 5; MaxHP = 10; Magic = 5; MaxMagic = 10; Gold = 0; SightRadius = 10; Items = []};
         TurnNumber = 0;
     }
     State.set entryState

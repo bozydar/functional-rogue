@@ -4,6 +4,7 @@ open System
 open System.Drawing
 open Utils
 open Config
+open Items
 
 type Tile =
     | Wall 
@@ -13,20 +14,12 @@ type Tile =
     | OpenDoor
     | ClosedDoor
 
-type Item = 
-    | Sword
-    | Vand
-    | Gold of int
 
 type CharacterType = 
     | Avatar
     | Monster
     | NPC
 
-type LevelType = 
-    | Test
-    | Dungeon
-    | Cave
 
 type Character = {
     Type: CharacterType

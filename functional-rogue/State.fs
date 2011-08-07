@@ -1,6 +1,7 @@
 ﻿module State
 
 open Board
+open Items
 open System.Drawing
 
 
@@ -9,7 +10,8 @@ type State = {
     BoardFramePosition: Point;
     Player: Player;
     TurnNumber: int;
-} and Player = {
+} 
+and Player = {
     Name: string;
     HP: int;  // life
     MaxHP: int;
@@ -17,6 +19,7 @@ type State = {
     MaxMagic: int;
     Gold: int // gold
     SightRadius: int // sigh radius
+    Items: list<Item>
 } 
 
 type private StateAgentMessage = 
