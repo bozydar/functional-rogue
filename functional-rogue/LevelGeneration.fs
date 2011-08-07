@@ -166,7 +166,7 @@ let generateTest: Board =
         | [] -> board
         | item::t -> addRooms t <| (item :> IModifier).Modify board 
     addRooms rooms board
-	|> addGold
+    |> addGold
     |> addItems
 
 // dungeon generation section
@@ -233,7 +233,7 @@ let generateDungeon: Board =
         | item::t -> addRooms t <| (item :> IModifier).Modify board 
     let resultBoard = addRooms (generateDungeonTunnels sections sectionWidth sectionHeight sectionsHorizontal sectionsVertical) board
     addRandomDoors resultBoard
-	|> addGold
+    |> addGold
     |> addItems
 
 // dungeon BSP generation method
@@ -333,7 +333,7 @@ let generateCave: Board =
     board <- smoothOutTheCave board 2
     let sections = new DisjointLocationSet(board)
     sections.ConnectUnconnected
-	|> addGold
+    |> addGold
     |> addItems
 
 // main level generation switch

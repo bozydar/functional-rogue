@@ -20,6 +20,10 @@ type CharacterType =
     | Monster
     | NPC
 
+type LevelType = 
+    | Test
+    | Dungeon
+    | Cave
 
 type Character = {
     Type: CharacterType
