@@ -48,6 +48,8 @@ let private screenWritter () =
                             match item.Tile with
                             | Wall ->  {Char = '#'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
                             | Floor -> {Char = '.'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
+                            | OpenDoor -> {Char = '/'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
+                            | ClosedDoor -> {Char = '+'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
                             | _ -> empty
                 if not item.IsSeen then {result with FGColor = ConsoleColor.DarkGray } else result
             else empty

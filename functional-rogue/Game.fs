@@ -17,6 +17,8 @@ type Command =
     | Wait
     | Quit
     | Unknown
+    | OpenDoor
+    | CloseDoor
 
 
 let commandToSize command = 
@@ -35,9 +37,24 @@ let moveCharacter character command board =
     let newPlace = get board newPosition
     
     match newPlace.Tile with 
-    | Wall -> board
+    | Wall | ClosedDoor -> board
     | _ ->         
         board |> moveCharacter character newPosition
+
+let operateDoor character command board =
+    let mutable oldDoor = {Place.EmptyPlace with Tile = (if (command = OpenDoor) then Tile.ClosedDoor else Tile.OpenDoor)}
+    let mutable newDoor = {Place.EmptyPlace with Tile = (if (command = OpenDoor) then Tile.OpenDoor else Tile.ClosedDoor)}
+    let position, _ =  Seq.find (fun (_, place) -> place.Character = Some character) <| places board
+    for x in (max 0 (position.X - 1))..(min boardWidth (position.X + 1)) do
+        for y in (max 0 (position.Y - 1))..(min boardHeight (position.Y + 1)) do
+            if(not(x = position.X && y = position.Y) && board.[x,y].Tile = oldDoor.Tile) then
+                Array2D.set board x y newDoor
+    board 
+
+let performAction character command board =
+    match command with
+    | OpenDoor | CloseDoor -> operateDoor character command board
+    | _ -> board
     
 let mainLoop() =
     let rec loop printAll =                
@@ -46,6 +63,7 @@ let mainLoop() =
             let board = 
                 state.Board  
                 |> moveCharacter {Type = Avatar} command
+                |> performAction {Type = Avatar} command
                 |> setVisibilityStates state.Player
                     
             // evaluate BoardFramePosition
@@ -70,17 +88,19 @@ let mainLoop() =
             | ConsoleKey.RightArrow -> Right
             | ConsoleKey.W -> Wait
             | ConsoleKey.Escape -> Quit
+            | ConsoleKey.O -> OpenDoor
+            | ConsoleKey.C -> CloseDoor
             | _ -> Unknown                        
         
         match command with
         | Quit -> ()
         | Unknown -> loop false
-        | Up | Down | Left | Right | Wait -> 
+        | Up | Down | Left | Right | Wait | OpenDoor | CloseDoor -> 
             (nextTurn command)                
             loop false
 
     let board = 
-        generateLevel LevelType.Cave
+        generateLevel LevelType.Dungeon
         |> Board.moveCharacter {Type = CharacterType.Avatar} (new Point(8, 4))
 
     let mainMenuReply = showMainMenu ()

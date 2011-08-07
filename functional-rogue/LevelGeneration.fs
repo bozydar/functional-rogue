@@ -44,8 +44,7 @@ type DisjointLocationSet(board: Board) =
      member this.NumberOfSections
         with get() = current
 
-     member this.ConnectUnconnected
-        with get() : Board =
+     member this.ConnectUnconnected : Board =
             let rec searchForMainSectionPiont (board: Board) x y i depth =
                 match depth with
                 | 0 -> if (flags.[x,y] = i) then (x,y) else (-1,-1)
@@ -53,14 +52,17 @@ type DisjointLocationSet(board: Board) =
                     let mutable result = (-1,-1)
                     for searchx in (max (x - 1) 0) .. (min (x + 1) ((Array2D.length1 board) - 1)) do
                         for searchy in (max (y - 1) 0) .. (min (y + 1) ((Array2D.length2 board) - 1)) do
-                            result <- searchForMainSectionPiont board searchx searchy i (depth - 1)
+                            if (not(searchx = x && searchy = y)) then
+                                let tmpResult = searchForMainSectionPiont board searchx searchy i (depth - 1)
+                                if (tmpResult <> (-1,-1)) then
+                                    result <- tmpResult
                     result
 
-            let rec searchForClosesMainSectionPoint (board: Board) x y i trial=
+            let rec searchForClosestMainSectionPoint (board: Board) x y i trial=
                 let mutable result = (-1,-1)
                 result <- searchForMainSectionPiont board x y i trial
                 if (result = (-1,-1)) then
-                    result <- searchForClosesMainSectionPoint board x y i (trial + 1)
+                    result <- searchForClosestMainSectionPoint board x y i (trial + 1)
                 result
 
             let rec digTunnel board x y targetx targety i =
@@ -79,9 +81,7 @@ type DisjointLocationSet(board: Board) =
                         tmpBoard <- digTunnel board x newy targetx targety i
                 tmpBoard
 
-            let connectPointToSection board x y i =
-                let targetx, targety = searchForClosesMainSectionPoint board x y i 0
-                digTunnel board x y targetx targety i
+            
 
             let mutable tmpBoard = board
             let mutable theLargestSectionSize = 0
@@ -93,6 +93,11 @@ type DisjointLocationSet(board: Board) =
             for i in 0 .. setSizes.Length - 1 do
                 if(i <> theLargestSectionIndex) then
                     let x, y = randomSetPoint.[i]
+
+                    let connectPointToSection board x y i =
+                        let targetx, targety = searchForClosestMainSectionPoint board x y i 0
+                        digTunnel board x y targetx targety i
+
                     tmpBoard <- connectPointToSection tmpBoard x y (theLargestSectionIndex + 1)
             tmpBoard
 
@@ -144,13 +149,13 @@ let generateDungeonRooms sections sectionWidth sectionHeight sectionsHorizontal 
 
 let generateTunnelConnection x1 y1 x2 y2 =
     let horizontalPart = [new Tunnel(new Rectangle(min x1 x2, min y1 y2, abs (x2 - x1) + 1, 1), false)]
-    let varticalPart = [new Tunnel(new Rectangle(max x1 x2, min y1 y2, 1, abs (y2 - y1) + 1), false)]
+    let varticalPart = [new Tunnel(new Rectangle((if (y1 < y2) then x2 else x1), min y1 y2, 1, abs (y2 - y1) + 1), false)]
     List.append horizontalPart varticalPart
 
 let generateDungeonConnections sections (rooms: Tunnel[,]) sectionWidth sectionHeight sectionsHorizontal sectionsVertical =
     let mutable connectionList = []
-    for x = 0 to sectionsHorizontal - 2 do 
-            for y = 0 to sectionsVertical - 2 do
+    for x = 0 to sectionsHorizontal - 1 do 
+            for y = 0 to sectionsVertical - 1 do
                 if(x < (sectionsHorizontal - 1)) then
                     let horx1, hory1 = rooms.[x, y].GetRandomPointInside
                     let horx2, hory2 = rooms.[x + 1, y].GetRandomPointInside
@@ -167,6 +172,24 @@ let generateDungeonTunnels sections sectionWidth sectionHeight sectionsHorizonta
     let roomsWithConnectionsList = List.append roomsList (generateDungeonConnections sections rooms sectionWidth sectionHeight sectionsHorizontal sectionsVertical)
     roomsWithConnectionsList
 
+let isGoodPlaceForDoor (board : Board) x y =
+    let mutable result = false
+    if( x > 0 && x < (boardWidth - 1) && y > 0 && y < (boardHeight - 1) && board.[x,y].Tile = Tile.Floor) then
+        if (board.[x,y-1].Tile = Tile.Floor && board.[x,y+1].Tile = Tile.Floor) then
+            if (board.[x-1, y].Tile = Tile.Wall && board.[x+1, y].Tile = Tile.Wall) then
+                if (board.[x-1,y-1].Tile = Tile.Floor || board.[x+1,y-1].Tile = Tile.Floor || board.[x-1,y+1].Tile = Tile.Floor || board.[x+1,y+1].Tile = Tile.Floor) then
+                    result <- true
+        if (board.[x-1,y].Tile = Tile.Floor && board.[x+1,y].Tile = Tile.Floor) then
+            if (board.[x,y-1].Tile = Tile.Wall && board.[x,y+1].Tile = Tile.Wall) then
+                if (board.[x-1,y-1].Tile = Tile.Floor || board.[x+1,y-1].Tile = Tile.Floor || board.[x-1,y+1].Tile = Tile.Floor || board.[x+1,y+1].Tile = Tile.Floor) then
+                    result <- true
+    result
+
+let addRandomDoors (board : Board) =
+    let closedDoor = {Place.EmptyPlace with Tile = Tile.ClosedDoor}
+    let floor = {Place.EmptyPlace with Tile = Tile.Floor}
+    Array2D.mapi (fun x y i -> if (i = floor && (isGoodPlaceForDoor board x y) && (rnd 100) < 30) then closedDoor else i) board
+
 let generateDungeon: Board = 
     let mutable board = Array2D.create boardWidth boardHeight {Place.EmptyPlace with Tile = Tile.Wall}
     let sectionsHorizontal = 4
@@ -179,7 +202,65 @@ let generateDungeon: Board =
         match rooms with
         | [] -> board
         | item::t -> addRooms t <| (item :> IModifier).Modify board 
-    addRooms (generateDungeonTunnels sections sectionWidth sectionHeight sectionsHorizontal sectionsVertical) board
+    let resultBoard = addRooms (generateDungeonTunnels sections sectionWidth sectionHeight sectionsHorizontal sectionsVertical) board
+    addRandomDoors resultBoard
+
+// dungeon BSP generation method
+
+let createConnectionBetweenClosestRooms (roomsList1 : Tunnel list) (roomsList2 : Tunnel list) =
+    let mutable shortestDistance = 1000000
+    let mutable bestX1 = 0
+    let mutable bestY1 = 0
+    let mutable bestX2 = 0
+    let mutable bestY2 = 0
+    for i1 in 0..(roomsList1.Length - 1) do
+        for i2 in 0..(roomsList2.Length - 1) do
+            let x1, y1 = roomsList1.[i1].GetRandomPointInside
+            let x2, y2 = roomsList2.[i2].GetRandomPointInside
+            let calculatedDistance = (abs x1 - x2) + (abs y1 - y2)
+            if(calculatedDistance < shortestDistance) then
+                shortestDistance <- calculatedDistance
+                bestX1 <- x1
+                bestY1 <- y1
+                bestX2 <- x2
+                bestY2 <- y2
+    (generateTunnelConnection bestX1 bestY1 bestX2 bestY2)
+
+let rec createTwoConnectedSections x y width height =
+    if (width > height) then
+        let newx = x + rnd2 (width / 3) ((width / 3) * 2)
+        if (width > 20) then
+            let section1 = createTwoConnectedSections x y (newx - x) height
+            let section2 = createTwoConnectedSections (newx  + 1) y (width - (newx - x) - 1) height
+            List.concat [section1 ; (createConnectionBetweenClosestRooms section1 section2) ; section2]
+        else
+            let room1 = new Tunnel(new Rectangle(x, y, (newx - x), height), true)
+            let room1x, room1y = room1.GetRandomPointInside
+            let room2 = new Tunnel(new Rectangle(newx + 1, y, (width - (newx - x) - 1), height), false)
+            let room2x, room2y = room2.GetRandomPointInside
+            List.concat [[room1] ; (generateTunnelConnection room1x room1y room2x room2y) ; [room2] ]
+    else
+        let newy = y + rnd2 (height / 4) ((height / 4) * 3)
+        if(height > 20) then
+            let section1 = createTwoConnectedSections x y width (newy - y)
+            let section2 = createTwoConnectedSections x (newy + 1) width (height - (newy - y) - 1)
+            List.concat [section1 ; (createConnectionBetweenClosestRooms section1 section2) ; section2]
+        else
+            let room1 = new Tunnel(new Rectangle(x, y, width, (newy - y)), true)
+            let room1x, room1y = room1.GetRandomPointInside
+            let room2 = new Tunnel(new Rectangle(x, newy + 1, width, (height - (newy - y) - 1)), false)
+            let room2x, room2y = room2.GetRandomPointInside
+            List.concat [[room1] ; (generateTunnelConnection room1x room1y room2x room2y) ; [room2] ]
+
+let generateBSPDungeon =
+    let rec addRooms rooms board =
+        match rooms with
+        | [] -> board
+        | item::t -> addRooms t <| (item :> IModifier).Modify board 
+
+    let mutable board = Array2D.create boardWidth boardHeight {Place.EmptyPlace with Tile = Tile.Wall}
+    let tunnelsList = createTwoConnectedSections 1 1 (boardWidth - 2) (boardHeight - 2)
+    addRooms tunnelsList board
 
 //cave generation section
 
@@ -201,7 +282,7 @@ let rec smoothOutTheCave board howManyTimes=
     | 0 -> board
     | _ -> smoothOutTheCave 
             (Array2D.mapi (fun x y i -> 
-            if(x > 0 && x < (boardWidth - 1)  && y > 0 && y < (boardHeight - 1)) then
+            if(x > 0 && x < (boardWidth - 1) && y > 0 && y < (boardHeight - 1)) then
                 if((countCaveTileNeighbours board x y) < 4 ) then floor
                 elif ((countCaveTileNeighbours board x y) > 5) then wall
                 else i
@@ -220,13 +301,12 @@ let generateCave: Board =
            ) board
     board <- smoothOutTheCave board 2
     let sections = new DisjointLocationSet(board)
-    //sections.ConnectUnconnected
-    board
+    sections.ConnectUnconnected
 
 // main level generation switch
 let generateLevel levelType : Board = 
     match levelType with
     | LevelType.Test -> generateTest
-    | LevelType.Dungeon -> generateDungeon
+    | LevelType.Dungeon -> generateDungeon// generateBSPDungeon //generateDungeon
     | LevelType.Cave -> generateCave
     | _ -> failwith "unknown level type"
