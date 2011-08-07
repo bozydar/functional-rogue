@@ -96,7 +96,7 @@ let mainLoop() =
                     board, state
                 
 
-            State.set {state with Board = board; TurnNumber = state.TurnNumber + 1; BoardFramePosition = boardFramePosition}
+            State.set {state1 with Board = board1; TurnNumber = state.TurnNumber + 1; BoardFramePosition = boardFramePosition}
 
             Screen.showBoard ()
 
