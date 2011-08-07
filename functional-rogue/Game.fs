@@ -8,6 +8,7 @@ open Board
 open LevelGeneration
 open Screen
 open Sight
+open Items
 
 type Command = 
     | Up
@@ -15,8 +16,8 @@ type Command =
     | Left
     | Right
     | Wait
-	| Take
-	| ShowItems
+    | Take
+    | ShowItems
     | Quit
     | Unknown
     | OpenDoor
@@ -57,7 +58,7 @@ let performAction character command board =
     match command with
     | OpenDoor | CloseDoor -> operateDoor character command board
     | _ -> board
-    
+
 let mainLoop() =
     let rec loop printAll =                
         let nextTurn command = 
@@ -76,7 +77,7 @@ let mainLoop() =
                 let y = inBoundary (playerPosition.Y - (boardFrameSize.Height / 2)) 0 (boardHeight - boardFrameSize.Height)
                 point x y                
             
-			// take item
+            // take item
             let board1, state1 = 
                 if command = Take then
                     let place = get board playerPosition
@@ -108,7 +109,7 @@ let mainLoop() =
             | ConsoleKey.LeftArrow -> Left            
             | ConsoleKey.RightArrow -> Right
             | ConsoleKey.W -> Wait
-			| ConsoleKey.OemComma -> Take
+            | ConsoleKey.OemComma -> Take
             | ConsoleKey.I -> ShowItems
             | ConsoleKey.Escape -> Quit
             | ConsoleKey.O -> OpenDoor
@@ -121,7 +122,7 @@ let mainLoop() =
         | Up | Down | Left | Right | Wait | Take | OpenDoor | CloseDoor -> 
             (nextTurn command)                
             loop false
-		| ShowItems ->
+        | ShowItems ->
             showChooseItemDialog {Items = (State.get ()).Player.Items; CanSelect = false} |> ignore
             loop false
 
