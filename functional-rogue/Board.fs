@@ -10,6 +10,8 @@ type Tile =
     | Floor
     | Avatar
     | None
+    | OpenDoor
+    | ClosedDoor
 
 type Item = 
     | Sword
@@ -53,7 +55,7 @@ let boardContains (point: Point) =
                     
 let get (board: Board) (point: Point) = if boardContains point then Array2D.get board point.X point.Y else Place.Wall
 
-let isObstacle (board: Board) (point: Point) = (get board point).Tile = Tile.Wall
+let isObstacle (board: Board) (point: Point) = ((get board point).Tile = Tile.Wall || (get board point).Tile = Tile.ClosedDoor)
 
 let set (point: Point) (value: Place) (board: Board) : Board =
     let result = Array2D.copy board 
@@ -143,10 +145,10 @@ type Tunnel(rect: Rectangle, randomizeSize: bool) =
         let floor = {Place.EmptyPlace with Tile = Tile.Floor}
 
         let tunnelWidth = 
-            if(randomizeSize) then rnd2 1 width
+            if(randomizeSize) then rnd2 (min 2 width) width
             else width
         let tunnelHeight = 
-            if(randomizeSize) then rnd2 1 height
+            if(randomizeSize) then rnd2 (min 2 height) height
             else height
         let tunnelX = rnd(width - tunnelWidth)
         let tunnelY = rnd(height - tunnelHeight)
