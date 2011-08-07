@@ -5,12 +5,17 @@ open System.Drawing
 open Board
 open State
 open Sight
+open Items
 
 type ScreenAgentMessage =
     | ShowBoard of State
     | ShowMainMenu of AsyncReplyChannel<MainMenuReply>
+    | ShowChooseItemDialog of AsyncReplyChannel<ChooseItemDialogReply>
 and MainMenuReply = {
     Name: String
+} 
+and ChooseItemDialogReply = {
+    Selected: list<Item>
 }
 
 type textel = {
@@ -82,7 +87,13 @@ let private screenWritter () =
         |> writeString (point leftPanelPos.Location.X (leftPanelPos.Location.Y + 3)) (sprintf "Gold: %d" state.Player.Gold)
         |> writeString (point leftPanelPos.Location.X (leftPanelPos.Location.Y + 4)) (sprintf "Turn: %d" state.TurnNumber)
         
-
+    (*
+    let listAllItems state screen = 
+        let player = state.Player
+        Seq.iteri (fun i item -> 
+            let pos = point 1 i
+            writeSttring pos (sprintf "%s - %s" item.) ) player.Items
+    *)
     let refreshScreen (oldScreen: screen) (newScreen: screen)= 
         let changes = seq {
             for x in 0..screenSize.Width - 1 do
@@ -122,6 +133,14 @@ let private screenWritter () =
                 let name = Console.ReadLine()
                 reply.Reply({Name = name})
                 return! loop newScreen  
+            | ShowChooseItemDialog(reply) ->
+                return! loop screen  
+                (*
+                let newScreen =
+                    screen
+                    |> Array2D.copy
+                    |> listAllItems
+                *)
         }
         loop <| Array2D.create screenSize.Width screenSize.Height empty
     )
@@ -129,3 +148,6 @@ let private screenWritter () =
 let private agent = screenWritter ()
 let showBoard () = agent.Post (ShowBoard(State.get ()))
 let showMainMenu () = agent.PostAndReply(fun reply -> ShowMainMenu(reply))
+let showChooseItemDialog () = agent.PostAndReply(fun reply -> ShowChooseItemDialog(reply))
+
+

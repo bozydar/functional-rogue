@@ -8,6 +8,7 @@ open Board
 open LevelGeneration
 open Screen
 open Sight
+open Items
 
 type Command = 
     | Up

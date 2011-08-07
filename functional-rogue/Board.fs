@@ -3,18 +3,14 @@
 open System
 open System.Drawing
 open Config
+open Items
 
 type Tile =
     | Wall 
     | Floor
     | Avatar
     | None
-
-type Item = 
-    | Sword
-    | Vand
-    | Gold of int
-
+    
 type CharacterType = 
     | Avatar
     | Monster
@@ -39,8 +35,7 @@ type Place = {
 let boardHeight = 24
 let boardWidth = 79
 
-type Board = Place[,] 
-    
+type Board = Place[,]     
     
 let boardContains (point: Point) = 
     boardWidth > point.X  && boardHeight > point.Y && point.X >= 0 && point.Y >= 0

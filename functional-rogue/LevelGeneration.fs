@@ -2,6 +2,7 @@
 
 open System.Drawing
 open Board
+open Items
 
 let minRoomSize = 3
 
