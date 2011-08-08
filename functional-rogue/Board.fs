@@ -13,6 +13,10 @@ type Tile =
     | None
     | OpenDoor
     | ClosedDoor
+    | Grass
+    | Tree
+    | SmallPlants
+    | Bush
 
 
 type CharacterType = 
@@ -24,6 +28,7 @@ type LevelType =
     | Test
     | Dungeon
     | Cave
+    | Forest
 
 type Character = {
     Type: CharacterType
@@ -52,7 +57,7 @@ let boardContains (point: Point) =
                     
 let get (board: Board) (point: Point) = if boardContains point then Array2D.get board point.X point.Y else Place.Wall
 
-let isObstacle (board: Board) (point: Point) = ((get board point).Tile = Tile.Wall || (get board point).Tile = Tile.ClosedDoor)
+let isObstacle (board: Board) (point: Point) = ((get board point).Tile = Tile.Wall || (get board point).Tile = Tile.ClosedDoor || (get board point).Tile = Tile.Tree)
 
 let set (point: Point) (value: Place) (board: Board) : Board =
     let result = Array2D.copy board 

@@ -6,18 +6,53 @@ open Items
 
 
 // level generation utilities
-let floodLocation board (flags: int[,]) x y =
-    Array2D.set flags x y 1
-    flags
 
-type DisjointLocationSet(board: Board) =
+let scatterTilesRamdomlyOnBoard (board: Board) (tileToPut:Tile) (backgroundTile:Tile) (probability:float) (createBorder:bool) : Board =
+    let background = {Place.EmptyPlace with Tile = backgroundTile}
+    let placeToPut = {Place.EmptyPlace with Tile = tileToPut}
+    Array2D.mapi (fun x y i ->
+        if(not(i.Tile = backgroundTile)) then
+            i
+        elif(createBorder && (x = 0 || x = (boardWidth - 1) || y = 0 || y = (boardHeight - 1))) then
+            placeToPut
+        else
+            if((float)(rnd 100) < (probability * (float)100)) then placeToPut else i
+           ) board
+
+let countTileNeighbours (board: Board) x y (tileType:Tile)=
+    let tileToSearch = {Place.EmptyPlace with Tile = tileType}
+    let mutable count = 0
+    for tmpx in x - 1 .. x + 1 do
+        for tmpy in y - 1 .. y + 1 do
+            if not(tmpx = x && tmpy = y) then
+                count <- count + (if(board.[tmpx,tmpy] = tileToSearch) then 1 else 0)
+    count
+
+let rec smoothOutTheLevel board howManyTimes (tileToGrow:Tile) (backgroundTile:Tile) (rule:(int*int)) =
+    let background = {Place.EmptyPlace with Tile = Tile.Floor}
+    let toGrow = {Place.EmptyPlace with Tile = tileToGrow}
+    let min, max = rule
+    match howManyTimes with
+    | 0 -> board
+    | _ -> smoothOutTheLevel 
+            (Array2D.mapi (fun x y i -> 
+            if(x > 0 && x < (boardWidth - 1) && y > 0 && y < (boardHeight - 1)) then
+                if((countTileNeighbours board x y tileToGrow) < min ) then background
+                elif ((countTileNeighbours board x y tileToGrow) > max) then toGrow
+                else i
+            else i
+                ) board)
+            (howManyTimes - 1) tileToGrow backgroundTile rule
+
+
+type DisjointLocationSet (board: Board, basicTile:Tile) =
      let mutable flags = Array2D.create (Array2D.length1 board) (Array2D.length2 board) -1
      let mutable current = 0
 
      let createSets =
         let rec floodLocation (board: Board) (flags: int[,]) x y current =
             let mutable tmpFlags = flags
-            if(not(board.[x,y].Tile = Tile.Wall) && tmpFlags.[x,y] = -1) then
+            if(board.[x,y].Tile = basicTile && tmpFlags.[x,y] = -1) then
                 Array2D.set tmpFlags x y current
                 for floodx in (max (x - 1) 0) .. (min (x + 1) ((Array2D.length1 board) - 1)) do
                     for floody in (max (y - 1) 0) .. (min (y + 1) ((Array2D.length2 board) - 1)) do
@@ -26,7 +61,7 @@ type DisjointLocationSet(board: Board) =
 
         for x in 0 .. (Array2D.length1 board) - 1 do
             for y in 0 .. (Array2D.length2 board) - 1 do
-                if(not(board.[x,y].Tile = Tile.Wall) && flags.[x,y] = -1) then
+                if(board.[x,y].Tile = basicTile && flags.[x,y] = -1) then
                     current <- current + 1
                     flags <- (floodLocation board flags x y current)
 
@@ -40,8 +75,6 @@ type DisjointLocationSet(board: Board) =
                     setSizes.[flags.[x,y] - 1] <- (setSizes.[flags.[x,y] - 1] + 1)
                     randomSetPoint.[flags.[x,y] - 1] <- (x,y)
      
-     
-
      member this.NumberOfSections
         with get() = current
 
@@ -69,20 +102,18 @@ type DisjointLocationSet(board: Board) =
             let rec digTunnel board x y targetx targety i =
                 let mutable tmpBoard = board
                 if(flags.[x,y] <> i) then
-                    let floor = {Place.EmptyPlace with Tile = Tile.Floor}
+                    let basicPlace = {Place.EmptyPlace with Tile = basicTile}
                     let dx = x - targetx
                     let dy = y - targety
                     if((abs dx) > (abs dy)) then
                         let newx = (if(x > targetx) then (x - 1) else (x + 1))
-                        Array2D.set board newx y floor
+                        Array2D.set board newx y basicPlace
                         tmpBoard <- digTunnel board newx y targetx targety i
                     else
                         let newy = (if(y > targety) then (y - 1) else (y + 1))
-                        Array2D.set board x newy floor
+                        Array2D.set board x newy basicPlace
                         tmpBoard <- digTunnel board x newy targetx targety i
                 tmpBoard
-
-            
 
             let mutable tmpBoard = board
             let mutable theLargestSectionSize = 0
@@ -98,7 +129,6 @@ type DisjointLocationSet(board: Board) =
                     let connectPointToSection board x y i =
                         let targetx, targety = searchForClosestMainSectionPoint board x y i 0
                         digTunnel board x y targetx targety i
-
                     tmpBoard <- connectPointToSection tmpBoard x y (theLargestSectionIndex + 1)
             tmpBoard
 
@@ -294,47 +324,27 @@ let generateBSPDungeon =
     addRooms tunnelsList board
 
 //cave generation section
-
-let countCaveTileNeighbours (board: Board) x y =
-    let wall = {Place.EmptyPlace with Tile = Tile.Wall}
-    let mutable count = 0
-    for tmpx in x - 1 .. x + 1 do
-        for tmpy in y - 1 .. y + 1 do
-            if (tmpx = x && tmpy = y) then
-                count <- count
-            else
-                count <- count + (if(board.[tmpx,tmpy] = wall) then 1 else 0)
-    count
-
-let rec smoothOutTheCave board howManyTimes=
-    let floor = {Place.EmptyPlace with Tile = Tile.Floor}
-    let wall = {Place.EmptyPlace with Tile = Tile.Wall}
-    match howManyTimes with
-    | 0 -> board
-    | _ -> smoothOutTheCave 
-            (Array2D.mapi (fun x y i -> 
-            if(x > 0 && x < (boardWidth - 1) && y > 0 && y < (boardHeight - 1)) then
-                if((countCaveTileNeighbours board x y) < 4 ) then floor
-                elif ((countCaveTileNeighbours board x y) > 5) then wall
-                else i
-            else i
-                ) board)
-            (howManyTimes - 1)
     
 let generateCave: Board = 
-    let mutable board = Array2D.create boardWidth boardHeight {Place.EmptyPlace with Tile = Tile.Wall}
-    let numberOfTilesWithoutBorders = (boardWidth * boardHeight) - (boardWidth * 2) - (boardHeight * 2) + 2
-    let floor = {Place.EmptyPlace with Tile = Tile.Floor}
-    board <- Array2D.mapi (fun x y i -> 
-        if(x > 0 && x < (boardWidth - 1) && y > 0 && y < (boardHeight - 1)) then
-            if((rnd 10) < 5) then floor else i
-        else i
-           ) board
-    board <- smoothOutTheCave board 2
-    let sections = new DisjointLocationSet(board)
+    let mutable board = Array2D.create boardWidth boardHeight {Place.EmptyPlace with Tile = Tile.Floor}
+    board <- scatterTilesRamdomlyOnBoard board Tile.Wall Tile.Floor 0.5 true
+    board <- smoothOutTheLevel board 2 Tile.Wall Tile.Floor (4,5)
+    let sections = new DisjointLocationSet(board, Tile.Floor)
     sections.ConnectUnconnected
     |> addGold
     |> addItems
+
+// jungle/forest generation
+
+let generateForest: Board =
+    let mutable board = Array2D.create boardWidth boardHeight {Place.EmptyPlace with Tile = Tile.Grass}
+    board <- scatterTilesRamdomlyOnBoard board Tile.Tree Tile.Grass 0.25 true
+    board <- smoothOutTheLevel board 1 Tile.Tree Tile.Grass (1,4)
+    let sections = new DisjointLocationSet(board, Tile.Grass)
+    board <- sections.ConnectUnconnected
+    board <- scatterTilesRamdomlyOnBoard board Tile.Bush Tile.Grass 0.05 false
+    board <- scatterTilesRamdomlyOnBoard board Tile.SmallPlants Tile.Grass 0.05 false
+    board
 
 // main level generation switch
 let generateLevel levelType : Board = 
@@ -342,4 +352,5 @@ let generateLevel levelType : Board =
     | LevelType.Test -> generateTest
     | LevelType.Dungeon -> generateDungeon// generateBSPDungeon //generateDungeon
     | LevelType.Cave -> generateCave
+    | LevelType.Forest -> generateForest
     | _ -> failwith "unknown level type"
