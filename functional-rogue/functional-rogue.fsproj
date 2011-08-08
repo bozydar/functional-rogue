@@ -47,6 +47,7 @@
     <Compile Include="LevelGeneration.fs" />
     <Compile Include="Characters.fs" />
     <Compile Include="Screen.fs" />
+    <Compile Include="Actions.fs" />
     <Compile Include="Game.fs" />
     <None Include="app.config" />
   </ItemGroup>
