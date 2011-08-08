@@ -40,7 +40,7 @@ let moveCharacter character command board =
     let newPlace = get board newPosition
     
     match newPlace.Tile with 
-    | Wall | ClosedDoor -> board
+    | Wall | ClosedDoor | Tree -> board
     | _ ->         
         board |> moveCharacter character newPosition
 
@@ -127,7 +127,7 @@ let mainLoop() =
             loop false
 
     let board = 
-        generateLevel LevelType.Dungeon
+        generateLevel LevelType.Forest
         |> Board.moveCharacter {Type = CharacterType.Avatar} (new Point(8, 4))
 
     let mainMenuReply = showMainMenu ()
