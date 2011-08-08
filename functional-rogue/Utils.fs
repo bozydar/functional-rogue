@@ -39,3 +39,10 @@ type FloatingPoint = {
     static member (+) (left, right: Point) =
         {X = left.X + Convert.ToDouble(right.X); Y = left.Y + Convert.ToDouble(right.Y)}
 
+let swap (a: _[]) x y =
+    let tmp = a.[x]
+    a.[x] <- a.[y]
+    a.[y] <- tmp
+
+let shuffleArray a =
+    Array.iteri (fun i _ -> swap a i (r.Next(i, Array.length a))) a

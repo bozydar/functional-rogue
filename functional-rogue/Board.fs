@@ -2,6 +2,7 @@
 
 open System
 open System.Drawing
+open Utils
 open Config
 open Items
 
@@ -10,11 +11,24 @@ type Tile =
     | Floor
     | Avatar
     | None
-    
+    | OpenDoor
+    | ClosedDoor
+    | Grass
+    | Tree
+    | SmallPlants
+    | Bush
+
+
 type CharacterType = 
     | Avatar
     | Monster
     | NPC
+
+type LevelType = 
+    | Test
+    | Dungeon
+    | Cave
+    | Forest
 
 type Character = {
     Type: CharacterType
@@ -28,21 +42,22 @@ type Place = {
     WasSeen: bool;
 } with
     static member EmptyPlace = 
-            {Tile = Tile.None; Items = []; Character = Option.None; IsSeen = false; WasSeen = Settings.EntireLevelSeen }
+            {Tile = Tile.None; Items = []; Character = Option.None; IsSeen = false; WasSeen = Settings.EntireLevelSeen; }
     static member Wall = 
-            {Tile = Tile.Wall; Items = []; Character = Option.None; IsSeen = false; WasSeen = Settings.EntireLevelSeen }
+            {Tile = Tile.Wall; Items = []; Character = Option.None; IsSeen = false; WasSeen = Settings.EntireLevelSeen; }
 
 let boardHeight = 24
 let boardWidth = 79
 
-type Board = Place[,]     
+type Board = Place[,] 
+    
     
 let boardContains (point: Point) = 
     boardWidth > point.X  && boardHeight > point.Y && point.X >= 0 && point.Y >= 0
                     
 let get (board: Board) (point: Point) = if boardContains point then Array2D.get board point.X point.Y else Place.Wall
 
-let isObstacle (board: Board) (point: Point) = (get board point).Tile = Tile.Wall
+let isObstacle (board: Board) (point: Point) = ((get board point).Tile = Tile.Wall || (get board point).Tile = Tile.ClosedDoor || (get board point).Tile = Tile.Tree)
 
 let set (point: Point) (value: Place) (board: Board) : Board =
     let result = Array2D.copy board 
@@ -119,6 +134,58 @@ type Room(rect: Rectangle) =
             Array2D.blit room 0 0 result rect.X rect.Y width height
             result
 
+type Tunnel(rect: Rectangle, randomizeSize: bool) =
+    
+    let mutable actualTunnelRect = new Rectangle(0, 0, 0, 0)
+    
+
+    let generateTunnel width height = 
+        if width < 1 then invalidArg "width" "Is zero"
+        if height < 1 then invalidArg "height" "Is zero"
+
+        let wall = {Place.EmptyPlace with Tile = Tile.Wall}
+        let floor = {Place.EmptyPlace with Tile = Tile.Floor}
+
+        let tunnelWidth = 
+            if(randomizeSize) then rnd2 (min 2 width) width
+            else width
+        let tunnelHeight = 
+            if(randomizeSize) then rnd2 (min 2 height) height
+            else height
+        let tunnelX = rnd(width - tunnelWidth)
+        let tunnelY = rnd(height - tunnelHeight)
+
+        actualTunnelRect <- new Rectangle(tunnelX + rect.X, tunnelY + rect.Y, tunnelWidth, tunnelHeight)
+
+        let result = Array2D.create width height wall
+        for x = tunnelX to tunnelX + tunnelWidth - 1 do 
+            for y = tunnelY to tunnelY + tunnelHeight - 1 do 
+                Array2D.set result x y floor
+        result
+    
+    let generatedTunnel = generateTunnel rect.Width rect.Height
+
+    
+    member this.ActualTunnelRect = actualTunnelRect
+    
+
+    member this.GeneratedTunnel
+        with get() = generatedTunnel
+
+    member this.GetRandomPointInside
+        with get() = (rnd2 actualTunnelRect.X (actualTunnelRect.X + actualTunnelRect.Width), rnd2 actualTunnelRect.Y (actualTunnelRect.Y + actualTunnelRect.Height))
+
+    member this.Rectangle
+        with get() = rect
+
+    interface IModifier with
+        member this.Modify board = 
+            let tunnel = generatedTunnel
+            let width = Array2D.length1 tunnel
+            let height = Array2D.length2 tunnel
+            let result = board
+            Array2D.blit tunnel 0 0 result rect.X rect.Y width height
+            result
 
 type private BoardMessage = 
 | GetAt of Point * AsyncReplyChannel<Place>
