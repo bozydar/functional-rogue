@@ -32,72 +32,75 @@ let commandToSize command =
     | Right -> new Size(1, 0)
     | _ -> new Size(0, 0)
 
-let moveCharacter character command board = 
-    let position, _ =  Seq.find (fun (_, place) -> place.Character = Some character) <| places board
+let moveCharacter command state = 
+    let board = state.Board
+    let playerPosition = getPlayerPosition board
 
     let move = commandToSize command
-    let newPosition = position + move
+    let newPosition = playerPosition + move
     let newPlace = get board newPosition
     
-    match newPlace.Tile with 
-    | Wall | ClosedDoor -> board
-    | _ ->         
-        board |> moveCharacter character newPosition
+    let preResult = 
+        match newPlace.Tile with 
+        | Wall | ClosedDoor -> board
+        | _ ->         
+            board |> moveCharacter {Type = Avatar} newPosition
+    {state with Board = preResult}
 
-let operateDoor character command board =
+let operateDoor command board =
+    let playerPosition = getPlayerPosition board
     let oldDoor = {Place.EmptyPlace with Tile = (if (command = OpenDoor) then Tile.ClosedDoor else Tile.OpenDoor)}
     let newDoor = {Place.EmptyPlace with Tile = (if (command = OpenDoor) then Tile.OpenDoor else Tile.ClosedDoor)}
-    let position, _ =  Seq.find (fun (_, place) -> place.Character = Some character) <| places board
-    for x in (max 0 (position.X - 1))..(min boardWidth (position.X + 1)) do
-        for y in (max 0 (position.Y - 1))..(min boardHeight (position.Y + 1)) do
-            if(not(x = position.X && y = position.Y) && board.[x,y].Tile = oldDoor.Tile) then
+    for x in (max 0 (playerPosition.X - 1))..(min boardWidth (playerPosition.X + 1)) do
+        for y in (max 0 (playerPosition.Y - 1))..(min boardHeight (playerPosition.Y + 1)) do
+            if(not(x = playerPosition.X && y = playerPosition.Y) && board.[x,y].Tile = oldDoor.Tile) then
                 Array2D.set board x y newDoor
     board 
 
-let performAction character command board =
+let performCloseOpenAction command state =
     match command with
-    | OpenDoor | CloseDoor -> operateDoor character command board
-    | _ -> board
+    | OpenDoor | CloseDoor -> { state with Board = operateDoor command state.Board }
+    | _ -> state
+
+let performTakeAction command state = 
+    let playerPosition = getPlayerPosition state.Board
+    if command = Take then
+        let place = get state.Board playerPosition
+        let takenItems = place.Items
+        let board1 = 
+            state.Board
+            |> set playerPosition {place with Items = []}
+        let state1 = 
+            let extractGold items =
+                Seq.sumBy (function | Gold(value) -> value | _ -> 0) items
+            let gold = state.Player.Gold + extractGold takenItems
+            { state with Player = { state.Player with Items =  takenItems @ state.Player.Items; Gold = gold}}
+
+        {state1 with Board = board1}
+    else
+        state
+
+let evaluateBoardFramePosition state = 
+    let playerPosition = getPlayerPosition state.Board
+    let frameView = new Rectangle(state.BoardFramePosition, boardFrameSize)
+    let preResult =                 
+        let x = inBoundary (playerPosition.X - (boardFrameSize.Width / 2)) 0 (boardWidth - boardFrameSize.Width)
+        let y = inBoundary (playerPosition.Y - (boardFrameSize.Height / 2)) 0 (boardHeight - boardFrameSize.Height)
+        point x y                
+    { state with BoardFramePosition = preResult }
 
 let mainLoop() =
     let rec loop printAll =                
-        let nextTurn command = 
-            let state = State.get ()
-            let board = 
-                state.Board  
-                |> moveCharacter {Type = Avatar} command
-                |> performAction {Type = Avatar} command
-                |> setVisibilityStates state.Player
-                    
-            // evaluate BoardFramePosition
-            let playerPosition = getPlayerPosition board
-            let frameView = new Rectangle(state.BoardFramePosition, boardFrameSize)
-            let boardFramePosition =                 
-                let x = inBoundary (playerPosition.X - (boardFrameSize.Width / 2)) 0 (boardWidth - boardFrameSize.Width)
-                let y = inBoundary (playerPosition.Y - (boardFrameSize.Height / 2)) 0 (boardHeight - boardFrameSize.Height)
-                point x y                
-            
-            // take item
-            let board1, state1 = 
-                if command = Take then
-                    let place = get board playerPosition
-                    let takenItems = place.Items
-                    let board1 = 
-                        board
-                        |> set playerPosition {place with Items = []}
-                    let state1 = 
-                        let extractGold items =
-                            Seq.sumBy (function | Gold(value) -> value | _ -> 0) items
-                        let gold = state.Player.Gold + extractGold takenItems
-                        { state with Player = { state.Player with Items =  takenItems @ state.Player.Items; Gold = gold}}
-
-                    board1, state1
-                else
-                    board, state
-                
-
-            State.set {state1 with Board = board1; TurnNumber = state.TurnNumber + 1; BoardFramePosition = boardFramePosition}
-
+        let nextTurn command =             
+            let state = 
+                State.get ()
+                |> moveCharacter command
+                |> performCloseOpenAction command
+                |> performTakeAction command
+                |> setVisibilityStates
+                |> evaluateBoardFramePosition
+                                    
+            State.set {state with TurnNumber = state.TurnNumber + 1}
             Screen.showBoard ()
 
         let key = if printAll then ConsoleKey.W else System.Console.ReadKey(true).Key
