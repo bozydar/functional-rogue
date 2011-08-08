@@ -42,7 +42,7 @@ let moveCharacter command state =
     
     let preResult = 
         match newPlace.Tile with 
-        | Wall | ClosedDoor -> board
+        | Wall | ClosedDoor | Tree -> board
         | _ ->         
             board |> moveCharacter {Type = Avatar} newPosition
     {state with Board = preResult}
