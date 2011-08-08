@@ -29,10 +29,11 @@ let visiblePositions (where: Point) distance board =
     |> Seq.distinct 
     |> Seq.toList)
     
-let setVisibilityStates player board  = 
-    let playerPosition = getPlayerPosition board
-    let positions = visiblePositions playerPosition player.SightRadius board    
-    Array2D.mapi (fun x y place -> 
+let setVisibilityStates state  = 
+    let playerPosition = getPlayerPosition state.Board
+    let positions = visiblePositions playerPosition state.Player.SightRadius state.Board    
+    let preResult = Array2D.mapi (fun x y place -> 
         let p = point x y
-        if Seq.exists ((=) p) positions then {place with IsSeen = true; WasSeen = true} else {place with IsSeen = false}) board
+        if Seq.exists ((=) p) positions then {place with IsSeen = true; WasSeen = true} else {place with IsSeen = false}) state.Board
+    {state with Board = preResult}
     
