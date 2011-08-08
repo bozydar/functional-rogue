@@ -45,8 +45,8 @@ let moveCharacter character command board =
         board |> moveCharacter character newPosition
 
 let operateDoor character command board =
-    let mutable oldDoor = {Place.EmptyPlace with Tile = (if (command = OpenDoor) then Tile.ClosedDoor else Tile.OpenDoor)}
-    let mutable newDoor = {Place.EmptyPlace with Tile = (if (command = OpenDoor) then Tile.OpenDoor else Tile.ClosedDoor)}
+    let oldDoor = {Place.EmptyPlace with Tile = (if (command = OpenDoor) then Tile.ClosedDoor else Tile.OpenDoor)}
+    let newDoor = {Place.EmptyPlace with Tile = (if (command = OpenDoor) then Tile.OpenDoor else Tile.ClosedDoor)}
     let position, _ =  Seq.find (fun (_, place) -> place.Character = Some character) <| places board
     for x in (max 0 (position.X - 1))..(min boardWidth (position.X + 1)) do
         for y in (max 0 (position.Y - 1))..(min boardHeight (position.Y + 1)) do
