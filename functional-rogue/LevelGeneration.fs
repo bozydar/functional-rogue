@@ -165,28 +165,27 @@ let rec generateRooms rooms =
 let addItems board =
     // returns sequence of board modification functions
     let modifiers = seq {
-        for i in 0..20 do
+        for i in 1..20 do
             let posX = rnd boardWidth
             let posY = rnd boardHeight
-            let itemIndex = rnd (Items.all.Length - 1)
             yield (fun board -> 
                 Board.modify (point posX posY) (fun place -> 
-                    {place with Items = Items.all.[1] :: place.Items} ) board)
+                    {place with Items = { Id = i ; Name = "Stick of Doom" ; Class = Stick { Damage = 3 }} :: place.Items} ) board)
     }
     // apply all modification functions on board
     board |>> modifiers
 
-let addGold board = 
-    let modifiers = seq {
-        for i in 0..20 do
-            let posX = rnd boardWidth
-            let posY = rnd boardHeight
-            let value = rnd2 1 10
-            yield (fun board -> 
-                Board.modify (point posX posY) (fun place -> 
-                    {place with Items = Gold(value) :: place.Items} ) board)
-    }
-    board |>> modifiers
+//let addGold board = 
+//    let modifiers = seq {
+//        for i in 0..20 do
+//            let posX = rnd boardWidth
+//            let posY = rnd boardHeight
+//            let value = rnd2 1 10
+//            yield (fun board -> 
+//                Board.modify (point posX posY) (fun place -> 
+//                    {place with Items = Gold(value) :: place.Items} ) board)
+//    }
+//    board |>> modifiers
 
 let generateTest: Board = 
     let mutable board = Array2D.create boardWidth boardHeight {Place.EmptyPlace with Tile = Tile.Floor}
@@ -196,8 +195,8 @@ let generateTest: Board =
         | [] -> board
         | item::t -> addRooms t <| (item :> IModifier).Modify board 
     addRooms rooms board
-    |> addGold
-    |> addItems
+    //|> addGold
+    //|> addItems
 
 // dungeon generation section
 
@@ -263,7 +262,7 @@ let generateDungeon: Board =
         | item::t -> addRooms t <| (item :> IModifier).Modify board 
     let resultBoard = addRooms (generateDungeonTunnels sections sectionWidth sectionHeight sectionsHorizontal sectionsVertical) board
     addRandomDoors resultBoard
-    |> addGold
+    //|> addGold
     |> addItems
 
 // dungeon BSP generation method
@@ -331,7 +330,7 @@ let generateCave: Board =
     board <- smoothOutTheLevel board 2 Tile.Wall Tile.Floor (4,5)
     let sections = new DisjointLocationSet(board, Tile.Floor)
     sections.ConnectUnconnected
-    |> addGold
+    //|> addGold
     |> addItems
 
 // jungle/forest generation

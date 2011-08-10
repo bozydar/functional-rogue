@@ -42,6 +42,7 @@
     <Compile Include="Log.fs" />
     <Compile Include="Items.fs" />
     <Compile Include="Board.fs" />
+    <Compile Include="Player.fs" />
     <Compile Include="State.fs" />
     <Compile Include="Sight.fs" />
     <Compile Include="LevelGeneration.fs" />

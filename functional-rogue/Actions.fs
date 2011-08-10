@@ -22,6 +22,7 @@ type Command =
     | Unknown
     | OpenDoor
     | CloseDoor
+    | ShowEquipment
 
 
 let private commandToSize command = 
@@ -71,8 +72,8 @@ let performTakeAction command state =
             state.Board
             |> set playerPosition {place with Items = []}
         let state1 = 
-            let extractGold items =
-                Seq.sumBy (function | Gold(value) -> value | _ -> 0) items
+            let extractGold items = 0
+                //Seq.sumBy (function | Gold(value) -> value | _ -> 0) items
             let gold = state.Player.Gold + extractGold takenItems
             { state with Player = { state.Player with Items =  takenItems @ state.Player.Items; Gold = gold}}
 
