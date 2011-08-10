@@ -10,6 +10,7 @@ open Screen
 open Sight
 open Items
 open Actions
+open Player
 
 
 let evaluateBoardFramePosition state = 
@@ -49,6 +50,7 @@ let mainLoop() =
             | ConsoleKey.Escape -> Quit
             | ConsoleKey.O -> OpenDoor
             | ConsoleKey.C -> CloseDoor
+            | ConsoleKey.E -> ShowEquipment
             | _ -> Unknown                        
         
         match command with
@@ -58,18 +60,21 @@ let mainLoop() =
             (nextTurn command)                
             loop false
         | ShowItems ->
-            showChooseItemDialog {Items = (State.get ()).Player.Items; CanSelect = false} |> ignore
+            showChooseItemDialog {Items = (State.get ()).Player.Items; CanSelect = false; Filter = (fun x -> true)} |> ignore
+            loop false
+        | ShowEquipment ->
+            showEquipmentItemDialog {Items = (State.get ()).Player.Items; CanSelect = false} |> ignore
             loop false
 
     let board = 
-        generateLevel LevelType.Forest
+        generateLevel LevelType.Cave
         |> Board.moveCharacter {Type = CharacterType.Avatar} (new Point(8, 4))
 
     let mainMenuReply = showMainMenu ()
     let entryState = {         
         Board = board; 
         BoardFramePosition = point 0 0;
-        Player = { Name = mainMenuReply.Name; HP = 5; MaxHP = 10; Magic = 5; MaxMagic = 10; Gold = 0; SightRadius = 10; Items = []};
+        Player = { Name = mainMenuReply.Name; HP = 5; MaxHP = 10; Magic = 5; MaxMagic = 10; Gold = 0; SightRadius = 10; Items = []; WornItems = { Head = 0; InLeftHand = 0; InRightHand = 0} };
         TurnNumber = 0;
     }
     State.set entryState
