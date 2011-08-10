@@ -68,6 +68,7 @@ let performTakeAction command state =
     if command = Take then
         let place = get state.Board playerPosition
         let takenItems = place.Items
+        let pickUpMessages = List.map (fun i -> (sprintf "You have picked up an item: %s" (itemShortDescription i))) takenItems
         let board1 = 
             state.Board
             |> set playerPosition {place with Items = []}
@@ -76,6 +77,7 @@ let performTakeAction command state =
                 //Seq.sumBy (function | Gold(value) -> value | _ -> 0) items
             let gold = state.Player.Gold + extractGold takenItems
             { state with Player = { state.Player with Items =  takenItems @ state.Player.Items; Gold = gold}}
+            |> addMessages pickUpMessages
 
         {state1 with Board = board1}
     else

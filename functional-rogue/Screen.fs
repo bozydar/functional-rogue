@@ -94,12 +94,15 @@ let private screenWritter () =
         |> String.iteri (fun i char -> 
             screen.[x + i, y] <- {empty with Char = char})
         screen
-
-    let cleanScreen (screen: screen) =
-        for x in 0..(screenSize.Width - 1)do
-            for y in 0..(screenSize.Height - 1) do
+    
+    let cleanPartOfScreen (point: Point) (size: Size) (screen: screen) =
+        for x in (point.X)..(point.X + size.Width - 1)do
+            for y in (point.Y)..(point.Y + size.Height - 1) do
                 screen.[x, y] <- empty
         screen
+
+    let cleanScreen (screen: screen) =
+        cleanPartOfScreen (Point(0,0)) (Size(screenSize.Width, screenSize.Height)) screen
 
     let writeStats state screen =
         screen 
@@ -108,6 +111,14 @@ let private screenWritter () =
         |> writeString (point leftPanelPos.Location.X (leftPanelPos.Location.Y + 2)) (sprintf "Ma: %d/%d" state.Player.HP state.Player.MaxHP)
         |> writeString (point leftPanelPos.Location.X (leftPanelPos.Location.Y + 3)) (sprintf "Gold: %d" state.Player.Gold)
         |> writeString (point leftPanelPos.Location.X (leftPanelPos.Location.Y + 4)) (sprintf "Turn: %d" state.TurnNumber)
+
+    let writeMessage state screen =
+        if( state.UserMessages.Length > 0 && (fst (state.UserMessages.Head)) = state.TurnNumber - 1) then
+            screen
+            |> cleanPartOfScreen (Point(0,(screenSize.Height - 1))) (Size(screenSize.Width, 1))
+            |> writeString (point 0 (screenSize.Height - 1)) (snd state.UserMessages.Head)
+        else
+            screen
             
     let listAllItems (items : Item list) screen = 
         //let plainItems = items |> Seq.choose (function | Gold(_) -> Option.None | Plain(_, itemProperties) -> Some itemProperties)
@@ -155,6 +166,7 @@ let private screenWritter () =
                     |> Array2D.copy
                     |> writeBoard state.Board state.BoardFramePosition state.Player.SightRadius
                     |> writeStats state
+                    |> writeMessage state
                 refreshScreen screen newScreen
                 return! loop newScreen                        
             | ShowMainMenu(reply) -> 
