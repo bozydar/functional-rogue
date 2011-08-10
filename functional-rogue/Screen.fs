@@ -13,6 +13,7 @@ type ScreenAgentMessage =
     | ShowMainMenu of AsyncReplyChannel<MainMenuReply>
     | ShowChooseItemDialog of ChooseItemDialogRequest * AsyncReplyChannel<ChooseItemDialogReply>
     | ShowEquipmentDialog of ChooseEquipmentDialogRequest * AsyncReplyChannel<ChooseEquipmentDialogReply>
+    | ShowMessages of State
 and MainMenuReply = {
     Name: String
 } 
@@ -78,6 +79,7 @@ let private screenWritter () =
                             | _ -> empty
                 if not item.IsSeen then {result with FGColor = ConsoleColor.DarkGray } else result
             else empty
+        
         for x in 0..boardFrameSize.Width - 1 do
             for y in 0..boardFrameSize.Height - 1 do
                 // move board                                
@@ -119,6 +121,13 @@ let private screenWritter () =
             |> writeString (point 0 (screenSize.Height - 1)) (snd state.UserMessages.Head)
         else
             screen
+
+    let writeAllMessages (state : State) screen =
+        let rec writeMessagesRecursively (messages: (int*string) list) screen lineNumber =
+            match messages with
+            | head :: tail -> writeMessagesRecursively tail (screen |> (writeString (Point(0, lineNumber)) (sprintf "Turn: %d - %s" (fst head) (snd head)))) (lineNumber + 1)
+            | [] -> screen
+        writeMessagesRecursively state.UserMessages screen 0
             
     let listAllItems (items : Item list) screen = 
         //let plainItems = items |> Seq.choose (function | Gold(_) -> Option.None | Plain(_, itemProperties) -> Some itemProperties)
@@ -168,6 +177,14 @@ let private screenWritter () =
                     |> writeStats state
                     |> writeMessage state
                 refreshScreen screen newScreen
+                return! loop newScreen
+            | ShowMessages(state) ->
+                let newScreen =
+                    screen
+                    |> Array2D.copy
+                    |> cleanScreen
+                    |> writeAllMessages state
+                refreshScreen screen newScreen
                 return! loop newScreen                        
             | ShowMainMenu(reply) -> 
                 let newScreen = 
@@ -210,3 +227,4 @@ let showBoard () = agent.Post (ShowBoard(State.get ()))
 let showMainMenu () = agent.PostAndReply(fun reply -> ShowMainMenu(reply))
 let showChooseItemDialog items = agent.PostAndReply(fun reply -> ShowChooseItemDialog(items, reply))
 let showEquipmentItemDialog items = agent.PostAndReply(fun reply -> ShowEquipmentDialog(items, reply))
+let showMessages () = agent.Post (ShowMessages(State.get ()))
