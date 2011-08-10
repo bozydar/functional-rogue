@@ -11,6 +11,7 @@ type State = {
     BoardFramePosition: Point;
     Player: Player;
     TurnNumber: int;
+    UserMessages: (int*string) list
 } 
 
 type private StateAgentMessage = 
@@ -39,3 +40,7 @@ let get () =
     match agent.PostAndReply(fun replyChannel -> Get(replyChannel)) with
     | Some(value) -> value
     | Option.None -> failwith "Cannot return None"
+
+let addMessages (messages : string list) (state : State) =
+    let newMessages = List.map (fun m -> (state.TurnNumber,m)) messages
+    { state with UserMessages = (List.append newMessages state.UserMessages) }

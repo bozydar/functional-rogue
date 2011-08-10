@@ -76,6 +76,7 @@ let mainLoop() =
         BoardFramePosition = point 0 0;
         Player = { Name = mainMenuReply.Name; HP = 5; MaxHP = 10; Magic = 5; MaxMagic = 10; Gold = 0; SightRadius = 10; Items = []; WornItems = { Head = 0; InLeftHand = 0; InRightHand = 0} };
         TurnNumber = 0;
+        UserMessages = []
     }
     State.set entryState
     loop true      
