@@ -10,12 +10,13 @@ open Screen
 open Sight
 open Items
 open Actions
+open Player
 
 
 let evaluateBoardFramePosition state = 
     let playerPosition = getPlayerPosition state.Board
     let frameView = new Rectangle(state.BoardFramePosition, boardFrameSize)
-    let preResult =                 
+    let preResult =
         let x = inBoundary (playerPosition.X - (boardFrameSize.Width / 2)) 0 (boardWidth - boardFrameSize.Width)
         let y = inBoundary (playerPosition.Y - (boardFrameSize.Height / 2)) 0 (boardHeight - boardFrameSize.Height)
         point x y                
@@ -39,38 +40,51 @@ let mainLoop() =
         
         let command = 
             match key with 
-            | ConsoleKey.UpArrow -> Up            
-            | ConsoleKey.DownArrow -> Down            
-            | ConsoleKey.LeftArrow -> Left            
-            | ConsoleKey.RightArrow -> Right
-            | ConsoleKey.W -> Wait
+            | ConsoleKey.UpArrow | ConsoleKey.NumPad8 -> Up            
+            | ConsoleKey.DownArrow | ConsoleKey.NumPad2 -> Down            
+            | ConsoleKey.LeftArrow | ConsoleKey.NumPad4 -> Left            
+            | ConsoleKey.RightArrow | ConsoleKey.NumPad6 -> Right
+            | ConsoleKey.NumPad7 -> UpLeft
+            | ConsoleKey.NumPad9 -> UpRight
+            | ConsoleKey.NumPad1 -> DownLeft
+            | ConsoleKey.NumPad3 -> DownRight
+            | ConsoleKey.W | ConsoleKey.NumPad5 -> Wait
             | ConsoleKey.OemComma -> Take
             | ConsoleKey.I -> ShowItems
             | ConsoleKey.Escape -> Quit
             | ConsoleKey.O -> OpenDoor
             | ConsoleKey.C -> CloseDoor
+            | ConsoleKey.E -> ShowEquipment
+            | ConsoleKey.M -> ShowMessages
             | _ -> Unknown                        
         
         match command with
         | Quit -> ()
         | Unknown -> loop false
-        | Up | Down | Left | Right | Wait | Take | OpenDoor | CloseDoor -> 
+        | Up | Down | Left | Right | UpLeft | UpRight | DownLeft | DownRight | Wait | Take | OpenDoor | CloseDoor -> 
             (nextTurn command)                
             loop false
         | ShowItems ->
-            showChooseItemDialog {Items = (State.get ()).Player.Items; CanSelect = false} |> ignore
+            showChooseItemDialog {Items = (State.get ()).Player.Items; CanSelect = false; Filter = (fun x -> true)} |> ignore
+            loop false
+        | ShowEquipment ->
+            showEquipmentItemDialog {Items = (State.get ()).Player.Items; CanSelect = false} |> ignore
+            loop false
+        | ShowMessages ->
+            Screen.showMessages ()
             loop false
 
     let board = 
-        generateLevel LevelType.Forest
+        generateLevel LevelType.Cave
         |> Board.moveCharacter {Type = CharacterType.Avatar} (new Point(8, 4))
 
     let mainMenuReply = showMainMenu ()
     let entryState = {         
         Board = board; 
         BoardFramePosition = point 0 0;
-        Player = { Name = mainMenuReply.Name; HP = 5; MaxHP = 10; Magic = 5; MaxMagic = 10; Gold = 0; SightRadius = 10; Items = []};
+        Player = { Name = mainMenuReply.Name; HP = 5; MaxHP = 10; Magic = 5; MaxMagic = 10; Gold = 0; SightRadius = 10; Items = []; WornItems = { Head = 0; InLeftHand = 0; InRightHand = 0} };
         TurnNumber = 0;
+        UserMessages = []
     }
     State.set entryState
     loop true      
