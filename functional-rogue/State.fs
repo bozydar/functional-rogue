@@ -2,6 +2,7 @@
 
 open Board
 open Items
+open Player
 open System.Drawing
 
 
@@ -10,16 +11,7 @@ type State = {
     BoardFramePosition: Point;
     Player: Player;
     TurnNumber: int;
-} 
-and Player = {
-    Name: string;
-    HP: int;  // life
-    MaxHP: int;
-    Magic: int;  // magic
-    MaxMagic: int;
-    Gold: int // gold
-    SightRadius: int // sigh radius
-    Items: list<Item>
+    UserMessages: (int*string) list
 } 
 
 type private StateAgentMessage = 
@@ -48,3 +40,7 @@ let get () =
     match agent.PostAndReply(fun replyChannel -> Get(replyChannel)) with
     | Some(value) -> value
     | Option.None -> failwith "Cannot return None"
+
+let addMessages (messages : string list) (state : State) =
+    let newMessages = List.map (fun m -> (state.TurnNumber,m)) messages
+    { state with UserMessages = (List.append newMessages state.UserMessages) }
