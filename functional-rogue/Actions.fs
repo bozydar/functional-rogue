@@ -15,6 +15,10 @@ type Command =
     | Down
     | Left
     | Right
+    | UpLeft
+    | UpRight
+    | DownLeft
+    | DownRight
     | Wait
     | Take
     | ShowItems
@@ -23,6 +27,7 @@ type Command =
     | OpenDoor
     | CloseDoor
     | ShowEquipment
+    | ShowMessages
 
 
 let private commandToSize command = 
@@ -31,6 +36,10 @@ let private commandToSize command =
     | Down -> new Size(0, 1)
     | Left -> new Size(-1, 0)
     | Right -> new Size(1, 0)
+    | UpLeft -> new Size(-1, -1)
+    | UpRight -> new Size(1, -1)
+    | DownLeft -> new Size(-1, 1)
+    | DownRight -> new Size(1, 1)
     | _ -> new Size(0, 0)
 
 let moveCharacter command state = 
@@ -68,6 +77,7 @@ let performTakeAction command state =
     if command = Take then
         let place = get state.Board playerPosition
         let takenItems = place.Items
+        let pickUpMessages = List.map (fun i -> (sprintf "You have picked up an item: %s" (itemShortDescription i))) takenItems
         let board1 = 
             state.Board
             |> set playerPosition {place with Items = []}
@@ -76,6 +86,7 @@ let performTakeAction command state =
                 //Seq.sumBy (function | Gold(value) -> value | _ -> 0) items
             let gold = state.Player.Gold + extractGold takenItems
             { state with Player = { state.Player with Items =  takenItems @ state.Player.Items; Gold = gold}}
+            |> addMessages pickUpMessages
 
         {state1 with Board = board1}
     else
