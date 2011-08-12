@@ -1,8 +1,27 @@
 ﻿module Monsters
 
-type Monster (id:int, appearance:char) =
-    member this.Id
-        with get() = id
+type MonsterType =
+    | Rat
+
+    
+
+type Monster (monsterType: MonsterType) =
+    let guid = System.Guid.NewGuid
+
+    let getMonsterAppearance =
+        match monsterType with
+        | Rat -> 'r'
+
+    member this.Type
+        with get() = monsterType
+
+    member this.Guid
+        with get() = guid
 
     member this.Appearance
-        with get() = appearance
+        with get() = getMonsterAppearance
+
+
+let createNewMonster (monsterType: MonsterType) : Monster =
+    match monsterType with
+    | Rat -> new Monster(Rat)
