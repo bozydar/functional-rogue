@@ -16,10 +16,14 @@ let performRandomMovement (monsterPlace: (Point*Place)) (state:State) : State =
     let resultState = { state with Board = state.Board |> Board.moveCharacter (snd monsterPlace).Character.Value (possibleNewLocations.[rnd possibleNewLocations.Length]) }
     resultState
 
+let handleSingleMonster (monsterPlace: (Point*Place)) (state:State) : State =
+    match (snd monsterPlace).Character.Value.Monster.Value.Type with
+    | Rat -> performRandomMovement monsterPlace state
+
 let handleMonsters (state: State) : State =
     let rec recursivelyHandleMonstersSequence (monsterPlaces: (Point*Place) list) (state:State) : State =
         match monsterPlaces with
-        | head :: tail -> recursivelyHandleMonstersSequence tail (state |> performRandomMovement head)
+        | head :: tail -> recursivelyHandleMonstersSequence tail (state |> handleSingleMonster head)
         | [] -> state
 
     let allMonsterPlaces = monsterPlaces state.Board

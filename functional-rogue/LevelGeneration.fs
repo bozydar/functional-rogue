@@ -145,7 +145,7 @@ let putRandomMonstersOnBoard (board:Board) =
             if((isObstacle board (Point (x,y)))) then
                 findEmptySpotsAndPutMonsters n board
             else
-                findEmptySpotsAndPutMonsters (n-1) (board |> Board.moveCharacter { Type = CharacterType.Monster; Monster =  Some(new Monster(n,'g')) } (new Point(x, y)))
+                findEmptySpotsAndPutMonsters (n-1) (board |> Board.moveCharacter { Type = CharacterType.Monster; Monster =  Some(createNewMonster(MonsterType.Rat)) } (new Point(x, y)))
     findEmptySpotsAndPutMonsters 10 board
 
 
@@ -370,5 +370,4 @@ let generateLevel levelType : Board =
     | LevelType.Dungeon -> generateDungeon// generateBSPDungeon //generateDungeon
     | LevelType.Cave -> generateCave
     | LevelType.Forest -> generateForest
-    | _ -> failwith "unknown level type"
 
