@@ -78,6 +78,16 @@ let places (board: Board) =
                 yield (new Point(x, y), item)
     }
 
+let monsterPlaces (board: Board) = 
+    let tempSeq = seq {
+        for x = 0 to boardWidth - 1 do
+            for y = 0 to boardHeight - 1 do
+                let item = Array2D.get board x y
+                if (item.Character.IsSome && item.Character.Value.Type = CharacterType.Monster) then
+                    yield (new Point(x, y), item)
+    }
+    Seq.toList tempSeq
+
 let getPlayerPosition (board: Board) = 
     let preResult = Seq.tryFind (fun (point, place) -> 
         match place.Character with 

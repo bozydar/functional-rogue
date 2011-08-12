@@ -58,7 +58,7 @@ let private screenWritter () =
                     | Some(character1) -> 
                         match character1.Type with
                         | Avatar -> {Char = '@'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
-                        | Monster -> {Char = 's'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Red}
+                        | Monster -> {Char = character1.Monster.Value.Appearance; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Red}
                         | NPC -> {Char = 'P'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.White}
                     | _ -> 
                         match item.Items with
