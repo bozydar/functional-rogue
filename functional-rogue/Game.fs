@@ -11,6 +11,8 @@ open Sight
 open Items
 open Actions
 open Player
+open Monsters
+open AI
 
 
 let evaluateBoardFramePosition state = 
@@ -28,6 +30,7 @@ let mainLoop() =
             let state = 
                 State.get ()
                 |> moveCharacter command
+                |> handleMonsters
                 |> performCloseOpenAction command
                 |> performTakeAction command
                 |> setVisibilityStates
@@ -76,7 +79,7 @@ let mainLoop() =
 
     let board = 
         generateLevel LevelType.Cave
-        |> Board.moveCharacter {Type = CharacterType.Avatar} (new Point(8, 4))
+        |> Board.moveCharacter {Type = CharacterType.Avatar; Monster = Option.None} (new Point(8, 4))
 
     let mainMenuReply = showMainMenu ()
     let entryState = {         
@@ -84,7 +87,8 @@ let mainLoop() =
         BoardFramePosition = point 0 0;
         Player = { Name = mainMenuReply.Name; HP = 5; MaxHP = 10; Magic = 5; MaxMagic = 10; Gold = 0; SightRadius = 10; Items = []; WornItems = { Head = 0; InLeftHand = 0; InRightHand = 0} };
         TurnNumber = 0;
-        UserMessages = []
+        UserMessages = [];
+        Monsters = []
     }
     State.set entryState
     loop true      
