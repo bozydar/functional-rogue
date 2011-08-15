@@ -4,7 +4,7 @@ open Board
 open Items
 open Player
 open System.Drawing
-
+open Monsters
 
 type State = {
     Board: Board;
@@ -12,6 +12,7 @@ type State = {
     Player: Player;
     TurnNumber: int;
     UserMessages: (int*string) list
+    Monsters: Monster list
 } 
 
 type private StateAgentMessage = 

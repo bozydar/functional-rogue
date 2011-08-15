@@ -41,6 +41,7 @@
     <Compile Include="Config.fs" />
     <Compile Include="Log.fs" />
     <Compile Include="Items.fs" />
+    <Compile Include="Monsters.fs" />
     <Compile Include="Board.fs" />
     <Compile Include="Player.fs" />
     <Compile Include="State.fs" />
@@ -49,6 +50,8 @@
     <Compile Include="Characters.fs" />
     <Compile Include="Screen.fs" />
     <Compile Include="Actions.fs" />
+    <Compile Include="AI.fs" />
+    <Compile Include="Turn.fs" />
     <Compile Include="Game.fs" />
     <None Include="app.config" />
   </ItemGroup>

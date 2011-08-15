@@ -5,6 +5,7 @@ open System.Drawing
 open Utils
 open Config
 open Items
+open Monsters
 
 type Tile =
     | Wall 
@@ -32,6 +33,7 @@ type LevelType =
 
 type Character = {
     Type: CharacterType
+    Monster: Monster option
 }    
 
 type Place = {
@@ -57,7 +59,7 @@ let boardContains (point: Point) =
                     
 let get (board: Board) (point: Point) = if boardContains point then Array2D.get board point.X point.Y else Place.Wall
 
-let isObstacle (board: Board) (point: Point) = ((get board point).Tile = Tile.Wall || (get board point).Tile = Tile.ClosedDoor || (get board point).Tile = Tile.Tree)
+let isObstacle (board: Board) (point: Point) = ((get board point).Tile = Tile.Wall || (get board point).Tile = Tile.ClosedDoor || (get board point).Tile = Tile.Tree || (get board point).Character.IsSome)
 
 let set (point: Point) (value: Place) (board: Board) : Board =
     let result = Array2D.copy board 
@@ -76,10 +78,20 @@ let places (board: Board) =
                 yield (new Point(x, y), item)
     }
 
+let monsterPlaces (board: Board) = 
+    let tempSeq = seq {
+        for x = 0 to boardWidth - 1 do
+            for y = 0 to boardHeight - 1 do
+                let item = Array2D.get board x y
+                if (item.Character.IsSome && item.Character.Value.Type = CharacterType.Monster) then
+                    yield (new Point(x, y), item)
+    }
+    Seq.toList tempSeq
+
 let getPlayerPosition (board: Board) = 
     let preResult = Seq.tryFind (fun (point, place) -> 
         match place.Character with 
-        | Some(character1) -> character1 = {Type = Avatar}
+        | Some(character1) -> character1 = {Type = Avatar; Monster = Option.None}
         | _ -> false) (places board)
     let point, _ = preResult.Value
     point
