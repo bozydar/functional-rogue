@@ -25,7 +25,24 @@ let evaluateBoardFramePosition state =
         point x y                
     { state with BoardFramePosition = preResult }
 
-let mainLoop() =
+let showEquipment () =
+    let refreshScreen = 
+        let items = (State.get ()).Player.Items
+        Screen.showEquipmentItemDialog {Items = items; CanSelect = false}
+
+    let rec loop () =
+        let key = System.Console.ReadKey(true).Key        
+        match key with 
+        | ConsoleKey.Escape -> ()
+        | _ -> 
+            refreshScreen
+            // proof of concept for passage of time for non-board actions
+            Turn.elapse 0.4M Command.Wait
+            loop ()
+    refreshScreen
+    loop ()
+
+let mainLoop () =
     let rec loop printAll =                
         let nextTurn command =             
             Turn.next command
@@ -63,7 +80,8 @@ let mainLoop() =
             showChooseItemDialog {Items = (State.get ()).Player.Items; CanSelect = false; Filter = (fun x -> true)} |> ignore
             loop false
         | ShowEquipment ->
-            showEquipmentItemDialog {Items = (State.get ()).Player.Items; CanSelect = false} |> ignore
+            showEquipment ()
+            Screen.showBoard ()
             loop false
         | ShowMessages ->
             Screen.showMessages ()
