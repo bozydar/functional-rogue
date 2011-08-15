@@ -3,6 +3,7 @@
 open System.Drawing
 open Board
 open Items
+open Monsters
 
 
 // level generation utilities
@@ -131,6 +132,22 @@ type DisjointLocationSet (board: Board, basicTile:Tile) =
                         digTunnel board x y targetx targety i
                     tmpBoard <- connectPointToSection tmpBoard x y (theLargestSectionIndex + 1)
             tmpBoard
+
+// monsters related code
+
+let putRandomMonstersOnBoard (board:Board) =
+    let rec findEmptySpotsAndPutMonsters n (board: Board) =
+        match n with
+        | 0 -> board
+        | _ ->
+            let x = rnd boardWidth
+            let y = rnd boardHeight
+            if((isObstacle board (Point (x,y)))) then
+                findEmptySpotsAndPutMonsters n board
+            else
+                findEmptySpotsAndPutMonsters (n-1) (board |> Board.moveCharacter { Type = CharacterType.Monster; Monster =  Some(createNewMonster(MonsterType.Rat)) } (new Point(x, y)))
+    findEmptySpotsAndPutMonsters 10 board
+
 
 // test code
 
@@ -332,6 +349,7 @@ let generateCave: Board =
     sections.ConnectUnconnected
     //|> addGold
     |> addItems
+    |> putRandomMonstersOnBoard
 
 // jungle/forest generation
 
@@ -352,4 +370,4 @@ let generateLevel levelType : Board =
     | LevelType.Dungeon -> generateDungeon// generateBSPDungeon //generateDungeon
     | LevelType.Cave -> generateCave
     | LevelType.Forest -> generateForest
-    | _ -> failwith "unknown level type"
+

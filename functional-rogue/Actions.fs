@@ -50,11 +50,11 @@ let moveCharacter command state =
     let newPosition = playerPosition + move
     let newPlace = get board newPosition
     
-    let preResult = 
-        match newPlace.Tile with 
-        | Wall | ClosedDoor | Tree -> board
-        | _ ->         
-            board |> moveCharacter {Type = Avatar} newPosition
+    let preResult =
+        if (isObstacle board newPosition) then
+            board
+        else
+            board |> moveCharacter {Type = Avatar; Monster = Option.None} newPosition
     {state with Board = preResult}
 
 let operateDoor command board =
