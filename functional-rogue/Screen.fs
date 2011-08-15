@@ -12,7 +12,7 @@ type ScreenAgentMessage =
     | ShowBoard of State
     | ShowMainMenu of AsyncReplyChannel<MainMenuReply>
     | ShowChooseItemDialog of ChooseItemDialogRequest * AsyncReplyChannel<ChooseItemDialogReply>
-    | ShowEquipmentDialog of ChooseEquipmentDialogRequest * AsyncReplyChannel<ChooseEquipmentDialogReply>
+    | ShowEquipmentDialog of ChooseEquipmentDialogRequest
     | ShowMessages of State
 and MainMenuReply = {
     Name: String
@@ -25,9 +25,6 @@ and ChooseItemDialogRequest = {
     CanSelect: bool
     Filter: Item->bool
 }
-and ChooseEquipmentDialogReply = {
-    Selected: list<Item>
-} 
 and ChooseEquipmentDialogRequest = {
     Items: list<Item>
     CanSelect: bool
@@ -58,7 +55,7 @@ let private screenWritter () =
                     | Some(character1) -> 
                         match character1.Type with
                         | Avatar -> {Char = '@'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
-                        | Monster -> {Char = 's'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Red}
+                        | Monster -> {Char = character1.Monster.Value.Appearance; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Red}
                         | NPC -> {Char = 'P'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.White}
                     | _ -> 
                         match item.Items with
@@ -204,18 +201,14 @@ let private screenWritter () =
                     |> cleanScreen
                     |> listAllItems request.Items
                 refreshScreen screen newScreen
-                //let key = Console.ReadKey()
-                reply.Reply({Selected = [request.Items.[0]]})
                 return! loop newScreen
-            | ShowEquipmentDialog(request, reply) ->                
+            | ShowEquipmentDialog(request) ->                
                 let newScreen =
                     screen
                     |> Array2D.copy
                     |> cleanScreen
                     |> listWornItems
                 refreshScreen screen newScreen
-                //let key = Console.ReadKey()
-                reply.Reply({Selected = [request.Items.[0]]})
                 return! loop newScreen
         }
         loop <| Array2D.create screenSize.Width screenSize.Height empty
@@ -226,5 +219,5 @@ let private agent = screenWritter ()
 let showBoard () = agent.Post (ShowBoard(State.get ()))
 let showMainMenu () = agent.PostAndReply(fun reply -> ShowMainMenu(reply))
 let showChooseItemDialog items = agent.PostAndReply(fun reply -> ShowChooseItemDialog(items, reply))
-let showEquipmentItemDialog items = agent.PostAndReply(fun reply -> ShowEquipmentDialog(items, reply))
+let showEquipmentItemDialog items = agent.Post(ShowEquipmentDialog(items))
 let showMessages () = agent.Post (ShowMessages(State.get ()))

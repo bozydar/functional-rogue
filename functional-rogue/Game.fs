@@ -11,6 +11,9 @@ open Sight
 open Items
 open Actions
 open Player
+open Monsters
+open AI
+open Turn
 
 
 let evaluateBoardFramePosition state = 
@@ -22,18 +25,27 @@ let evaluateBoardFramePosition state =
         point x y                
     { state with BoardFramePosition = preResult }
 
-let mainLoop() =
+let showEquipment () =
+    let refreshScreen = 
+        let items = (State.get ()).Player.Items
+        Screen.showEquipmentItemDialog {Items = items; CanSelect = false}
+
+    let rec loop () =
+        let key = System.Console.ReadKey(true).Key        
+        match key with 
+        | ConsoleKey.Escape -> ()
+        | _ -> 
+            refreshScreen
+            // proof of concept for passage of time for non-board actions
+            Turn.elapse 0.4M Command.Wait
+            loop ()
+    refreshScreen
+    loop ()
+
+let mainLoop () =
     let rec loop printAll =                
         let nextTurn command =             
-            let state = 
-                State.get ()
-                |> moveCharacter command
-                |> performCloseOpenAction command
-                |> performTakeAction command
-                |> setVisibilityStates
-                |> evaluateBoardFramePosition
-                                    
-            State.set {state with TurnNumber = state.TurnNumber + 1}
+            Turn.next command
             Screen.showBoard ()
 
         let key = if printAll then ConsoleKey.W else System.Console.ReadKey(true).Key
@@ -68,7 +80,8 @@ let mainLoop() =
             showChooseItemDialog {Items = (State.get ()).Player.Items; CanSelect = false; Filter = (fun x -> true)} |> ignore
             loop false
         | ShowEquipment ->
-            showEquipmentItemDialog {Items = (State.get ()).Player.Items; CanSelect = false} |> ignore
+            showEquipment ()
+            Screen.showBoard ()
             loop false
         | ShowMessages ->
             Screen.showMessages ()
@@ -76,7 +89,7 @@ let mainLoop() =
 
     let board = 
         generateLevel LevelType.Cave
-        |> Board.moveCharacter {Type = CharacterType.Avatar} (new Point(8, 4))
+        |> Board.moveCharacter {Type = CharacterType.Avatar; Monster = Option.None} (new Point(8, 4))
 
     let mainMenuReply = showMainMenu ()
     let entryState = {         
@@ -84,7 +97,8 @@ let mainLoop() =
         BoardFramePosition = point 0 0;
         Player = { Name = mainMenuReply.Name; HP = 5; MaxHP = 10; Magic = 5; MaxMagic = 10; Gold = 0; SightRadius = 10; Items = []; WornItems = { Head = 0; InLeftHand = 0; InRightHand = 0} };
         TurnNumber = 0;
-        UserMessages = []
+        UserMessages = [];
+        Monsters = []
     }
     State.set entryState
     loop true      
