@@ -13,6 +13,7 @@ open Actions
 open Player
 open Monsters
 open AI
+open Turn
 
 
 let evaluateBoardFramePosition state = 
@@ -27,16 +28,7 @@ let evaluateBoardFramePosition state =
 let mainLoop() =
     let rec loop printAll =                
         let nextTurn command =             
-            let state = 
-                State.get ()
-                |> moveCharacter command
-                |> handleMonsters
-                |> performCloseOpenAction command
-                |> performTakeAction command
-                |> setVisibilityStates
-                |> evaluateBoardFramePosition
-                                    
-            State.set {state with TurnNumber = state.TurnNumber + 1}
+            Turn.next command
             Screen.showBoard ()
 
         let key = if printAll then ConsoleKey.W else System.Console.ReadKey(true).Key
