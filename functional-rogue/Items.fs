@@ -1,6 +1,6 @@
 ﻿module Items
 
-type Item = {
+type Item = {    
     Id : int;
     Name : string;
     Wearing : Wearing
@@ -20,9 +20,9 @@ and Type =
     | Hat
 
 let itemShortDescription item =
-    let type' = repr item.Type
     let rest = 
-        if not item.Offence.IsZero then sprintf "Offence: %s " (item.Offence.ToString()) else ""  
+        item.Name + " - "
+        + if not item.Offence.IsZero then sprintf "Offence: %s " (item.Offence.ToString()) else ""  
         + if not item.Defence.IsZero  then sprintf "Defence: %s " (item.Defence.ToString()) else ""
     rest
     

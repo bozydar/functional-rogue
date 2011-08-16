@@ -226,7 +226,8 @@ let generateTest: Board =
         | item::t -> addRooms t <| (item :> IModifier).Modify board 
     addRooms rooms board
     //|> addGold
-    //|> addItems
+    |> addItems
+    |> putRandomMonstersOnBoard
 
 // dungeon generation section
 
