@@ -11,7 +11,7 @@ type Tile =
     | Wall 
     | Floor
     | Avatar
-    | None
+    | Empty
     | OpenDoor
     | ClosedDoor
     | Grass
@@ -44,7 +44,7 @@ type Place = {
     WasSeen: bool;
 } with
     static member EmptyPlace = 
-            {Tile = Tile.None; Items = []; Character = Option.None; IsSeen = false; WasSeen = Settings.EntireLevelSeen; }
+            {Tile = Tile.Empty; Items = []; Character = Option.None; IsSeen = false; WasSeen = Settings.EntireLevelSeen; }
     static member Wall = 
             {Tile = Tile.Wall; Items = []; Character = Option.None; IsSeen = false; WasSeen = Settings.EntireLevelSeen; }
 
