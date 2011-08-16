@@ -11,7 +11,7 @@ open Player
 type ScreenAgentMessage =
     | ShowBoard of State
     | ShowMainMenu of AsyncReplyChannel<MainMenuReply>
-    | ShowChooseItemDialog of ChooseItemDialogRequest * AsyncReplyChannel<ChooseItemDialogReply>
+    | ShowChooseItemDialog of ChooseItemDialogRequest
     | ShowEquipmentDialog of ChooseEquipmentDialogRequest
     | ShowMessages of State
 and MainMenuReply = {
@@ -23,7 +23,6 @@ and ChooseItemDialogReply = {
 and ChooseItemDialogRequest = {
     Items: list<Item>
     CanSelect: bool
-    Filter: Item->bool
 }
 and ChooseEquipmentDialogRequest = {
     Items: list<Item>
@@ -199,7 +198,7 @@ let private screenWritter () =
                 let name = Console.ReadLine()
                 reply.Reply({Name = name})
                 return! loop newScreen  
-            | ShowChooseItemDialog(request, reply) ->                
+            | ShowChooseItemDialog(request) ->                
                 let newScreen =
                     screen
                     |> Array2D.copy
@@ -223,6 +222,6 @@ let private screenWritter () =
 let private agent = screenWritter ()
 let showBoard () = agent.Post (ShowBoard(State.get ()))
 let showMainMenu () = agent.PostAndReply(fun reply -> ShowMainMenu(reply))
-let showChooseItemDialog items = agent.PostAndReply(fun reply -> ShowChooseItemDialog(items, reply))
+let showChooseItemDialog items = agent.Post(ShowChooseItemDialog(items))
 let showEquipmentItemDialog items = agent.Post(ShowEquipmentDialog(items))
 let showMessages () = agent.Post (ShowMessages(State.get ()))

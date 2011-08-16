@@ -42,6 +42,21 @@ let showEquipment () =
     refreshScreen
     loop ()
 
+let showItems () =
+    let refreshScreen = 
+        let items = (State.get ()).Player.Items
+        Screen.showChooseItemDialog {Items = items; CanSelect = false}
+
+    let rec loop () =
+        let key = System.Console.ReadKey(true).Key        
+        match key with 
+        | ConsoleKey.Escape -> ()
+        | _ -> 
+            refreshScreen            
+            loop ()
+    refreshScreen
+    loop ()
+
 let mainLoop () =
     let rec loop printAll =                
         let nextTurn command =             
@@ -77,7 +92,8 @@ let mainLoop () =
             (nextTurn command)                
             loop false
         | ShowItems ->
-            showChooseItemDialog {Items = (State.get ()).Player.Items; CanSelect = false; Filter = (fun x -> true)} |> ignore
+            showItems ()
+            Screen.showBoard ()
             loop false
         | ShowEquipment ->
             showEquipment ()
@@ -88,7 +104,7 @@ let mainLoop () =
             loop false
 
     let board = 
-        generateLevel LevelType.Cave
+        generateLevel LevelType.Test
         |> Board.moveCharacter {Type = CharacterType.Avatar; Monster = Option.None} (new Point(8, 4))
 
     let mainMenuReply = showMainMenu ()
