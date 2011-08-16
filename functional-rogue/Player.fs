@@ -3,10 +3,12 @@
 open Items
 
 type WornItems = {
-    Head : int;
-    InLeftHand : int;
-    InRightHand : int
-}
+    Head : option<Item>;
+    LeftHand : option<Item>;
+    RightHand : option<Item>;
+    Torso : option<Item>;
+    Legs : option<Item>
+} 
 
 type Player = {
     Name: string;
