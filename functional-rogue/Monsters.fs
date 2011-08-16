@@ -11,6 +11,10 @@ type Monster (monsterType: MonsterType) =
     let getMonsterAppearance =
         match monsterType with
         | Rat -> 'r'
+    
+    let getMonsterSightRadius =
+        match monsterType with
+        | Rat -> 2
 
     member this.Type
         with get() = monsterType
@@ -20,7 +24,9 @@ type Monster (monsterType: MonsterType) =
 
     member this.Appearance
         with get() = getMonsterAppearance
-
+    
+    member this.SightRadius
+        with get() = getMonsterSightRadius
 
 let createNewMonster (monsterType: MonsterType) : Monster =
     match monsterType with
