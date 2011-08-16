@@ -137,10 +137,15 @@ let private screenWritter () =
         screen |>> writeProperties
 
     let listWornItems screen =
+        let writeIfExisits (item : option<Item>) = 
+            if item.IsSome then itemShortDescription (item.Value) else ""
+
         let writeProperties (allItems : Item list) (wornItems : WornItems) = [
-            (writeString (new Point(1,0)) (sprintf "%c: Head - %s" (letterByInt (1)) (if(wornItems.Head = 0) then "" else "kaka")))
-            ;(writeString (new Point(1,1)) (sprintf "%c: In Left Hand - %s" (letterByInt (2)) (if(wornItems.InLeftHand = 0) then "" else itemShortDescription (List.find<Item> (fun x -> x.Id = wornItems.InLeftHand) allItems) )))
-            ;(writeString (new Point(1,2)) (sprintf "%c: In Right Hand - %s" (letterByInt (3)) (if(wornItems.InRightHand = 0) then "" else itemShortDescription (List.find<Item> (fun x -> x.Id = wornItems.InRightHand) allItems) )))
+            (writeString (new Point(1,0)) (sprintf "%c: Head - %s" (letterByInt (1)) (writeIfExisits wornItems.Head )));
+            (writeString (new Point(1,1)) (sprintf "%c: In Left Hand - %s" (letterByInt (2)) (writeIfExisits wornItems.LeftHand )));
+            (writeString (new Point(1,2)) (sprintf "%c: In Right Hand - %s" (letterByInt (3)) (writeIfExisits wornItems.RightHand )));
+            (writeString (new Point(1,3)) (sprintf "%c: On Torso - %s" (letterByInt (4)) (writeIfExisits wornItems.Torso )));
+            (writeString (new Point(1,4)) (sprintf "%c: On Legs - %s" (letterByInt (5)) (writeIfExisits wornItems.Legs )));
         ]
 
         let currentState = State.get ()
