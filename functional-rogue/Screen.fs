@@ -11,7 +11,7 @@ open Player
 type ScreenAgentMessage =
     | ShowBoard of State
     | ShowMainMenu of AsyncReplyChannel<MainMenuReply>
-    | ShowChooseItemDialog of ChooseItemDialogRequest
+    | ShowChooseItemDialog of Player
     | ShowEquipmentDialog of ChooseEquipmentDialogRequest
     | ShowMessages of State
 and MainMenuReply = {
@@ -125,13 +125,14 @@ let private screenWritter () =
             | [] -> screen
         writeMessagesRecursively state.UserMessages screen 0
             
-    let listAllItems (items : Item list) screen = 
+    let listAllItems (items : Item list) (shortCuts : Map<char, Item>) screen = 
         //let plainItems = items |> Seq.choose (function | Gold(_) -> Option.None | Plain(_, itemProperties) -> Some itemProperties)
         
         let writeProperties = seq {
             for i, item in Seq.mapi (fun i item -> i, item) items do
                 let pos = point 1 i                
-                yield writeString pos (sprintf "%c: %s" (letterByInt (i + 1)) (itemShortDescription item))
+                let char = match findShortCut shortCuts item with Some(value) -> value.ToString() | _ -> ""                
+                yield writeString pos (sprintf "%s (id=%d): %s" char item.Id (itemShortDescription item))
         }
         screen |>> writeProperties
 
@@ -198,12 +199,12 @@ let private screenWritter () =
                 let name = Console.ReadLine()
                 reply.Reply({Name = name})
                 return! loop newScreen  
-            | ShowChooseItemDialog(request) ->                
+            | ShowChooseItemDialog(player) ->                
                 let newScreen =
                     screen
                     |> Array2D.copy
                     |> cleanScreen
-                    |> listAllItems request.Items
+                    |> listAllItems player.Items player.ShortCuts
                 refreshScreen screen newScreen
                 return! loop newScreen
             | ShowEquipmentDialog(request) ->                
