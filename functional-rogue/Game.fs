@@ -44,8 +44,8 @@ let showEquipment () =
 
 let showItems () =
     let refreshScreen = 
-        let items = (State.get ()).Player.Items
-        Screen.showChooseItemDialog {Items = items; CanSelect = false}
+        let player = (State.get ()).Player
+        Screen.showChooseItemDialog player
 
     let rec loop () =
         let key = System.Console.ReadKey(true).Key        
@@ -59,10 +59,6 @@ let showItems () =
 
 let mainLoop () =
     let rec loop printAll =                
-        let nextTurn command =             
-            Turn.next command
-            Screen.showBoard ()
-
         let key = if printAll then ConsoleKey.W else System.Console.ReadKey(true).Key
         
         let command = 
@@ -89,7 +85,8 @@ let mainLoop () =
         | Quit -> ()
         | Unknown -> loop false
         | Up | Down | Left | Right | UpLeft | UpRight | DownLeft | DownRight | Wait | Take | OpenDoor | CloseDoor -> 
-            (nextTurn command)                
+            Turn.next command     
+            Screen.showBoard ()
             loop false
         | ShowItems ->
             showItems ()
@@ -111,7 +108,17 @@ let mainLoop () =
     let entryState = {         
         Board = board; 
         BoardFramePosition = point 0 0;
-        Player = { Name = mainMenuReply.Name; HP = 5; MaxHP = 10; Magic = 5; MaxMagic = 10; Gold = 0; SightRadius = 10; Items = []; WornItems = { Head = None; LeftHand = None; RightHand = None; Torso = None; Legs = None} };
+        Player = { 
+                    Name = mainMenuReply.Name; 
+                    HP = 5; MaxHP = 10; 
+                    Magic = 5; 
+                    MaxMagic = 10; 
+                    Gold = 0; 
+                    SightRadius = 10; 
+                    Items = []; 
+                    WornItems = { Head = None; LeftHand = None; RightHand = None; Torso = None; Legs = None} 
+                    ShortCuts = Map<char, Item> []
+                 };
         TurnNumber = 0;
         UserMessages = [];
         Monsters = []

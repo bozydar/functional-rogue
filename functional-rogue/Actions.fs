@@ -9,6 +9,7 @@ open LevelGeneration
 open Screen
 open Sight
 open Items
+open Player
 
 type Command = 
     | Up
@@ -82,10 +83,9 @@ let performTakeAction command state =
             state.Board
             |> set playerPosition {place with Items = []}
         let state1 = 
-            let extractGold items = 0
-                //Seq.sumBy (function | Gold(value) -> value | _ -> 0) items
-            let gold = state.Player.Gold + extractGold takenItems
-            { state with Player = { state.Player with Items =  takenItems @ state.Player.Items; Gold = gold}}
+            let shortCuts = createShortCuts state.Player.ShortCuts takenItems
+            
+            { state with Player = { state.Player with Items =  takenItems @ state.Player.Items; ShortCuts = shortCuts }}
             |> addMessages pickUpMessages
 
         {state1 with Board = board1}
