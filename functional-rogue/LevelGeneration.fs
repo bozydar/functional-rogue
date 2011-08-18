@@ -205,17 +205,17 @@ let addItems board =
     // apply all modification functions on board
     board |>> modifiers
 
-//let addGold board = 
-//    let modifiers = seq {
-//        for i in 0..20 do
-//            let posX = rnd boardWidth
-//            let posY = rnd boardHeight
-//            let value = rnd2 1 10
-//            yield (fun board -> 
-//                Board.modify (point posX posY) (fun place -> 
-//                    {place with Items = Gold(value) :: place.Items} ) board)
-//    }
-//    board |>> modifiers
+let addOre board = 
+    let modifiers = seq {
+        for i in 0..20 do
+            let posX = rnd boardWidth
+            let posY = rnd boardHeight
+            let value = rnd2 1 10
+            yield (fun board -> 
+                Board.modify (point posX posY) (fun place -> 
+                    {place with Ore = Uranium(value)} ) board)
+    }
+    board |>> modifiers
 
 let generateTest: Board = 
     let mutable board = Array2D.create boardWidth boardHeight {Place.EmptyPlace with Tile = Tile.Floor}
@@ -225,7 +225,7 @@ let generateTest: Board =
         | [] -> board
         | item::t -> addRooms t <| (item :> IModifier).Modify board 
     addRooms rooms board
-    //|> addGold
+    |> addOre
     |> addItems
     |> putRandomMonstersOnBoard
 
