@@ -2,19 +2,27 @@
 
 type MonsterType =
     | Rat
+    | Lurker
 
-    
+type MonsterState =
+    | Lurking
+    | Hunting
+    | Default   
 
 type Monster (monsterType: MonsterType) =
     let guid = System.Guid.NewGuid
 
+    let mutable state = MonsterState.Default
+
     let getMonsterAppearance =
         match monsterType with
         | Rat -> 'r'
+        | Lurker -> 'l'
     
     let getMonsterSightRadius =
         match monsterType with
         | Rat -> 2
+        | Lurker -> 5
 
     member this.Type
         with get() = monsterType
@@ -28,6 +36,11 @@ type Monster (monsterType: MonsterType) =
     member this.SightRadius
         with get() = getMonsterSightRadius
 
+    member this.State
+        with get() = state
+        and set(value) = state <- value
+
 let createNewMonster (monsterType: MonsterType) : Monster =
     match monsterType with
     | Rat -> new Monster(Rat)
+    | Lurker -> new Monster(Lurker)

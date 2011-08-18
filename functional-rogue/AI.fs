@@ -14,6 +14,8 @@ type GridPoint = {
         mutable fScore : int
     }
 
+// tools
+
 let aStar (startPoint: Point) (endPoint: Point) (board: Board) : (Point list) =
 
     let listContains (point: Point) (lst: GridPoint list) : bool =
@@ -59,6 +61,13 @@ let aStar (startPoint: Point) (endPoint: Point) (board: Board) : (Point list) =
                             openSet.[elementIndex].fScore <- (tentativeGScore + (estimateCostToEnd (Point(x,y)) endPoint))
     resultList
 
+let goTowards (monsterPlace: (Point*Place)) (targetLocation: Point) (state:State) : State =
+    let movementSteps = aStar (fst monsterPlace) targetLocation state.Board
+    if(movementSteps.Length > 1) then
+        { state with Board = state.Board |> Board.moveCharacter (snd monsterPlace).Character.Value movementSteps.Tail.Head }
+    else
+        state
+
 let performRandomMovement (monsterPlace: (Point*Place)) (state:State) : State =
     let mutable possibleNewLocations = []
     let x = (fst monsterPlace).X
@@ -86,31 +95,55 @@ let getDifferentSpeciesTheMonsterCanSee (monsterPlace: (Point*Place)) (state:Sta
                 result <- result @ [Point(x,y)]
     result
 
-let aiCowardMonster (monsterPlace: (Point*Place)) (state:State) : State =
-    let rec calculateDangerScore (place: Point) (enemies: Point list) =
+let rec calculateDangerScore (place: Point) (enemies: Point list) =
         match enemies with
         | head :: tail -> 10 - (max (abs (head.X - place.X)) (abs (head.Y - place.Y))) + calculateDangerScore place tail
         | [] -> 0
 
-    let getSpotsWithDangerScore (enemies: Point list) (monsterPlace: Point) (state: State) =
-        let mutable spots = []
-        for x in ((monsterPlace).X - 1)..((monsterPlace).X + 1) do
-            for y in ((monsterPlace).Y - 1)..((monsterPlace).Y + 1) do
-                if not(isObstacle state.Board (Point(x,y))) then
-                    spots <- spots @ [(Point(x,y),(calculateDangerScore (Point(x,y)) enemies))]
-        spots
+let getSpotsWithDangerScore (enemies: Point list) (monsterPlace: Point) (state: State) =
+    let mutable spots = []
+    for x in ((monsterPlace).X - 1)..((monsterPlace).X + 1) do
+        for y in ((monsterPlace).Y - 1)..((monsterPlace).Y + 1) do
+            if not(isObstacle state.Board (Point(x,y))) then
+                spots <- spots @ [(Point(x,y),(calculateDangerScore (Point(x,y)) enemies))]
+    spots
 
+// specific monster AIs
+
+let aiCowardMonster (monsterPlace: (Point*Place)) (state:State) : State =
     let differentSpecies = getDifferentSpeciesTheMonsterCanSee monsterPlace state
     if (differentSpecies.Length > 0) then
-        let sortedSpotsWithDangerScore = List.sortBy (fun element -> snd element) (getSpotsWithDangerScore differentSpecies (fst monsterPlace) state)
-        let resultState = { state with Board = state.Board |> Board.moveCharacter (snd monsterPlace).Character.Value (fst (sortedSpotsWithDangerScore.Head)) }
+        let sortedSpotsWithDistanceScore = List.sortBy (fun element -> -(snd element)) (getSpotsWithDangerScore differentSpecies (fst monsterPlace) state)
+        let resultState = { state with Board = state.Board |> Board.moveCharacter (snd monsterPlace).Character.Value (fst (sortedSpotsWithDistanceScore.Head)) }
         resultState
     else
         performRandomMovement monsterPlace state
 
+let aiLurkerPredatorMonster (monsterPlace: (Point*Place)) (state:State) : State =
+    let monster = (snd monsterPlace).Character.Value
+    let monsterPoint = fst monsterPlace
+    if (monster.Monster.Value.State = MonsterState.Default) then monster.Monster.Value.State <- MonsterState.Lurking
+    match monster.Monster.Value.State with
+    | MonsterState.Default | MonsterState.Lurking ->
+        monster.Monster.Value.State <- MonsterState.Hunting
+        { state with Board = state.Board |> Board.updateCharacter (snd monsterPlace).Character.Value monster}
+        //state
+    | MonsterState.Hunting ->
+        let differentSpecies = getDifferentSpeciesTheMonsterCanSee monsterPlace state
+        let differentSpeciesWithDistance = differentSpecies |> List.map<Point,(Point*int)> (fun v -> (v,max (abs (monsterPoint.X - v.X)) (abs (monsterPoint.Y - v.Y))) )
+        let sortedDiffSpeciesWithDist = List.sortBy (fun element -> (snd element)) differentSpeciesWithDistance
+        if (sortedDiffSpeciesWithDist.Length > 0) then
+            { state with Board = state.Board |> Board.updateCharacter (snd monsterPlace).Character.Value monster}
+            |> goTowards monsterPlace (fst (sortedDiffSpeciesWithDist.Head))
+        else
+            state
+
+// some top level functions
+
 let handleSingleMonster (monsterPlace: (Point*Place)) (state:State) : State =
     match (snd monsterPlace).Character.Value.Monster.Value.Type with
     | Rat -> aiCowardMonster monsterPlace state
+    | Lurker -> aiLurkerPredatorMonster monsterPlace state
 
 let handleMonsters (state: State) : State =
     let rec recursivelyHandleMonstersSequence (monsterPlaces: (Point*Place) list) (state:State) : State =

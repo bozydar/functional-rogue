@@ -111,6 +111,18 @@ let moveCharacter (character: Character) (newPosition: Point) (board: Board) =
         board
         |> modify newPosition (fun place -> {place with Character = Some character })
 
+let updateCharacter (character: Character) (newCharacter: Character) (board: Board) =
+    let allBoardPlaces = places board
+    match Seq.tryFind (fun (_, place) -> 
+        match place.Character with 
+        | Some(character1) -> character1 = character
+        | _ -> false) allBoardPlaces with        
+    | Some((oldPosition, oldPlace)) ->           
+        board
+        |> modify oldPosition (fun place -> { place with Character = Some newCharacter }) 
+    | _ ->
+        board
+
 let emptyBoard : Board = Array2D.create boardWidth boardHeight Place.EmptyPlace
 
 type IModifier =
