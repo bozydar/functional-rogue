@@ -10,7 +10,6 @@ open Monsters
 type Tile =
     | Wall 
     | Floor
-    | Avatar
     | Empty
     | OpenDoor
     | ClosedDoor
