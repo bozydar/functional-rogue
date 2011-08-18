@@ -114,8 +114,10 @@ let private screenWritter () =
         |> writeString leftPanelPos.Location (sprintf "HP: %d/%d" state.Player.HP state.Player.MaxHP)
         |> writeString (point leftPanelPos.Location.X (leftPanelPos.Location.Y + 1)) (sprintf "%s the rogue" state.Player.Name)
         |> writeString (point leftPanelPos.Location.X (leftPanelPos.Location.Y + 2)) (sprintf "Ma: %d/%d" state.Player.HP state.Player.MaxHP)
-        |> writeString (point leftPanelPos.Location.X (leftPanelPos.Location.Y + 3)) (sprintf "Gold: %d" state.Player.Gold)
-        |> writeString (point leftPanelPos.Location.X (leftPanelPos.Location.Y + 4)) (sprintf "Turn: %d" state.TurnNumber)
+        |> writeString (point leftPanelPos.Location.X (leftPanelPos.Location.Y + 3)) (sprintf "Iron: %d" state.Player.Iron)
+        |> writeString (point leftPanelPos.Location.X (leftPanelPos.Location.Y + 4)) (sprintf "Gold: %d" state.Player.Gold)
+        |> writeString (point leftPanelPos.Location.X (leftPanelPos.Location.Y + 5)) (sprintf "Uranium: %d" state.Player.Uranium)
+        |> writeString (point leftPanelPos.Location.X (leftPanelPos.Location.Y + 6)) (sprintf "Turn: %d" state.TurnNumber)
 
     let writeMessage state screen =
         if( state.UserMessages.Length > 0 && (fst (state.UserMessages.Head)) = state.TurnNumber - 1) then

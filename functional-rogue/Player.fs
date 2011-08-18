@@ -18,7 +18,9 @@ type Player = {
     MaxHP : int;
     Magic : int;  // magic
     MaxMagic : int;
+    Iron : int
     Gold : int // gold
+    Uranium : int
     SightRadius : int // sigh radius
     Items : list<Item>
     ShortCuts : Map<char, Item> // keys (chars) to access items
