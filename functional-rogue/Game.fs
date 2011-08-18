@@ -79,12 +79,13 @@ let mainLoop () =
             | ConsoleKey.C -> CloseDoor
             | ConsoleKey.E -> ShowEquipment
             | ConsoleKey.M -> ShowMessages
+            | ConsoleKey.H -> Harvest
             | _ -> Unknown                        
         
         match command with
         | Quit -> ()
         | Unknown -> loop false
-        | Up | Down | Left | Right | UpLeft | UpRight | DownLeft | DownRight | Wait | Take | OpenDoor | CloseDoor -> 
+        | Up | Down | Left | Right | UpLeft | UpRight | DownLeft | DownRight | Wait | Take | OpenDoor | CloseDoor | Harvest -> 
             Turn.next command     
             Screen.showBoard ()
             loop false
@@ -114,6 +115,8 @@ let mainLoop () =
                     Magic = 5; 
                     MaxMagic = 10; 
                     Gold = 0; 
+                    Iron = 0;
+                    Uranium = 0;
                     SightRadius = 10; 
                     Items = []; 
                     WornItems = { Head = None; LeftHand = None; RightHand = None; Torso = None; Legs = None} 

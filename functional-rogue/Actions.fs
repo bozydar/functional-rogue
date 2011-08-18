@@ -29,6 +29,7 @@ type Command =
     | CloseDoor
     | ShowEquipment
     | ShowMessages
+    | Harvest
 
 
 let private commandToSize command = 
@@ -73,9 +74,9 @@ let performCloseOpenAction command state =
     | OpenDoor | CloseDoor -> { state with Board = operateDoor command state.Board }
     | _ -> state
 
-let performTakeAction command state = 
-    let playerPosition = getPlayerPosition state.Board
+let performTakeAction command state =     
     if command = Take then
+        let playerPosition = getPlayerPosition state.Board
         let place = get state.Board playerPosition
         let takenItems = place.Items
         let pickUpMessages = List.map (fun i -> (sprintf "You have picked up an item: %s" (itemShortDescription i))) takenItems
@@ -89,5 +90,28 @@ let performTakeAction command state =
             |> addMessages pickUpMessages
 
         {state1 with Board = board1}
+    else
+        state
+
+let performHarvest command state = 
+    if command = Harvest then
+        let playerPosition = getPlayerPosition state.Board
+        let place = get state.Board playerPosition
+        let takenOre = place.Ore
+        let player1 = 
+            match takenOre with
+            | Iron(quantity) -> {state.Player with Iron = state.Player.Iron + quantity}
+            | Gold(quantity) -> {state.Player with Gold = state.Player.Gold + quantity}
+            | Uranium(quantity) -> {state.Player with Uranium = state.Player.Uranium + quantity}
+            | _ -> state.Player
+        match takenOre with
+            | Iron(quantity) | Gold(quantity) | Uranium(quantity) ->
+                let pickUpMessage = sprintf "You have harvested ore %s. Quantity: %i" (repr takenOre) quantity
+                let board1 = 
+                    state.Board
+                    |> set playerPosition {place with Ore = NoneOre}
+                {state with Board = board1; Player = player1} |> addMessage pickUpMessage                
+            | NoneOre -> 
+                state
     else
         state
