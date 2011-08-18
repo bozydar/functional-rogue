@@ -80,18 +80,18 @@ type DisjointLocationSet (board: Board, basicTile:Tile) =
         with get() = current
 
      member this.ConnectUnconnected : Board =
-            let rec searchForMainSectionPiont (board: Board) x y i depth =
-                match depth with
-                | 0 -> if (flags.[x,y] = i) then (x,y) else (-1,-1)
-                | _ ->
-                    let mutable result = (-1,-1)
-                    for searchx in (max (x - 1) 0) .. (min (x + 1) ((Array2D.length1 board) - 1)) do
-                        for searchy in (max (y - 1) 0) .. (min (y + 1) ((Array2D.length2 board) - 1)) do
-                            if (not(searchx = x && searchy = y)) then
-                                let tmpResult = searchForMainSectionPiont board searchx searchy i (depth - 1)
-                                if (tmpResult <> (-1,-1)) then
-                                    result <- tmpResult
-                    result
+            let searchForMainSectionPiont (board: Board) x y i depth =
+                let mutable result = (-1,-1)
+                let minX = max (x - depth) 0
+                let maxX = (min (x + depth) ((Array2D.length1 board) - 1))
+                let minY = max (y - depth) 0
+                let maxY = (min (y + depth) ((Array2D.length2 board) - 1))
+                for searchx in minX .. maxX do
+                    for searchy in minY .. maxY do
+                        if (searchx = minX || searchx = maxX) || (searchy = minY || searchy = maxY) then
+                            if (flags.[searchx,searchy] = i) then
+                                result <- (searchx,searchy)
+                result
 
             let rec searchForClosestMainSectionPoint (board: Board) x y i trial=
                 let mutable result = (-1,-1)
