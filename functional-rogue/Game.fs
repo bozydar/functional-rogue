@@ -42,6 +42,22 @@ let showEquipment () =
     refreshScreen
     loop ()
 
+let showItems () =
+    let refreshScreen = 
+        let player = (State.get ()).Player
+        Screen.showChooseItemDialog player
+
+    let rec loop () =
+        let key = System.Console.ReadKey(true).Key        
+        match key with 
+        | ConsoleKey.Escape -> ()
+        | _ -> 
+            refreshScreen            
+            loop ()
+    refreshScreen
+    loop ()
+
+
 let mainLoop () =
     let rec loop printAll =                
         let nextTurn command =             
@@ -103,7 +119,7 @@ let mainLoop () =
             Screen.showBoard ()
             loop false
         | ShowItems ->
-            showChooseItemDialog  |> ignore
+            showItems ()
             Screen.showBoard ()
             loop false
         | ShowEquipment ->
