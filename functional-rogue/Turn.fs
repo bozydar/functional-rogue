@@ -45,6 +45,7 @@ let private turnAgent () =
                         |> handleMonsters
                         |> performCloseOpenAction command
                         |> performTakeAction command
+                        |> performHarvest command
                         |> setVisibilityStates
                         |> evaluateBoardFramePosition                                    
                     State.set {state with TurnNumber = state.TurnNumber + 1}

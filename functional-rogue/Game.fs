@@ -42,12 +42,23 @@ let showEquipment () =
     refreshScreen
     loop ()
 
+let showItems () =
+    let refreshScreen = 
+        let player = (State.get ()).Player
+        Screen.showChooseItemDialog player
+
+    let rec loop () =
+        let key = System.Console.ReadKey(true).Key        
+        match key with 
+        | ConsoleKey.Escape -> ()
+        | _ -> 
+            refreshScreen            
+            loop ()
+    refreshScreen
+    loop ()
+
 let mainLoop () =
     let rec loop printAll =                
-        let nextTurn command =             
-            Turn.next command
-            Screen.showBoard ()
-
         let key = if printAll then ConsoleKey.W else System.Console.ReadKey(true).Key
         
         let command = 
@@ -68,16 +79,19 @@ let mainLoop () =
             | ConsoleKey.C -> CloseDoor
             | ConsoleKey.E -> ShowEquipment
             | ConsoleKey.M -> ShowMessages
+            | ConsoleKey.H -> Harvest
             | _ -> Unknown                        
         
         match command with
         | Quit -> ()
         | Unknown -> loop false
-        | Up | Down | Left | Right | UpLeft | UpRight | DownLeft | DownRight | Wait | Take | OpenDoor | CloseDoor -> 
-            (nextTurn command)                
+        | Up | Down | Left | Right | UpLeft | UpRight | DownLeft | DownRight | Wait | Take | OpenDoor | CloseDoor | Harvest -> 
+            Turn.next command     
+            Screen.showBoard ()
             loop false
         | ShowItems ->
-            showChooseItemDialog {Items = (State.get ()).Player.Items; CanSelect = false; Filter = (fun x -> true)} |> ignore
+            showItems ()
+            Screen.showBoard ()
             loop false
         | ShowEquipment ->
             showEquipment ()
@@ -88,14 +102,26 @@ let mainLoop () =
             loop false
 
     let board = 
-        generateLevel LevelType.Cave
+        generateLevel LevelType.Test
         |> Board.moveCharacter {Type = CharacterType.Avatar; Monster = Option.None} (new Point(8, 4))
 
     let mainMenuReply = showMainMenu ()
     let entryState = {         
         Board = board; 
         BoardFramePosition = point 0 0;
-        Player = { Name = mainMenuReply.Name; HP = 5; MaxHP = 10; Magic = 5; MaxMagic = 10; Gold = 0; SightRadius = 10; Items = []; WornItems = { Head = 0; InLeftHand = 0; InRightHand = 0} };
+        Player = { 
+                    Name = mainMenuReply.Name; 
+                    HP = 5; MaxHP = 10; 
+                    Magic = 5; 
+                    MaxMagic = 10; 
+                    Gold = 0; 
+                    Iron = 0;
+                    Uranium = 0;
+                    SightRadius = 10; 
+                    Items = []; 
+                    WornItems = { Head = None; LeftHand = None; RightHand = None; Torso = None; Legs = None} 
+                    ShortCuts = Map<char, Item> []
+                 };
         TurnNumber = 0;
         UserMessages = [];
         Monsters = []

@@ -10,8 +10,7 @@ open Monsters
 type Tile =
     | Wall 
     | Floor
-    | Avatar
-    | None
+    | Empty
     | OpenDoor
     | ClosedDoor
     | Grass
@@ -19,6 +18,7 @@ type Tile =
     | SmallPlants
     | Bush
 
+let obstacles = set [ Wall; ClosedDoor; Tree ]
 
 type CharacterType = 
     | Avatar
@@ -36,17 +36,24 @@ type Character = {
     Monster: Monster option
 }    
 
+type Ore = 
+    | NoneOre
+    | Iron of int
+    | Gold of int
+    | Uranium of int
+
 type Place = {
-    Tile: Tile; 
-    Items: Item list;
-    Character: Character option;    
-    IsSeen: bool;
-    WasSeen: bool;
+    Tile : Tile; 
+    Items : Item list;
+    Ore : Ore
+    Character : Character option;    
+    IsSeen : bool;
+    WasSeen : bool;
 } with
     static member EmptyPlace = 
-            {Tile = Tile.None; Items = []; Character = Option.None; IsSeen = false; WasSeen = Settings.EntireLevelSeen; }
+            {Tile = Tile.Empty; Items = []; Character = Option.None; IsSeen = false; WasSeen = Settings.EntireLevelSeen; Ore = NoneOre }
     static member Wall = 
-            {Tile = Tile.Wall; Items = []; Character = Option.None; IsSeen = false; WasSeen = Settings.EntireLevelSeen; }
+            {Tile = Tile.Wall; Items = []; Character = Option.None; IsSeen = false; WasSeen = Settings.EntireLevelSeen; Ore = NoneOre }
 
 let boardHeight = 24
 let boardWidth = 79

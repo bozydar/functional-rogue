@@ -181,28 +181,41 @@ let rec generateRooms rooms =
 
 let addItems board =
     // returns sequence of board modification functions
+    let stickOfDoom = {
+        Id = 0;
+        Name = "Stick of doom";
+        Wearing = {
+                    OnHead = false;
+                    InHand = true;
+                    OnTorso = false;
+                    OnLegs = false
+        };
+        Offence = Value(3M);
+        Defence = Value(0M);
+        Type = Stick
+    }
     let modifiers = seq {
         for i in 1..20 do
             let posX = rnd boardWidth
             let posY = rnd boardHeight
             yield (fun board -> 
                 Board.modify (point posX posY) (fun place -> 
-                    {place with Items = { Id = i ; Name = "Stick of Doom" ; Class = Stick { Damage = 3 }} :: place.Items} ) board)
+                    {place with Items = { stickOfDoom with Id = i } :: place.Items} ) board)
     }
     // apply all modification functions on board
     board |>> modifiers
 
-//let addGold board = 
-//    let modifiers = seq {
-//        for i in 0..20 do
-//            let posX = rnd boardWidth
-//            let posY = rnd boardHeight
-//            let value = rnd2 1 10
-//            yield (fun board -> 
-//                Board.modify (point posX posY) (fun place -> 
-//                    {place with Items = Gold(value) :: place.Items} ) board)
-//    }
-//    board |>> modifiers
+let addOre board = 
+    let modifiers = seq {
+        for i in 0..20 do
+            let posX = rnd boardWidth
+            let posY = rnd boardHeight
+            let value = rnd2 1 10
+            yield (fun board -> 
+                Board.modify (point posX posY) (fun place -> 
+                    {place with Ore = Uranium(value)} ) board)
+    }
+    board |>> modifiers
 
 let generateTest: Board = 
     let mutable board = Array2D.create boardWidth boardHeight {Place.EmptyPlace with Tile = Tile.Floor}
@@ -212,8 +225,9 @@ let generateTest: Board =
         | [] -> board
         | item::t -> addRooms t <| (item :> IModifier).Modify board 
     addRooms rooms board
-    //|> addGold
-    //|> addItems
+    |> addOre
+    |> addItems
+    |> putRandomMonstersOnBoard
 
 // dungeon generation section
 

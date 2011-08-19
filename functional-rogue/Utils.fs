@@ -24,6 +24,20 @@ let point x y  = new Point(x, y)
 
 let (|>>) v l = Seq.fold (|>) v l
 
+type Factor = 
+    | Value of decimal
+    | Percent of decimal
+    with override this.ToString () : string = 
+            match this with
+            | Value(v) -> v.ToString()
+            | Percent(v) -> v.ToString("p")
+type Factor with
+    member this.IsZero = 
+        match this with
+        | Value(v) when v = 0M -> true
+        | Percent(v) when v = 0M -> true
+        | _ -> false
+
 let inBoundary (v: int) max min = Math.Max(Math.Min(v, min), max)
 
 type FloatingPoint = {

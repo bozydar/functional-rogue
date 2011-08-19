@@ -43,5 +43,8 @@ let get () =
     | Option.None -> failwith "Cannot return None"
 
 let addMessages (messages : string list) (state : State) =
-    let newMessages = List.map (fun m -> (state.TurnNumber,m)) messages
+    let newMessages = List.map (fun m -> (state.TurnNumber, m)) messages
     { state with UserMessages = (List.append newMessages state.UserMessages) }
+
+let addMessage (message : string) (state : State) =
+    addMessages [message] state
