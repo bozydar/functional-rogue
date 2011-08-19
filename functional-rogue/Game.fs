@@ -60,31 +60,28 @@ let showItems () =
 
 let mainLoop () =
     let rec loop printAll =                
-        let nextTurn command =             
-            Turn.next command
-            Screen.showBoard ()
 
-        let key = if printAll then ConsoleKey.W else System.Console.ReadKey(true).Key
+        let consoleKeyInfo = if printAll then new ConsoleKeyInfo('5', ConsoleKey.NumPad5, false, false, false) else System.Console.ReadKey(true)
         
         let command = 
-            match key with 
-            | ConsoleKey.UpArrow | ConsoleKey.NumPad8 -> Up            
-            | ConsoleKey.DownArrow | ConsoleKey.NumPad2 -> Down            
-            | ConsoleKey.LeftArrow | ConsoleKey.NumPad4 -> Left            
-            | ConsoleKey.RightArrow | ConsoleKey.NumPad6 -> Right
-            | ConsoleKey.NumPad7 -> UpLeft
-            | ConsoleKey.NumPad9 -> UpRight
-            | ConsoleKey.NumPad1 -> DownLeft
-            | ConsoleKey.NumPad3 -> DownRight
-            | ConsoleKey.W | ConsoleKey.NumPad5 -> Wait
-            | ConsoleKey.OemComma -> Take
-            | ConsoleKey.I -> ShowItems
-            | ConsoleKey.Escape -> Quit
-            | ConsoleKey.O -> OpenDoor
-            | ConsoleKey.C -> CloseDoor
-            | ConsoleKey.E -> ShowEquipment
-            | ConsoleKey.M -> ShowMessages
-            | ConsoleKey.H -> Harvest
+            match consoleKeyInfo.Key, consoleKeyInfo.KeyChar with 
+            | ConsoleKey.UpArrow, _ | _, '8' -> Up            
+            | ConsoleKey.DownArrow, _ | _, '2' -> Down            
+            | ConsoleKey.LeftArrow, _ | _, '4' -> Left            
+            | ConsoleKey.RightArrow, _ | _, '6' -> Right
+            | _, '7'  -> UpLeft
+            | _, '9' -> UpRight
+            | _, '1' -> DownLeft
+            | _, '3' -> DownRight
+            | _, '5' -> Wait
+            | _, ',' -> Take
+            | _, 'i' -> ShowItems
+            | ConsoleKey.Escape, _ -> Quit
+            | _, 'o' -> OpenDoor
+            | _, 'c' -> CloseDoor
+            | _, 'e' -> ShowEquipment
+            | _, 'm' -> ShowMessages
+            | _, 'h' -> Harvest
             | _ -> Unknown                        
         
         match command with
