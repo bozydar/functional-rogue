@@ -37,7 +37,7 @@ let showEquipment () =
         | _ -> 
             refreshScreen
             // proof of concept for passage of time for non-board actions
-            Turn.elapse 0.4M Command.Wait
+            Turn.elapse 0.4M option.None
             loop ()
     refreshScreen
     loop ()
@@ -57,8 +57,13 @@ let showItems () =
     refreshScreen
     loop ()
 
+
 let mainLoop () =
     let rec loop printAll =                
+        let nextTurn command =             
+            Turn.next command
+            Screen.showBoard ()
+
         let key = if printAll then ConsoleKey.W else System.Console.ReadKey(true).Key
         
         let command = 
@@ -85,8 +90,32 @@ let mainLoop () =
         match command with
         | Quit -> ()
         | Unknown -> loop false
-        | Up | Down | Left | Right | UpLeft | UpRight | DownLeft | DownRight | Wait | Take | OpenDoor | CloseDoor | Harvest -> 
-            Turn.next command     
+        | Up | Down | Left | Right | UpLeft | UpRight | DownLeft | DownRight  ->
+            State.get () 
+            |> moveCharacter command
+            |> Turn.next
+            Screen.showBoard ()
+            loop false
+        | Wait ->
+            State.get () |> Turn.next
+            Screen.showBoard ()
+            loop false
+        | Take ->
+            State.get () 
+            |> Actions.performTakeAction
+            |> Turn.next
+            Screen.showBoard ()
+            loop false
+        | OpenDoor | CloseDoor ->
+            State.get () 
+            |> Actions.performCloseOpenAction command
+            |> Turn.next
+            Screen.showBoard ()
+            loop false
+        | Harvest -> 
+            State.get () 
+            |> Actions.performHarvest
+            |> Turn.next
             Screen.showBoard ()
             loop false
         | ShowItems ->
@@ -102,7 +131,7 @@ let mainLoop () =
             loop false
 
     let board = 
-        generateLevel LevelType.Test
+        generateLevel LevelType.Cave
         |> Board.moveCharacter {Type = CharacterType.Avatar; Monster = Option.None} (new Point(8, 4))
 
     let mainMenuReply = showMainMenu ()
@@ -115,12 +144,12 @@ let mainLoop () =
                     Magic = 5; 
                     MaxMagic = 10; 
                     Gold = 0; 
-                    Iron = 0;
-                    Uranium = 0;
+                    Iron = 0; 
+                    Uranium = 0; 
                     SightRadius = 10; 
                     Items = []; 
-                    WornItems = { Head = None; LeftHand = None; RightHand = None; Torso = None; Legs = None} 
-                    ShortCuts = Map<char, Item> []
+                    WornItems = { Head = None; LeftHand = None; RightHand = None; Torso = None; Legs = None};
+                    ShortCuts = Map []
                  };
         TurnNumber = 0;
         UserMessages = [];

@@ -15,7 +15,7 @@ open Monsters
 open AI
 
 type private TurnAgentMessage = 
-    | Elapse of decimal * Command * AsyncReplyChannel<unit>
+    | Elapse of decimal * State * AsyncReplyChannel<unit>
 
 
 let private evaluateBoardFramePosition state = 
@@ -29,26 +29,22 @@ let private evaluateBoardFramePosition state =
 
 let private turnAgent () =
     MailboxProcessor<TurnAgentMessage>.Start (fun inbox ->
-    let rec loop state = async {
+    let rec loop time = async {
         let! msg = inbox.Receive()            
         match msg with
-        | Elapse(elapsedTime, command, reply) -> 
-            let elapsed = state + elapsedTime
+        | Elapse(elapsedTime, state, reply) -> 
+            let elapsed = time + elapsedTime
             let iElapsed = Convert.ToInt32(Math.Floor(elapsed))
-            let iState = Convert.ToInt32(Math.Floor(state))
+            let iState = Convert.ToInt32(Math.Floor(time))
             let turnsToGo = iElapsed - iState
             if turnsToGo > 0 then 
                 for i = 1 to turnsToGo do
-                    let state = 
-                        State.get ()
-                        |> moveCharacter command
+                    let state1 = 
+                        state
                         |> handleMonsters
-                        |> performCloseOpenAction command
-                        |> performTakeAction command
-                        |> performHarvest command
                         |> setVisibilityStates
                         |> evaluateBoardFramePosition                                    
-                    State.set {state with TurnNumber = state.TurnNumber + 1}
+                    State.set {state1 with TurnNumber = state.TurnNumber + 1}
             reply.Reply ()
 
             return! loop elapsed
@@ -58,6 +54,9 @@ let private turnAgent () =
 
 let private agent = turnAgent () 
 
-let elapse turns command = agent.PostAndReply(fun reply -> Elapse(turns, command, reply))
-let next command = agent.PostAndReply(fun reply -> Elapse(1M, command, reply))
+let elapse turns (state : option<State>) = 
+    let myState = if state.IsSome then state.Value else State.get ()
+    agent.PostAndReply(fun reply -> Elapse(turns, myState, reply))
+
+let next state = agent.PostAndReply(fun reply -> Elapse(1M, state, reply))
 
