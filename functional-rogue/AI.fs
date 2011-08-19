@@ -63,7 +63,7 @@ let aStar (startPoint: Point) (endPoint: Point) (board: Board) : (Point list) =
 
 let goTowards (monsterPlace: (Point*Place)) (targetLocation: Point) (state:State) : State =
     let movementSteps = aStar (fst monsterPlace) targetLocation state.Board
-    if(movementSteps.Length > 1) then
+    if(movementSteps.Length > 2) then   //because the first and the last step are source and target
         { state with Board = state.Board |> Board.moveCharacter (snd monsterPlace).Character.Value movementSteps.Tail.Head }
     else
         state
@@ -113,7 +113,7 @@ let getSpotsWithDangerScore (enemies: Point list) (monsterPlace: Point) (state: 
 let aiCowardMonster (monsterPlace: (Point*Place)) (state:State) : State =
     let differentSpecies = getDifferentSpeciesTheMonsterCanSee monsterPlace state
     if (differentSpecies.Length > 0) then
-        let sortedSpotsWithDistanceScore = List.sortBy (fun element -> -(snd element)) (getSpotsWithDangerScore differentSpecies (fst monsterPlace) state)
+        let sortedSpotsWithDistanceScore = List.sortBy (fun element -> (snd element)) (getSpotsWithDangerScore differentSpecies (fst monsterPlace) state)
         let resultState = { state with Board = state.Board |> Board.moveCharacter (snd monsterPlace).Character.Value (fst (sortedSpotsWithDistanceScore.Head)) }
         resultState
     else
