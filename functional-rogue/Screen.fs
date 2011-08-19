@@ -11,7 +11,7 @@ open Player
 type ScreenAgentMessage =
     | ShowBoard of State
     | ShowMainMenu of AsyncReplyChannel<MainMenuReply>
-    | ShowChooseItemDialog of ChooseItemDialogRequest * AsyncReplyChannel<ChooseItemDialogReply>
+    | ShowChooseItemDialog of Player
     | ShowEquipmentDialog of ChooseEquipmentDialogRequest
     | ShowMessages of State
 and MainMenuReply = {
@@ -23,7 +23,6 @@ and ChooseItemDialogReply = {
 and ChooseItemDialogRequest = {
     Items: list<Item>
     CanSelect: bool
-    Filter: Item->bool
 }
 and ChooseEquipmentDialogRequest = {
     Items: list<Item>
@@ -59,21 +58,28 @@ let private screenWritter () =
                         | NPC -> {Char = 'P'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.White}
                     | _ -> 
                         match item.Items with
-                        | h::_ -> 
-                                match h with 
-                                //| Gold(value) -> {Char = '$'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
+                        | h::_ when not <| Set.contains item.Tile obstacles -> 
+                                match h.Type with 
+                                | Stick -> {Char = '|'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
+                                | Sword -> {Char = '/'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
+                                | Hat -> {Char = ']'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
                                 | _ -> {Char = 'i'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
                         | _ -> 
-                            match item.Tile with
-                            | Wall ->  {Char = '#'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
-                            | Floor -> {Char = '.'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
-                            | OpenDoor -> {Char = '/'; FGColor = ConsoleColor.DarkGray; BGColor = ConsoleColor.Black}
-                            | ClosedDoor -> {Char = '+'; FGColor = ConsoleColor.DarkGray; BGColor = ConsoleColor.Black}
-                            | Grass -> {Char = '.'; FGColor = ConsoleColor.DarkGreen; BGColor = ConsoleColor.Black}
-                            | Tree -> {Char = 'T'; FGColor = ConsoleColor.DarkGreen; BGColor = ConsoleColor.Black}
-                            | SmallPlants -> {Char = '*'; FGColor = ConsoleColor.DarkGreen; BGColor = ConsoleColor.Black}
-                            | Bush -> {Char = '&'; FGColor = ConsoleColor.DarkGreen; BGColor = ConsoleColor.Black}
-                            | _ -> empty
+                            match item.Ore with
+                            | Iron(_) -> {Char = '$'; FGColor = ConsoleColor.Black; BGColor = ConsoleColor.Gray}
+                            | Gold(_) -> {Char = '$'; FGColor = ConsoleColor.Black; BGColor = ConsoleColor.Yellow}
+                            | Uranium(_) -> {Char = '$'; FGColor = ConsoleColor.Black; BGColor = ConsoleColor.Green}
+                            | _ ->
+                                match item.Tile with
+                                | Wall ->  {Char = '#'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
+                                | Floor -> {Char = '.'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
+                                | OpenDoor -> {Char = '/'; FGColor = ConsoleColor.DarkGray; BGColor = ConsoleColor.Black}
+                                | ClosedDoor -> {Char = '+'; FGColor = ConsoleColor.DarkGray; BGColor = ConsoleColor.Black}
+                                | Grass -> {Char = '.'; FGColor = ConsoleColor.DarkGreen; BGColor = ConsoleColor.Black}
+                                | Tree -> {Char = 'T'; FGColor = ConsoleColor.DarkGreen; BGColor = ConsoleColor.Black}
+                                | SmallPlants -> {Char = '*'; FGColor = ConsoleColor.DarkGreen; BGColor = ConsoleColor.Black}
+                                | Bush -> {Char = '&'; FGColor = ConsoleColor.DarkGreen; BGColor = ConsoleColor.Black}
+                                | _ -> empty
                 if not item.IsSeen then {result with FGColor = ConsoleColor.DarkGray } else result
             else empty
         
@@ -108,8 +114,10 @@ let private screenWritter () =
         |> writeString leftPanelPos.Location (sprintf "HP: %d/%d" state.Player.HP state.Player.MaxHP)
         |> writeString (point leftPanelPos.Location.X (leftPanelPos.Location.Y + 1)) (sprintf "%s the rogue" state.Player.Name)
         |> writeString (point leftPanelPos.Location.X (leftPanelPos.Location.Y + 2)) (sprintf "Ma: %d/%d" state.Player.HP state.Player.MaxHP)
-        |> writeString (point leftPanelPos.Location.X (leftPanelPos.Location.Y + 3)) (sprintf "Gold: %d" state.Player.Gold)
-        |> writeString (point leftPanelPos.Location.X (leftPanelPos.Location.Y + 4)) (sprintf "Turn: %d" state.TurnNumber)
+        |> writeString (point leftPanelPos.Location.X (leftPanelPos.Location.Y + 3)) (sprintf "Iron: %d" state.Player.Iron)
+        |> writeString (point leftPanelPos.Location.X (leftPanelPos.Location.Y + 4)) (sprintf "Gold: %d" state.Player.Gold)
+        |> writeString (point leftPanelPos.Location.X (leftPanelPos.Location.Y + 5)) (sprintf "Uranium: %d" state.Player.Uranium)
+        |> writeString (point leftPanelPos.Location.X (leftPanelPos.Location.Y + 6)) (sprintf "Turn: %d" state.TurnNumber)
 
     let writeMessage state screen =
         if( state.UserMessages.Length > 0 && (fst (state.UserMessages.Head)) = state.TurnNumber - 1) then
@@ -126,21 +134,27 @@ let private screenWritter () =
             | [] -> screen
         writeMessagesRecursively state.UserMessages screen 0
             
-    let listAllItems (items : Item list) screen = 
+    let listAllItems (items : Item list) (shortCuts : Map<char, Item>) screen = 
         //let plainItems = items |> Seq.choose (function | Gold(_) -> Option.None | Plain(_, itemProperties) -> Some itemProperties)
         
         let writeProperties = seq {
             for i, item in Seq.mapi (fun i item -> i, item) items do
                 let pos = point 1 i                
-                yield writeString pos (sprintf "%c: %s" (letterByInt (i + 1)) (itemShortDescription item))
+                let char = match findShortCut shortCuts item with Some(value) -> value.ToString() | _ -> ""                
+                yield writeString pos (sprintf "%s (id=%d): %s" char item.Id (itemShortDescription item))
         }
         screen |>> writeProperties
 
     let listWornItems screen =
+        let writeIfExisits (item : option<Item>) = 
+            if item.IsSome then itemShortDescription (item.Value) else ""
+
         let writeProperties (allItems : Item list) (wornItems : WornItems) = [
-            (writeString (new Point(1,0)) (sprintf "%c: Head - %s" (letterByInt (1)) (if(wornItems.Head = 0) then "" else "kaka")))
-            ;(writeString (new Point(1,1)) (sprintf "%c: In Left Hand - %s" (letterByInt (2)) (if(wornItems.InLeftHand = 0) then "" else itemShortDescription (List.find<Item> (fun x -> x.Id = wornItems.InLeftHand) allItems) )))
-            ;(writeString (new Point(1,2)) (sprintf "%c: In Right Hand - %s" (letterByInt (3)) (if(wornItems.InRightHand = 0) then "" else itemShortDescription (List.find<Item> (fun x -> x.Id = wornItems.InRightHand) allItems) )))
+            (writeString (new Point(1,0)) (sprintf "%c: Head - %s" (letterByInt (1)) (writeIfExisits wornItems.Head )));
+            (writeString (new Point(1,1)) (sprintf "%c: In Left Hand - %s" (letterByInt (2)) (writeIfExisits wornItems.LeftHand )));
+            (writeString (new Point(1,2)) (sprintf "%c: In Right Hand - %s" (letterByInt (3)) (writeIfExisits wornItems.RightHand )));
+            (writeString (new Point(1,3)) (sprintf "%c: On Torso - %s" (letterByInt (4)) (writeIfExisits wornItems.Torso )));
+            (writeString (new Point(1,4)) (sprintf "%c: On Legs - %s" (letterByInt (5)) (writeIfExisits wornItems.Legs )));
         ]
 
         let currentState = State.get ()
@@ -194,12 +208,12 @@ let private screenWritter () =
                 let name = Console.ReadLine()
                 reply.Reply({Name = name})
                 return! loop newScreen  
-            | ShowChooseItemDialog(request, reply) ->                
+            | ShowChooseItemDialog(player) ->                
                 let newScreen =
                     screen
                     |> Array2D.copy
                     |> cleanScreen
-                    |> listAllItems request.Items
+                    |> listAllItems player.Items player.ShortCuts
                 refreshScreen screen newScreen
                 return! loop newScreen
             | ShowEquipmentDialog(request) ->                
@@ -218,6 +232,6 @@ let private screenWritter () =
 let private agent = screenWritter ()
 let showBoard () = agent.Post (ShowBoard(State.get ()))
 let showMainMenu () = agent.PostAndReply(fun reply -> ShowMainMenu(reply))
-let showChooseItemDialog items = agent.PostAndReply(fun reply -> ShowChooseItemDialog(items, reply))
+let showChooseItemDialog items = agent.Post(ShowChooseItemDialog(items))
 let showEquipmentItemDialog items = agent.Post(ShowEquipmentDialog(items))
 let showMessages () = agent.Post (ShowMessages(State.get ()))
