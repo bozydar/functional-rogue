@@ -135,13 +135,13 @@ type DisjointLocationSet (board: Board, basicTile:Tile) =
 
 // monsters related code
 
-let putRandomMonstersOnBoard (board:Board) =
-    let getRandomMonsterType =
+let getRandomMonsterType () =
         let cases = Reflection.FSharpType.GetUnionCases(typeof<MonsterType>)
         let index = rnd cases.Length
         let case = cases.[index]
         Reflection.FSharpValue.MakeUnion(case, [||]) :?> MonsterType
 
+let putRandomMonstersOnBoard (board:Board) =
     let rec findEmptySpotsAndPutMonsters n (board: Board) =
         match n with
         | 0 -> board
@@ -151,8 +151,7 @@ let putRandomMonstersOnBoard (board:Board) =
             if((isObstacle board (Point (x,y)))) then
                 findEmptySpotsAndPutMonsters n board
             else
-                
-                findEmptySpotsAndPutMonsters (n-1) (board |> Board.moveCharacter { Type = CharacterType.Monster; Monster =  Some(createNewMonster(getRandomMonsterType)) } (new Point(x, y)))
+                findEmptySpotsAndPutMonsters (n-1) (board |> Board.moveCharacter { Type = CharacterType.Monster; Monster =  Some(createNewMonster(getRandomMonsterType ())) } (new Point(x, y)))
     findEmptySpotsAndPutMonsters 10 board
 
 
