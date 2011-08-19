@@ -45,3 +45,6 @@ let get () =
 let addMessages (messages : string list) (state : State) =
     let newMessages = List.map (fun m -> (state.TurnNumber,m)) messages
     { state with UserMessages = (List.append newMessages state.UserMessages) }
+
+let updateCharacter (character: Character) (newCharacter: Character) (state: State) =
+    { state with Board = state.Board |> Board.updateCharacter character newCharacter}

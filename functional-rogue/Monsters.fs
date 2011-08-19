@@ -7,12 +7,14 @@ type MonsterType =
 type MonsterState =
     | Lurking
     | Hunting
-    | Default   
+    | Default   //this is used for stateless monsters and for state monsters indicates that the monster has just been created and needs a setup
 
 type Monster (monsterType: MonsterType) =
     let guid = System.Guid.NewGuid
 
     let mutable state = MonsterState.Default
+
+    let mutable hungerFactor = 0
 
     let getMonsterAppearance =
         match monsterType with
@@ -39,6 +41,10 @@ type Monster (monsterType: MonsterType) =
     member this.State
         with get() = state
         and set(value) = state <- value
+
+    member this.HungerFactor
+        with get() = hungerFactor
+        and set(value) = hungerFactor <- value
 
 let createNewMonster (monsterType: MonsterType) : Monster =
     match monsterType with
