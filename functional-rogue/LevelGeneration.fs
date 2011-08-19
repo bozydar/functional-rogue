@@ -293,7 +293,7 @@ let generateDungeon: Board =
         | item::t -> addRooms t <| (item :> IModifier).Modify board 
     let resultBoard = addRooms (generateDungeonTunnels sections sectionWidth sectionHeight sectionsHorizontal sectionsVertical) board
     addRandomDoors resultBoard
-    //|> addGold
+    |> addOre
     |> addItems
 
 // dungeon BSP generation method
@@ -363,6 +363,7 @@ let generateCave: Board =
     sections.ConnectUnconnected
     //|> addGold
     |> addItems
+    |> addOre
     |> putRandomMonstersOnBoard
 
 // jungle/forest generation
