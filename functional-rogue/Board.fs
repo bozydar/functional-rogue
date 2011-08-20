@@ -118,6 +118,26 @@ let moveCharacter (character: Character) (newPosition: Point) (board: Board) =
         board
         |> modify newPosition (fun place -> {place with Character = Some character })
 
+let updateCharacter (character: Character) (newCharacter: Character) (board: Board) =
+    let allBoardPlaces = places board
+    match Seq.tryFind (fun (_, place) -> 
+        match place.Character with 
+        | Some(character1) -> character1 = character
+        | _ -> false) allBoardPlaces with        
+    | Some((oldPosition, oldPlace)) ->           
+        board
+        |> modify oldPosition (fun place -> { place with Character = Some newCharacter }) 
+    | _ ->
+        board
+
+let countObstaclesAroundPoint (point: Point) (board: Board) : int =
+    let mutable count = 0
+    for tmpx in (max 0 (point.X - 1))..(min (point.X + 1) (boardWidth - 1)) do
+        for tmpy in (max 0 (point.Y - 1))..(min (point.Y + 1) (boardHeight - 1)) do
+            if not(tmpx = point.X && tmpy = point.Y) then
+                count <- count + (if(isObstacle board (Point(tmpx,tmpy))) then 1 else 0)
+    count
+
 let emptyBoard : Board = Array2D.create boardWidth boardHeight Place.EmptyPlace
 
 type IModifier =
