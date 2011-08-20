@@ -164,13 +164,13 @@ let aiLurkerPredatorMonster (monsterPlace: (Point*Place)) (state:State) : State 
         monster.Monster.Value.HungerFactor <- rnd2 30 60
         state |> State.updateCharacter (snd monsterPlace).Character.Value monster
     | MonsterState.Lurking ->
-        let positions = getGoodLurkingPositionsInSightSortedFromBest monsterPlace state
         let newHungerFactor = monster.Monster.Value.HungerFactor - 1
         monster.Monster.Value.HungerFactor <- newHungerFactor
         if (newHungerFactor < 0) then
             monster.Monster.Value.State <- MonsterState.Hunting
             state |> State.updateCharacter (snd monsterPlace).Character.Value monster
         else
+            let positions = getGoodLurkingPositionsInSightSortedFromBest monsterPlace state
             let newState = state |> State.updateCharacter (snd monsterPlace).Character.Value monster
             if(positions.Length > 0) then
                 if ((fst positions.Head) <> monsterPoint) then
