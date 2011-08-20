@@ -188,7 +188,7 @@ let addItems board =
                     OnHead = false;
                     InHand = true;
                     OnTorso = false;
-                    OnLegs = false
+                    OnLegs = true
         };
         Offence = Value(3M);
         Defence = Value(0M);
