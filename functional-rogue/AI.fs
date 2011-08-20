@@ -83,14 +83,14 @@ let aStar (startPoint: Point) (endPoint: Point) (board: Board) : (Point list) =
                 for y in (max 0 (current.point.Y - 1))..(min (current.point.Y + 1) (boardHeight - 1)) do
                     let mutable tentativeIsBetter = true
                     if (Point(x,y) = endPoint || not(isObstacle board (Point(x,y)))) && (not( listContains (Point(x,y)) closedSet )) then
-                        let tentativeGScore = current.gScore + 1    //TODO: change this to something else later
+                        let tentativeGScore = current.gScore + 1    //TODO: change this to something else later (terrain difficulty, etc.)
                         if not( listContains (Point(x,y)) openSet) then
                             openSet <- openSet @ [{ point = Point(x,y); cameFrom = current.point; gScore = tentativeGScore; hScore = (estimateCostToEnd (Point(x,y)) endPoint); fScore = (tentativeGScore + (estimateCostToEnd (Point(x,y)) endPoint))}]
                         elif tentativeGScore > (List.find<GridPoint> (fun elem -> elem.point = Point(x,y)) openSet).gScore then
                             tentativeIsBetter <- false
                         
                         if tentativeIsBetter then
-                            let elementIndex = List.findIndex (fun elem -> true) openSet
+                            let elementIndex = List.findIndex (fun elem -> elem.point = (Point(x,y))) openSet
                             openSet.[elementIndex].cameFrom <- current.point
                             openSet.[elementIndex].gScore <- tentativeGScore
                             openSet.[elementIndex].hScore <- (estimateCostToEnd (Point(x,y)) endPoint)
