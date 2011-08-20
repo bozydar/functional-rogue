@@ -30,6 +30,7 @@ type Command =
     | ShowEquipment
     | ShowMessages
     | Harvest
+    | Wear
 
 
 let private commandToSize command = 
@@ -59,7 +60,7 @@ let moveCharacter command state =
             board |> moveCharacter {Type = Avatar; Monster = Option.None} newPosition
     {state with Board = preResult}
 
-let operateDoor command board =
+let private operateDoor command board =
     let playerPosition = getPlayerPosition board
     let oldDoor = {Place.EmptyPlace with Tile = (if (command = OpenDoor) then Tile.ClosedDoor else Tile.OpenDoor)}
     let newDoor = {Place.EmptyPlace with Tile = (if (command = OpenDoor) then Tile.OpenDoor else Tile.ClosedDoor)}
@@ -107,3 +108,76 @@ let performHarvest state =
             {state with Board = board1; Player = player1} |> addMessage pickUpMessage                
         | NoneOre -> 
             state
+
+let chooseItem () =
+    let refreshScreen = 
+        let player = (State.get ()).Player
+        Screen.showChooseItemDialog player
+
+    let rec loop () =
+        let keyInfo = System.Console.ReadKey(true)
+        match keyInfo with 
+        | Key ConsoleKey.Escape -> ()
+        | _ -> 
+            refreshScreen            
+            loop ()
+    refreshScreen
+    loop ()
+
+let chooseOption (options : list<char * string>)  =
+    let refreshScreen =         
+        Screen.showOptions options
+    
+    let keys = options |> List.map (fun (key, _) -> key :> obj) 
+
+    let rec loop () =
+        let keyInfo = System.Console.ReadKey(true)
+        match keyInfo with 
+        | Keys keys -> keyInfo.KeyChar
+        | _ -> 
+            refreshScreen            
+            loop ()
+    refreshScreen
+    loop ()
+    
+
+
+let wear state = 
+    let refreshScreen = 
+        Screen.showChooseItemDialog state.Player
+
+    let rec loop () =
+        let keyInfo = System.Console.ReadKey(true)
+        match keyInfo with 
+        | Key ConsoleKey.Escape -> state
+        | _ -> 
+            let keyChar = keyInfo.KeyChar
+            let item = Map.tryGetItem keyChar state.Player.ShortCuts 
+            if item.IsSome then
+                let result = 
+                    let options = Seq.toList <| seq {
+                        if item.Value.Wearing.InHand then yield ('g', "Grab")
+                        if item.Value.Wearing.OnHead then yield ('h', "Put on head")
+                        if item.Value.Wearing.OnLegs then yield ('l', "Put on legs")
+                        if item.Value.Wearing.OnTorso then yield ('t', "Put on torso")
+                    }
+                    let chosenOption = 
+                        if options.Length > 1 then 
+                            chooseOption options                           
+                        elif options.Length = 1 then
+                            fst (List.head options)
+                        else
+                            ' '                    
+                    match chosenOption with
+                    | 'g' -> {state with Player = {state.Player with WornItems = {state.Player.WornItems with Hand = item }}}
+                    | 'h' -> {state with Player = {state.Player with WornItems = {state.Player.WornItems with Head = item }}}
+                    | 'l' -> {state with Player = {state.Player with WornItems = {state.Player.WornItems with Legs = item }}}
+                    | 't' -> {state with Player = {state.Player with WornItems = {state.Player.WornItems with Torso = item }}}                        
+                    | _ -> state
+
+                result
+            else
+                refreshScreen 
+                loop ()
+    refreshScreen
+    loop ()

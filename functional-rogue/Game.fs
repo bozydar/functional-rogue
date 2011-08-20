@@ -82,6 +82,7 @@ let mainLoop () =
             | _, 'e' -> ShowEquipment
             | _, 'm' -> ShowMessages
             | _, 'h' -> Harvest
+            | _, 'W' -> Wear
             | _ -> Unknown                        
         
         match command with
@@ -126,6 +127,12 @@ let mainLoop () =
         | ShowMessages ->
             Screen.showMessages ()
             loop false
+        | Wear ->
+            State.get ()
+            |> wear
+            |> Turn.next
+            Screen.showBoard ()
+            loop false
 
     let board = 
         generateLevel LevelType.Cave
@@ -145,7 +152,7 @@ let mainLoop () =
                     Uranium = 0; 
                     SightRadius = 10; 
                     Items = []; 
-                    WornItems = { Head = None; LeftHand = None; RightHand = None; Torso = None; Legs = None};
+                    WornItems = { Head = None; Hand = None; Torso = None; Legs = None};
                     ShortCuts = Map []
                  };
         TurnNumber = 0;
