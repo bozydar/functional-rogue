@@ -64,25 +64,25 @@ let mainLoop () =
         let consoleKeyInfo = if printAll then new ConsoleKeyInfo('5', ConsoleKey.NumPad5, false, false, false) else System.Console.ReadKey(true)
         
         let command = 
-            match consoleKeyInfo.Key, consoleKeyInfo.KeyChar with 
-            | ConsoleKey.UpArrow, _ | _, '8' -> Up            
-            | ConsoleKey.DownArrow, _ | _, '2' -> Down            
-            | ConsoleKey.LeftArrow, _ | _, '4' -> Left            
-            | ConsoleKey.RightArrow, _ | _, '6' -> Right
-            | _, '7'  -> UpLeft
-            | _, '9' -> UpRight
-            | _, '1' -> DownLeft
-            | _, '3' -> DownRight
-            | _, '5' -> Wait
-            | _, ',' -> Take
-            | _, 'i' -> ShowItems
-            | ConsoleKey.Escape, _ -> Quit
-            | _, 'o' -> OpenDoor
-            | _, 'c' -> CloseDoor
-            | _, 'e' -> ShowEquipment
-            | _, 'm' -> ShowMessages
-            | _, 'h' -> Harvest
-            | _, 'W' -> Wear
+            match consoleKeyInfo with 
+            | Keys [ConsoleKey.UpArrow; '8'] -> Up            
+            | Keys [ConsoleKey.DownArrow; '2'] -> Down            
+            | Keys [ConsoleKey.LeftArrow; '4'] -> Left            
+            | Keys [ConsoleKey.RightArrow; '6'] -> Right
+            | Key '7'  -> UpLeft
+            | Key '9' -> UpRight
+            | Key '1' -> DownLeft
+            | Key '3' -> DownRight
+            | Key '5' -> Wait
+            | Key ',' -> Take
+            | Key 'i' -> ShowItems
+            | Key ConsoleKey.Escape -> Quit
+            | Key 'o' -> OpenDoor
+            | Key 'c' -> CloseDoor
+            | Key 'e' -> ShowEquipment
+            | Key 'm' -> ShowMessages
+            | Key 'h' -> Harvest
+            | Key 'W' -> Wear
             | _ -> Unknown                        
         
         match command with
