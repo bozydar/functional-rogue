@@ -44,8 +44,7 @@ let showEquipment () =
 
 let showItems () =
     let refreshScreen = 
-        let player = (State.get ()).Player
-        Screen.showChooseItemDialog player
+        Screen.showChooseItemDialog { State = (State.get ()); Filter = fun _ -> true }
 
     let rec loop () =
         let key = System.Console.ReadKey(true).Key        
@@ -60,31 +59,30 @@ let showItems () =
 
 let mainLoop () =
     let rec loop printAll =                
-        let nextTurn command =             
-            Turn.next command
-            Screen.showBoard ()
 
-        let key = if printAll then ConsoleKey.W else System.Console.ReadKey(true).Key
+        let consoleKeyInfo = if printAll then new ConsoleKeyInfo('5', ConsoleKey.NumPad5, false, false, false) else System.Console.ReadKey(true)
         
         let command = 
-            match key with 
-            | ConsoleKey.UpArrow | ConsoleKey.NumPad8 -> Up            
-            | ConsoleKey.DownArrow | ConsoleKey.NumPad2 -> Down            
-            | ConsoleKey.LeftArrow | ConsoleKey.NumPad4 -> Left            
-            | ConsoleKey.RightArrow | ConsoleKey.NumPad6 -> Right
-            | ConsoleKey.NumPad7 -> UpLeft
-            | ConsoleKey.NumPad9 -> UpRight
-            | ConsoleKey.NumPad1 -> DownLeft
-            | ConsoleKey.NumPad3 -> DownRight
-            | ConsoleKey.W | ConsoleKey.NumPad5 -> Wait
-            | ConsoleKey.OemComma -> Take
-            | ConsoleKey.I -> ShowItems
-            | ConsoleKey.Escape -> Quit
-            | ConsoleKey.O -> OpenDoor
-            | ConsoleKey.C -> CloseDoor
-            | ConsoleKey.E -> ShowEquipment
-            | ConsoleKey.M -> ShowMessages
-            | ConsoleKey.H -> Harvest
+            match consoleKeyInfo with 
+            | Keys [ConsoleKey.UpArrow; '8'] -> Up            
+            | Keys [ConsoleKey.DownArrow; '2'] -> Down            
+            | Keys [ConsoleKey.LeftArrow; '4'] -> Left            
+            | Keys [ConsoleKey.RightArrow; '6'] -> Right
+            | Key '7'  -> UpLeft
+            | Key '9' -> UpRight
+            | Key '1' -> DownLeft
+            | Key '3' -> DownRight
+            | Key '5' -> Wait
+            | Key ',' -> Take
+            | Key 'i' -> ShowItems
+            | Key ConsoleKey.Escape -> Quit
+            | Key 'o' -> OpenDoor
+            | Key 'c' -> CloseDoor
+            | Key 'e' -> ShowEquipment
+            | Key 'm' -> ShowMessages
+            | Key 'h' -> Harvest
+            | Key 'W' -> Wear
+            | Key 'T' -> TakeOff
             | _ -> Unknown                        
         
         match command with
@@ -129,6 +127,18 @@ let mainLoop () =
         | ShowMessages ->
             Screen.showMessages ()
             loop false
+        | Wear ->
+            State.get ()
+            |> wear
+            |> Turn.next
+            Screen.showBoard ()
+            loop false
+        | TakeOff ->
+            State.get ()
+            |> takeOff
+            |> Turn.next
+            Screen.showBoard ()
+            loop false
 
     let board = 
         generateLevel LevelType.Cave
@@ -148,7 +158,7 @@ let mainLoop () =
                     Uranium = 0; 
                     SightRadius = 10; 
                     Items = []; 
-                    WornItems = { Head = None; LeftHand = None; RightHand = None; Torso = None; Legs = None};
+                    WornItems = { Head = None; Hand = None; Torso = None; Legs = None};
                     ShortCuts = Map []
                  };
         TurnNumber = 0;

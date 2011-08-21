@@ -6,8 +6,7 @@ open Items
 
 type WornItems = {
     Head : option<Item>;
-    LeftHand : option<Item>;
-    RightHand : option<Item>;
+    Hand : option<Item>;    
     Torso : option<Item>;
     Legs : option<Item>
 } 
