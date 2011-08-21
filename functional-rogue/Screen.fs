@@ -11,7 +11,7 @@ open Player
 type ScreenAgentMessage =
     | ShowBoard of State
     | ShowMainMenu of AsyncReplyChannel<MainMenuReply>
-    | ShowChooseItemDialog of Player
+    | ShowChooseItemDialog of ShowChooseItemDialogRequest
     | ShowEquipmentDialog of ChooseEquipmentDialogRequest
     | ShowMessages of State
     | ShowOptions of seq<char * string>
@@ -28,6 +28,10 @@ and ChooseItemDialogRequest = {
 and ChooseEquipmentDialogRequest = {
     Items: list<Item>
     CanSelect: bool
+} 
+and ShowChooseItemDialogRequest = {
+    State: State;
+    Filter: Item -> bool
 }
 
 
@@ -214,12 +218,17 @@ let private screenWritter () =
                 let name = Console.ReadLine()
                 reply.Reply({Name = name})
                 return! loop newScreen  
-            | ShowChooseItemDialog(player) ->                
+            | ShowChooseItemDialog(request) ->                
+                let itemsToShow =
+                    List.filter request.Filter request.State.Player.Items                
                 let newScreen =
                     screen
                     |> Array2D.copy
                     |> cleanScreen
-                    |> listAllItems player.Items player.ShortCuts
+                    |> if itemsToShow.Length > 0 then 
+                           listAllItems itemsToShow request.State.Player.ShortCuts 
+                       else 
+                           writeString (point 1 1) "No items"
                 refreshScreen screen newScreen
                 return! loop newScreen
             | ShowEquipmentDialog(request) ->                

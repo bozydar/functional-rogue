@@ -44,8 +44,7 @@ let showEquipment () =
 
 let showItems () =
     let refreshScreen = 
-        let player = (State.get ()).Player
-        Screen.showChooseItemDialog player
+        Screen.showChooseItemDialog { State = (State.get ()); Filter = fun _ -> true }
 
     let rec loop () =
         let key = System.Console.ReadKey(true).Key        
@@ -83,6 +82,7 @@ let mainLoop () =
             | Key 'm' -> ShowMessages
             | Key 'h' -> Harvest
             | Key 'W' -> Wear
+            | Key 'T' -> TakeOff
             | _ -> Unknown                        
         
         match command with
@@ -130,6 +130,12 @@ let mainLoop () =
         | Wear ->
             State.get ()
             |> wear
+            |> Turn.next
+            Screen.showBoard ()
+            loop false
+        | TakeOff ->
+            State.get ()
+            |> takeOff
             |> Turn.next
             Screen.showBoard ()
             loop false

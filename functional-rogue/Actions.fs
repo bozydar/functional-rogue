@@ -11,6 +11,7 @@ open Sight
 open Items
 open Player
 
+
 type Command = 
     | Up
     | Down
@@ -31,6 +32,7 @@ type Command =
     | ShowMessages
     | Harvest
     | Wear
+    | TakeOff
 
 
 let private commandToSize command = 
@@ -111,8 +113,7 @@ let performHarvest state =
 
 let chooseItem () =
     let refreshScreen = 
-        let player = (State.get ()).Player
-        Screen.showChooseItemDialog player
+        Screen.showChooseItemDialog {State = (State.get ()); Filter = fun _ -> true}
 
     let rec loop () =
         let keyInfo = System.Console.ReadKey(true)
@@ -142,9 +143,14 @@ let chooseOption (options : list<char * string>)  =
     
 
 
-let wear state = 
+let wear (state : State) = 
+    let alreadyWorn =     
+        [state.Player.WornItems.Hand; state.Player.WornItems.Head; state.Player.WornItems.Legs; state.Player.WornItems.Torso]
+        |> List.filter Option.isSome
+        |> List.map Option.get
+
     let refreshScreen = 
-        Screen.showChooseItemDialog state.Player
+        Screen.showChooseItemDialog {State = state; Filter = (fun item -> not <| List.exists ((=) item) alreadyWorn)}
 
     let rec loop () =
         let keyInfo = System.Console.ReadKey(true)
@@ -153,7 +159,7 @@ let wear state =
         | _ -> 
             let keyChar = keyInfo.KeyChar
             let item = Map.tryGetItem keyChar state.Player.ShortCuts 
-            if item.IsSome then
+            if item.IsSome && not <| List.exists ((=) item.Value) alreadyWorn then
                 let result = 
                     let options = Seq.toList <| seq {
                         if item.Value.Wearing.InHand then yield ('g', "Grab")
@@ -161,13 +167,8 @@ let wear state =
                         if item.Value.Wearing.OnLegs then yield ('l', "Put on legs")
                         if item.Value.Wearing.OnTorso then yield ('t', "Put on torso")
                     }
-                    let chosenOption = 
-                        if options.Length > 1 then 
-                            chooseOption options                           
-                        elif options.Length = 1 then
-                            fst (List.head options)
-                        else
-                            ' '                    
+                    let chosenOption = chooseOption options                           
+                        
                     match chosenOption with
                     | 'g' -> {state with Player = {state.Player with WornItems = {state.Player.WornItems with Hand = item }}}
                     | 'h' -> {state with Player = {state.Player with WornItems = {state.Player.WornItems with Head = item }}}
@@ -181,3 +182,24 @@ let wear state =
                 loop ()
     refreshScreen
     loop ()
+
+let takeOff (state : State) = 
+    let options = Seq.toList <| seq {
+        if state.Player.WornItems.Hand.IsSome then yield ('g', "Put off - " + itemShortDescription state.Player.WornItems.Hand.Value)
+        if state.Player.WornItems.Head.IsSome then yield ('h', "Take off from head - " + itemShortDescription state.Player.WornItems.Head.Value)
+        if state.Player.WornItems.Legs.IsSome then yield ('l', "Remove from legs - " + itemShortDescription state.Player.WornItems.Legs.Value)
+        if state.Player.WornItems.Torso.IsSome then yield ('t', "Take off from torso - " + itemShortDescription state.Player.WornItems.Torso.Value)
+    }
+    let chosenOption = 
+        if options.Length > 0  then 
+            chooseOption options                           
+        else
+            ' '                    
+    match chosenOption with
+    | 'g' -> {state with Player = {state.Player with WornItems = {state.Player.WornItems with Hand = None }}}
+    | 'h' -> {state with Player = {state.Player with WornItems = {state.Player.WornItems with Head = None }}}
+    | 'l' -> {state with Player = {state.Player with WornItems = {state.Player.WornItems with Legs = None }}}
+    | 't' -> {state with Player = {state.Player with WornItems = {state.Player.WornItems with Torso = None }}}                        
+    | _ -> state
+
+
