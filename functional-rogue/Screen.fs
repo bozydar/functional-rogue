@@ -45,7 +45,7 @@ let private empty = {Char = ' '; FGColor = ConsoleColor.Gray; BGColor = ConsoleC
 
 type private screen = textel[,]
 
-let boardFrameSize = new Size(60, 24)
+let boardFrameSize = new Size(60, 23)
 let private screenSize = new Size(79, 24)
 let private leftPanelPos = new Rectangle(61, 0, 19, 24)
 let private letterByInt (int: int) = Convert.ToChar(Convert.ToInt32('a') + int - 1)
