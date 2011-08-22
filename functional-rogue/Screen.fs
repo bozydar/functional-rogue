@@ -11,9 +11,10 @@ open Player
 type ScreenAgentMessage =
     | ShowBoard of State
     | ShowMainMenu of AsyncReplyChannel<MainMenuReply>
-    | ShowChooseItemDialog of Player
+    | ShowChooseItemDialog of ShowChooseItemDialogRequest
     | ShowEquipmentDialog of ChooseEquipmentDialogRequest
     | ShowMessages of State
+    | ShowOptions of seq<char * string>
 and MainMenuReply = {
     Name: String
 } 
@@ -27,6 +28,10 @@ and ChooseItemDialogRequest = {
 and ChooseEquipmentDialogRequest = {
     Items: list<Item>
     CanSelect: bool
+} 
+and ShowChooseItemDialogRequest = {
+    State: State;
+    Filter: Item -> bool
 }
 
 
@@ -151,15 +156,20 @@ let private screenWritter () =
             if item.IsSome then itemShortDescription (item.Value) else ""
 
         let writeProperties (allItems : Item list) (wornItems : WornItems) = [
-            (writeString (new Point(1,0)) (sprintf "%c: Head - %s" (letterByInt (1)) (writeIfExisits wornItems.Head )));
-            (writeString (new Point(1,1)) (sprintf "%c: In Left Hand - %s" (letterByInt (2)) (writeIfExisits wornItems.LeftHand )));
-            (writeString (new Point(1,2)) (sprintf "%c: In Right Hand - %s" (letterByInt (3)) (writeIfExisits wornItems.RightHand )));
-            (writeString (new Point(1,3)) (sprintf "%c: On Torso - %s" (letterByInt (4)) (writeIfExisits wornItems.Torso )));
-            (writeString (new Point(1,4)) (sprintf "%c: On Legs - %s" (letterByInt (5)) (writeIfExisits wornItems.Legs )));
+            (writeString (new Point(1,0)) (sprintf "Head - %s"  (writeIfExisits wornItems.Head )));
+            (writeString (new Point(1,1)) (sprintf "In Hand - %s" (writeIfExisits wornItems.Hand )));
+            (writeString (new Point(1,2)) (sprintf "On Torso - %s" (writeIfExisits wornItems.Torso )));
+            (writeString (new Point(1,3)) (sprintf "On Legs - %s" (writeIfExisits wornItems.Legs )));
         ]
 
         let currentState = State.get ()
         screen |>> (writeProperties currentState.Player.Items currentState.Player.WornItems)
+
+    let showOptions (options : seq<char * string>) screen =
+        let write = options |> Seq.mapi (fun i (char, message) -> 
+            writeString (new Point(1, i)) (sprintf "%s: %s" (char.ToString()) message);
+        ) 
+        screen |>> write                
                
     let refreshScreen (oldScreen: screen) (newScreen: screen)= 
         let changes = seq {
@@ -209,12 +219,17 @@ let private screenWritter () =
                 let name = Console.ReadLine()
                 reply.Reply({Name = name})
                 return! loop newScreen  
-            | ShowChooseItemDialog(player) ->                
+            | ShowChooseItemDialog(request) ->                
+                let itemsToShow =
+                    List.filter request.Filter request.State.Player.Items                
                 let newScreen =
                     screen
                     |> Array2D.copy
                     |> cleanScreen
-                    |> listAllItems player.Items player.ShortCuts
+                    |> if itemsToShow.Length > 0 then 
+                           listAllItems itemsToShow request.State.Player.ShortCuts 
+                       else 
+                           writeString (point 1 1) "No items"
                 refreshScreen screen newScreen
                 return! loop newScreen
             | ShowEquipmentDialog(request) ->                
@@ -225,6 +240,15 @@ let private screenWritter () =
                     |> listWornItems
                 refreshScreen screen newScreen
                 return! loop newScreen
+            | ShowOptions(request) ->
+                let newScreen =
+                    screen
+                    |> Array2D.copy
+                    |> cleanScreen
+                    |> showOptions request
+                refreshScreen screen newScreen
+                return! loop newScreen
+
         }
         loop <| Array2D.create screenSize.Width screenSize.Height empty
     )
@@ -236,3 +260,4 @@ let showMainMenu () = agent.PostAndReply(fun reply -> ShowMainMenu(reply))
 let showChooseItemDialog items = agent.Post(ShowChooseItemDialog(items))
 let showEquipmentItemDialog items = agent.Post(ShowEquipmentDialog(items))
 let showMessages () = agent.Post (ShowMessages(State.get ()))
+let showOptions options  = agent.Post(ShowOptions(options))
