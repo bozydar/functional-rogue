@@ -128,15 +128,15 @@ let getDifferentSpeciesTheMonsterCanSee (monsterPlace: (Point*Place)) (state:Sta
                         state.Board.[x,y].Character.Value.Monster.Value.Type <> (snd monsterPlace).Character.Value.Monster.Value.Type
                         )
                 )) then
-                result <- result @ [Point(x,y)]
+                result <- result @ [(Point(x,y),state.Board.[x,y].Character.Value)]
     result
 
-let rec calculateDangerScore (place: Point) (enemies: Point list) =
+let rec calculateDangerScore (place: Point) (enemies: (Point*Character) list) =
         match enemies with
-        | head :: tail -> 10 - (max (abs (head.X - place.X)) (abs (head.Y - place.Y))) + calculateDangerScore place tail
+        | head :: tail -> 10 - (max (abs ((fst head).X - place.X)) (abs ((fst head).Y - place.Y))) + calculateDangerScore place tail
         | [] -> 0
 
-let getSpotsWithDangerScore (enemies: Point list) (monsterPlace: Point) (state: State) =
+let getSpotsWithDangerScore (enemies: (Point*Character) list) (monsterPlace: Point) (state: State) =
     let mutable spots = []
     for x in ((monsterPlace).X - 1)..((monsterPlace).X + 1) do
         for y in ((monsterPlace).Y - 1)..((monsterPlace).Y + 1) do
@@ -181,15 +181,17 @@ let aiLurkerPredatorMonster (monsterPlace: (Point*Place)) (state:State) : State 
                 performRandomMovement monsterPlace newState
     | MonsterState.Hunting ->
         let differentSpecies = getDifferentSpeciesTheMonsterCanSee monsterPlace state
-        let differentSpeciesWithDistance = differentSpecies |> List.map<Point,(Point*int)> (fun v -> (v,max (abs (monsterPoint.X - v.X)) (abs (monsterPoint.Y - v.Y))) )
-        let sortedDiffSpeciesWithDist = List.sortBy (fun element -> (snd element)) differentSpeciesWithDistance
+        let sortedDiffSpeciesByDist = differentSpecies |> List.sortBy (fun elem -> (max (abs (monsterPoint.X - (fst elem).X)) (abs (monsterPoint.Y - (fst elem).Y))) )
+        //if (sortedDiffSpeciesByDist.Length > 0) then
+            //state //|> goTowards monsterPlace (fst (sortedDiffSpeciesByDist.Head))    //go to eat it
+        //else
         let victims = getDifferentSpeciesTheMonsterCanAttackInMelee monsterPlace state
         if (victims.Length > 0) then
-            state   //attack
-        elif (sortedDiffSpeciesWithDist.Length > 0) then
+                { state with Board = state.Board |> Board.meleeAttack monster state.Board.[victims.Head.X,victims.Head.Y].Character.Value }
+        elif (sortedDiffSpeciesByDist.Length > 0) then
             state
             |> State.updateCharacter (snd monsterPlace).Character.Value monster
-            |> goTowards monsterPlace (fst (sortedDiffSpeciesWithDist.Head))
+            |> goTowards monsterPlace (fst (sortedDiffSpeciesByDist.Head))
         else
             state
     | _ -> state
@@ -197,9 +199,12 @@ let aiLurkerPredatorMonster (monsterPlace: (Point*Place)) (state:State) : State 
 // some top level functions
 
 let handleSingleMonster (monsterPlace: (Point*Place)) (state:State) : State =
-    match (snd monsterPlace).Character.Value.Monster.Value.Type with
-    | Rat -> aiCowardMonster monsterPlace state
-    | Lurker -> aiLurkerPredatorMonster monsterPlace state
+    if((snd monsterPlace).Character.Value.Monster.Value.IsAlive) then
+        match (snd monsterPlace).Character.Value.Monster.Value.Type with
+        | Rat -> aiCowardMonster monsterPlace state
+        | Lurker -> aiLurkerPredatorMonster monsterPlace state
+    else
+        state
 
 let handleMonsters (state: State) : State =
     let rec recursivelyHandleMonstersSequence (monsterPlaces: (Point*Place) list) (state:State) : State =
