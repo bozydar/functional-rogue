@@ -138,6 +138,41 @@ let countObstaclesAroundPoint (point: Point) (board: Board) : int =
                 count <- count + (if(isObstacle board (Point(tmpx,tmpy))) then 1 else 0)
     count
 
+let killCharacter (victim: Character) (board: Board) =
+    let allBoardPlaces = places board
+    let victimPlace = Seq.find (fun x -> (snd x).Character.IsSome && (snd x).Character.Value = victim) allBoardPlaces
+    let corpseItem = {
+        Id = 0;
+        Name = "some" + " corpse";
+        Wearing = {
+                    OnHead = false;
+                    InHand = false;
+                    OnTorso = false;
+                    OnLegs = false
+        };
+        Offence = Value(0M);
+        Defence = Value(0M);
+        Type = Corpse
+        }
+    board 
+        |> modify (fst victimPlace) (fun place -> { place with Character = option.None })
+        |> modify (fst victimPlace) (fun place -> { place with Items = { corpseItem with Id = (rnd Int32.MaxValue) } :: place.Items} )
+
+let meleeAttack (attacker: Character) (defender: Character) (board: Board) =
+    let allBoardPlaces = places board
+    let attackerPlace = Seq.find (fun x -> (snd x).Character.IsSome && (snd x).Character.Value = attacker) allBoardPlaces
+    let defenderPlace = Seq.find (fun x -> (snd x).Character.IsSome && (snd x).Character.Value = defender) allBoardPlaces
+    //check if distance = 1
+    if max (abs ((fst attackerPlace).X - (fst defenderPlace).X)) (abs ((fst attackerPlace).Y - (fst defenderPlace).Y)) = 1 then
+        let defenderResult = defender
+        defenderResult.Monster.Value.HitWithDamage attacker.Monster.Value.GetMeleeDamage
+        if  (defenderResult.Monster.Value.IsAlive) then
+            updateCharacter defender defenderResult board
+        else
+            killCharacter defender board
+    else
+        board
+
 let emptyBoard : Board = Array2D.create boardWidth boardHeight Place.EmptyPlace
 
 type IModifier =
