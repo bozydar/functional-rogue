@@ -18,6 +18,7 @@ and Type =
     | Stick
     | Sword
     | Hat
+    | Corpse
 
 let itemShortDescription item =
     let rest = 
