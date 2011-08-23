@@ -177,7 +177,10 @@ let meleeAttack (attacker: Character) (defender: Character) (board: Board) =
         if  (defender.IsAlive) then
             updateCharacter defender defenderResult board
         else
-            killCharacter defender board
+            if(defender.Type <> Avatar) then
+                killCharacter defender board
+            else
+                board
     else
         board
 

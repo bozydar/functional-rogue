@@ -60,85 +60,88 @@ let showItems () =
 let mainLoop () =
     let rec loop printAll =                
 
-        let consoleKeyInfo = if printAll then new ConsoleKeyInfo('5', ConsoleKey.NumPad5, false, false, false) else System.Console.ReadKey(true)
+        if not(State.get().Player.IsAlive) then
+            ()
+        else5
+            let consoleKeyInfo = if printAll then new ConsoleKeyInfo('5', ConsoleKey.NumPad5, false, false, false) else System.Console.ReadKey(true)
         
-        let command = 
-            match consoleKeyInfo with 
-            | Keys [ConsoleKey.UpArrow; '8'] -> Up            
-            | Keys [ConsoleKey.DownArrow; '2'] -> Down            
-            | Keys [ConsoleKey.LeftArrow; '4'] -> Left            
-            | Keys [ConsoleKey.RightArrow; '6'] -> Right
-            | Key '7'  -> UpLeft
-            | Key '9' -> UpRight
-            | Key '1' -> DownLeft
-            | Key '3' -> DownRight
-            | Key '5' -> Wait
-            | Key ',' -> Take
-            | Key 'i' -> ShowItems
-            | Key ConsoleKey.Escape -> Quit
-            | Key 'o' -> OpenDoor
-            | Key 'c' -> CloseDoor
-            | Key 'e' -> ShowEquipment
-            | Key 'm' -> ShowMessages
-            | Key 'h' -> Harvest
-            | Key 'W' -> Wear
-            | Key 'T' -> TakeOff
-            | _ -> Unknown                        
+            let command = 
+                match consoleKeyInfo with 
+                | Keys [ConsoleKey.UpArrow; '8'] -> Up            
+                | Keys [ConsoleKey.DownArrow; '2'] -> Down            
+                | Keys [ConsoleKey.LeftArrow; '4'] -> Left            
+                | Keys [ConsoleKey.RightArrow; '6'] -> Right
+                | Key '7'  -> UpLeft
+                | Key '9' -> UpRight
+                | Key '1' -> DownLeft
+                | Key '3' -> DownRight
+                | Key '5' -> Wait
+                | Key ',' -> Take
+                | Key 'i' -> ShowItems
+                | Key ConsoleKey.Escape -> Quit
+                | Key 'o' -> OpenDoor
+                | Key 'c' -> CloseDoor
+                | Key 'e' -> ShowEquipment
+                | Key 'm' -> ShowMessages
+                | Key 'h' -> Harvest
+                | Key 'W' -> Wear
+                | Key 'T' -> TakeOff
+                | _ -> Unknown                        
         
-        match command with
-        | Quit -> ()
-        | Unknown -> loop false
-        | Up | Down | Left | Right | UpLeft | UpRight | DownLeft | DownRight  ->
-            State.get () 
-            |> moveAvatar command
-            |> Turn.next
-            Screen.showBoard ()
-            loop false
-        | Wait ->
-            State.get () |> Turn.next
-            Screen.showBoard ()
-            loop false
-        | Take ->
-            State.get () 
-            |> Actions.performTakeAction
-            |> Turn.next
-            Screen.showBoard ()
-            loop false
-        | OpenDoor | CloseDoor ->
-            State.get () 
-            |> Actions.performCloseOpenAction command
-            |> Turn.next
-            Screen.showBoard ()
-            loop false
-        | Harvest -> 
-            State.get () 
-            |> Actions.performHarvest
-            |> Turn.next
-            Screen.showBoard ()
-            loop false
-        | ShowItems ->
-            showItems ()
-            Screen.showBoard ()
-            loop false
-        | ShowEquipment ->
-            showEquipment ()
-            Screen.showBoard ()
-            loop false
-        | ShowMessages ->
-            Screen.showMessages ()
-            loop false
-        | Wear ->
-            State.get ()
-            |> wear
-            |> Turn.next
-            Screen.showBoard ()
-            loop false
-        | TakeOff ->
-            State.get ()
-            |> takeOff
-            |> Turn.next
-            Screen.showBoard ()
-            loop false
+            match command with
+            | Quit -> ()
+            | Unknown -> loop false
+            | Up | Down | Left | Right | UpLeft | UpRight | DownLeft | DownRight  ->
+                State.get () 
+                |> moveAvatar command
+                |> Turn.next
+                Screen.showBoard ()
+                loop false
+            | Wait ->
+                State.get () |> Turn.next
+                Screen.showBoard ()
+                loop false
+            | Take ->
+                State.get () 
+                |> Actions.performTakeAction
+                |> Turn.next
+                Screen.showBoard ()
+                loop false
+            | OpenDoor | CloseDoor ->
+                State.get () 
+                |> Actions.performCloseOpenAction command
+                |> Turn.next
+                Screen.showBoard ()
+                loop false
+            | Harvest -> 
+                State.get () 
+                |> Actions.performHarvest
+                |> Turn.next
+                Screen.showBoard ()
+                loop false
+            | ShowItems ->
+                showItems ()
+                Screen.showBoard ()
+                loop false
+            | ShowEquipment ->
+                showEquipment ()
+                Screen.showBoard ()
+                loop false
+            | ShowMessages ->
+                Screen.showMessages ()
+                loop false
+            | Wear ->
+                State.get ()
+                |> wear
+                |> Turn.next
+                Screen.showBoard ()
+                loop false
+            | TakeOff ->
+                State.get ()
+                |> takeOff
+                |> Turn.next
+                Screen.showBoard ()
+                loop false
 
     let mainMenuReply = showMainMenu ()
 
@@ -152,19 +155,6 @@ let mainLoop () =
         Board = board; 
         BoardFramePosition = point 0 0;
         Player = thePlayer
-//        Player = { 
-//                    Name = mainMenuReply.Name; 
-//                    HP = 5; MaxHP = 10; 
-//                    Magic = 5; 
-//                    MaxMagic = 10; 
-//                    Gold = 0; 
-//                    Iron = 0; 
-//                    Uranium = 0; 
-//                    SightRadius = 10; 
-//                    Items = []; 
-//                    WornItems = { Head = None; Hand = None; Torso = None; Legs = None};
-//                    ShortCuts = Map []
-//                 };
         TurnNumber = 0;
         UserMessages = [];
         Monsters = []
