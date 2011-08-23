@@ -10,7 +10,7 @@ open Screen
 open Sight
 open Items
 open Player
-
+open Characters
 
 type Command = 
     | Up
@@ -47,19 +47,20 @@ let private commandToSize command =
     | DownRight -> new Size(1, 1)
     | _ -> new Size(0, 0)
 
-let moveCharacter command state = 
+let moveAvatar command state = 
     let board = state.Board
     let playerPosition = getPlayerPosition board
 
     let move = commandToSize command
     let newPosition = playerPosition + move
     let newPlace = get board newPosition
+    let playerCharacter = getPlayerCharacter board
     
     let preResult =
         if (isObstacle board newPosition) then
             board
         else
-            board |> moveCharacter {Type = Avatar; Monster = Option.None} newPosition
+            board |> moveCharacter playerCharacter newPosition
     {state with Board = preResult}
 
 let private operateDoor command board =
@@ -86,7 +87,10 @@ let performTakeAction state =
     let state1 = 
         let shortCuts = createShortCuts state.Player.ShortCuts takenItems
             
-        { state with Player = { state.Player with Items =  takenItems @ state.Player.Items; ShortCuts = shortCuts }}
+        //{ state with Player = { state.Player with Items =  takenItems @ state.Player.Items; ShortCuts = shortCuts }}
+        state.Player.Items <- takenItems @ state.Player.Items
+        state.Player.ShortCuts <- shortCuts
+        state
         |> addMessages pickUpMessages
 
     {state1 with Board = board1}
@@ -95,19 +99,18 @@ let performHarvest state =
     let playerPosition = getPlayerPosition state.Board
     let place = get state.Board playerPosition
     let takenOre = place.Ore
-    let player1 = 
-        match takenOre with
-        | Iron(quantity) -> {state.Player with Iron = state.Player.Iron + quantity}
-        | Gold(quantity) -> {state.Player with Gold = state.Player.Gold + quantity}
-        | Uranium(quantity) -> {state.Player with Uranium = state.Player.Uranium + quantity}
-        | _ -> state.Player
+    match takenOre with
+    | Iron(quantity) -> state.Player.Iron <- state.Player.Iron + quantity
+    | Gold(quantity) -> state.Player.Gold <- state.Player.Gold + quantity
+    | Uranium(quantity) -> state.Player.Uranium <- state.Player.Uranium + quantity
+    | _ -> ()
     match takenOre with
         | Iron(quantity) | Gold(quantity) | Uranium(quantity) ->
             let pickUpMessage = sprintf "You have harvested ore %s. Quantity: %i" (repr takenOre) quantity
             let board1 = 
                 state.Board
                 |> set playerPosition {place with Ore = NoneOre}
-            {state with Board = board1; Player = player1} |> addMessage pickUpMessage                
+            {state with Board = board1} |> addMessage pickUpMessage                
         | NoneOre -> 
             state
 
@@ -170,13 +173,13 @@ let wear (state : State) =
                     let chosenOption = chooseOption options                           
                         
                     match chosenOption with
-                    | 'g' -> {state with Player = {state.Player with WornItems = {state.Player.WornItems with Hand = item }}}
-                    | 'h' -> {state with Player = {state.Player with WornItems = {state.Player.WornItems with Head = item }}}
-                    | 'l' -> {state with Player = {state.Player with WornItems = {state.Player.WornItems with Legs = item }}}
-                    | 't' -> {state with Player = {state.Player with WornItems = {state.Player.WornItems with Torso = item }}}                        
-                    | _ -> state
+                    | 'g' -> state.Player.WornItems <- {state.Player.WornItems with Hand = item }
+                    | 'h' -> state.Player.WornItems <- {state.Player.WornItems with Head = item }
+                    | 'l' -> state.Player.WornItems <- {state.Player.WornItems with Legs = item }
+                    | 't' -> state.Player.WornItems <- {state.Player.WornItems with Torso = item }                        
+                    | _ -> ()
 
-                result
+                state
             else
                 refreshScreen 
                 loop ()
@@ -196,10 +199,10 @@ let takeOff (state : State) =
         else
             ' '                    
     match chosenOption with
-    | 'g' -> {state with Player = {state.Player with WornItems = {state.Player.WornItems with Hand = None }}}
-    | 'h' -> {state with Player = {state.Player with WornItems = {state.Player.WornItems with Head = None }}}
-    | 'l' -> {state with Player = {state.Player with WornItems = {state.Player.WornItems with Legs = None }}}
-    | 't' -> {state with Player = {state.Player with WornItems = {state.Player.WornItems with Torso = None }}}                        
-    | _ -> state
-
+    | 'g' -> state.Player.WornItems <- {state.Player.WornItems with Hand = None }
+    | 'h' -> state.Player.WornItems <- {state.Player.WornItems with Head = None }
+    | 'l' -> state.Player.WornItems <- {state.Player.WornItems with Legs = None }
+    | 't' -> state.Player.WornItems <- {state.Player.WornItems with Torso = None }                      
+    | _ -> ()
+    state
 

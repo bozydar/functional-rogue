@@ -3,6 +3,7 @@
 open System
 open System.Collections.Generic
 open Items
+open Characters
 
 type WornItems = {
     Head : option<Item>;
@@ -11,20 +12,76 @@ type WornItems = {
     Legs : option<Item>
 } 
 
-type Player = {
-    Name : string;
-    HP : int;  // life
-    MaxHP : int;
-    Magic : int;  // magic
-    MaxMagic : int;
-    Iron : int
-    Gold : int // gold
-    Uranium : int
-    SightRadius : int // sigh radius
-    Items : list<Item>
-    ShortCuts : Map<char, Item> // keys (chars) to access items
-    WornItems : WornItems
-} 
+type Player (name : string, hp : int) = 
+    inherit Character (CharacterType.Avatar)
+
+    let mutable hP = hp
+
+    let maxHp = hp
+
+    let mutable iron : int = 0
+
+    let mutable gold : int = 0
+
+    let mutable uranium : int = 0
+
+    let mutable items : list<Item> = []
+
+    let mutable shortCuts : Map<char, Item> =  Map [] // keys (chars) to access items
+
+    let mutable wornItems : WornItems = { Head = Option.None; Hand = Option.None; Torso = Option.None; Legs = Option.None }
+
+    member this.Name 
+        with get() = name
+
+    override this.CurrentHP
+        with get() = hP
+
+    //Magic : int;  // magic
+    //MaxMagic : int;
+    
+    member this.ShortCuts
+        with get() = shortCuts
+        and set(value) = shortCuts <- value
+
+    member this.Iron
+        with get() = iron
+        and set(value) = iron <- value
+    
+    member this.Gold
+        with get() = gold
+        and set(value) = gold <- value
+    
+    member this.Uranium
+        with get() = uranium
+        and set(value) = uranium <- value
+
+    override this.SightRadius
+        with get() = 10
+
+    member this.Items
+        with get() = items
+        and set(value) = items <- value
+
+    member this.WornItems
+        with get() = wornItems
+        and set(value) = wornItems <- value
+
+    override this.IsAlive
+        with get() = hP > 0
+
+    override this.HitWithDamage (damage: int) = 
+        hP <- hP - damage
+
+    override this.Appearance
+        with get() = '@'
+
+    override this.GetMeleeDamage
+        with get() = 4
+
+    override this.MaxHP
+        with get() = maxHp
+ 
 
 let createShortCuts currentShortCuts items =
     // use those characters

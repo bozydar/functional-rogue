@@ -7,6 +7,7 @@ open State
 open Sight
 open Items
 open Player
+open Characters
 
 type ScreenAgentMessage =
     | ShowBoard of State
@@ -59,7 +60,7 @@ let private screenWritter () =
                     | Some(character1) -> 
                         match character1.Type with
                         | Avatar -> {Char = '@'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
-                        | Monster -> {Char = character1.Monster.Value.Appearance; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Red}
+                        | Monster -> {Char = character1.Appearance; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Red}
                         | NPC -> {Char = 'P'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.White}
                     | _ -> 
                         match item.Items with
@@ -117,9 +118,9 @@ let private screenWritter () =
 
     let writeStats state screen =
         screen 
-        |> writeString leftPanelPos.Location (sprintf "HP: %d/%d" state.Player.HP state.Player.MaxHP)
+        |> writeString leftPanelPos.Location (sprintf "HP: %d/%d" state.Player.CurrentHP state.Player.MaxHP)
         |> writeString (point leftPanelPos.Location.X (leftPanelPos.Location.Y + 1)) (sprintf "%s the rogue" state.Player.Name)
-        |> writeString (point leftPanelPos.Location.X (leftPanelPos.Location.Y + 2)) (sprintf "Ma: %d/%d" state.Player.HP state.Player.MaxHP)
+        |> writeString (point leftPanelPos.Location.X (leftPanelPos.Location.Y + 2)) (sprintf "Ma: %d/%d" state.Player.CurrentHP state.Player.MaxHP)
         |> writeString (point leftPanelPos.Location.X (leftPanelPos.Location.Y + 3)) (sprintf "Iron: %d" state.Player.Iron)
         |> writeString (point leftPanelPos.Location.X (leftPanelPos.Location.Y + 4)) (sprintf "Gold: %d" state.Player.Gold)
         |> writeString (point leftPanelPos.Location.X (leftPanelPos.Location.Y + 5)) (sprintf "Uranium: %d" state.Player.Uranium)

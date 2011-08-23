@@ -5,6 +5,7 @@ open Items
 open Player
 open System.Drawing
 open Monsters
+open Characters
 
 type State = {
     Board: Board;

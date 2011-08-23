@@ -41,13 +41,13 @@
     <Compile Include="Config.fs" />
     <Compile Include="Log.fs" />
     <Compile Include="Items.fs" />
+    <Compile Include="Characters.fs" />
     <Compile Include="Monsters.fs" />
     <Compile Include="Board.fs" />
     <Compile Include="Player.fs" />
     <Compile Include="State.fs" />
     <Compile Include="Sight.fs" />
     <Compile Include="LevelGeneration.fs" />
-    <Compile Include="Characters.fs" />
     <Compile Include="Screen.fs" />
     <Compile Include="Actions.fs" />
     <Compile Include="AI.fs" />

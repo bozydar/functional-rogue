@@ -3,6 +3,7 @@
 open State
 open Monsters
 open Board
+open Characters
 open System.Drawing
 open System.Collections.Generic
 
@@ -18,6 +19,7 @@ type GridPoint = {
 
 let getDifferentSpeciesTheMonsterCanAttackInMelee (monsterPlace: (Point*Place)) (state:State) =
     let distance = 1
+    let monster = (snd monsterPlace).Character.Value :?> Monster
     let mutable result = []
     for x in (max 0 ((fst monsterPlace).X - distance))..(min (boardWidth - 1) ((fst monsterPlace).X + distance)) do
         for y in (max 0 ((fst monsterPlace).Y - distance))..(min (boardHeight - 1) ((fst monsterPlace).Y + distance)) do
@@ -26,7 +28,7 @@ let getDifferentSpeciesTheMonsterCanAttackInMelee (monsterPlace: (Point*Place)) 
                     || state.Board.[x,y].Character.Value.Type = CharacterType.NPC
                     || (
                         state.Board.[x,y].Character.Value.Type = CharacterType.Monster &&
-                        state.Board.[x,y].Character.Value.Monster.Value.Type <> (snd monsterPlace).Character.Value.Monster.Value.Type
+                        (state.Board.[x,y].Character.Value :?> Monster).Type <> monster.Type
                         )
                 )) then
                 result <- result @ [Point(x,y)]
@@ -41,7 +43,7 @@ let getGoodLurkingPositionsInSightSortedFromBest (monsterPlace: (Point*Place)) (
         | _ -> 0
 
     let mutable result = []
-    let sightRadius = (snd monsterPlace).Character.Value.Monster.Value.SightRadius
+    let sightRadius = (snd monsterPlace).Character.Value.SightRadius
     let center = fst monsterPlace
     for x in (max 1 (center.X - sightRadius))..(min (center.X + sightRadius) (boardWidth - 2)) do
         for y in (max 1 (center.Y - sightRadius))..(min (center.Y + sightRadius) (boardHeight - 2)) do
@@ -116,7 +118,8 @@ let performRandomMovement (monsterPlace: (Point*Place)) (state:State) : State =
     resultState
 
 let getDifferentSpeciesTheMonsterCanSee (monsterPlace: (Point*Place)) (state:State) =
-    let distance = (snd monsterPlace).Character.Value.Monster.Value.SightRadius
+    let distance = (snd monsterPlace).Character.Value.SightRadius
+    let monster = (snd monsterPlace).Character.Value :?> Monster
     let mutable result = []
     for x in (max 0 ((fst monsterPlace).X - distance))..(min (boardWidth - 1) ((fst monsterPlace).X + distance)) do
         for y in (max 0 ((fst monsterPlace).Y - distance))..(min (boardHeight - 1) ((fst monsterPlace).Y + distance)) do
@@ -125,7 +128,7 @@ let getDifferentSpeciesTheMonsterCanSee (monsterPlace: (Point*Place)) (state:Sta
                     || state.Board.[x,y].Character.Value.Type = CharacterType.NPC
                     || (
                         state.Board.[x,y].Character.Value.Type = CharacterType.Monster &&
-                        state.Board.[x,y].Character.Value.Monster.Value.Type <> (snd monsterPlace).Character.Value.Monster.Value.Type
+                        (state.Board.[x,y].Character.Value :?> Monster).Type <> monster.Type
                         )
                 )) then
                 result <- result @ [(Point(x,y),state.Board.[x,y].Character.Value)]
@@ -156,18 +159,18 @@ let aiCowardMonster (monsterPlace: (Point*Place)) (state:State) : State =
         performRandomMovement monsterPlace state
 
 let aiLurkerPredatorMonster (monsterPlace: (Point*Place)) (state:State) : State =
-    let monster = (snd monsterPlace).Character.Value
+    let monster = (snd monsterPlace).Character.Value :?> Monster
     let monsterPoint = fst monsterPlace
-    match monster.Monster.Value.State with
-    | MonsterState.Default ->
-        monster.Monster.Value.State <- MonsterState.Lurking
-        monster.Monster.Value.HungerFactor <- rnd2 30 60
+    match monster.State with
+    | CharacterAiState.Default ->
+        monster.State <- CharacterAiState.Lurking
+        monster.HungerFactor <- rnd2 30 60
         state |> State.updateCharacter (snd monsterPlace).Character.Value monster
-    | MonsterState.Lurking ->
-        let newHungerFactor = monster.Monster.Value.HungerFactor - 1
-        monster.Monster.Value.HungerFactor <- newHungerFactor
+    | CharacterAiState.Lurking ->
+        let newHungerFactor = monster.HungerFactor - 1
+        monster.HungerFactor <- newHungerFactor
         if (newHungerFactor < 0) then
-            monster.Monster.Value.State <- MonsterState.Hunting
+            monster.State <- CharacterAiState.Hunting
             state |> State.updateCharacter (snd monsterPlace).Character.Value monster
         else
             let positions = getGoodLurkingPositionsInSightSortedFromBest monsterPlace state
@@ -179,7 +182,7 @@ let aiLurkerPredatorMonster (monsterPlace: (Point*Place)) (state:State) : State 
                     newState
             else
                 performRandomMovement monsterPlace newState
-    | MonsterState.Hunting ->
+    | CharacterAiState.Hunting ->
         let differentSpecies = getDifferentSpeciesTheMonsterCanSee monsterPlace state
         let sortedDiffSpeciesByDist = differentSpecies |> List.sortBy (fun elem -> (max (abs (monsterPoint.X - (fst elem).X)) (abs (monsterPoint.Y - (fst elem).Y))) )
         //if (sortedDiffSpeciesByDist.Length > 0) then
@@ -199,8 +202,9 @@ let aiLurkerPredatorMonster (monsterPlace: (Point*Place)) (state:State) : State 
 // some top level functions
 
 let handleSingleMonster (monsterPlace: (Point*Place)) (state:State) : State =
-    if((snd monsterPlace).Character.Value.Monster.Value.IsAlive) then
-        match (snd monsterPlace).Character.Value.Monster.Value.Type with
+    if((snd monsterPlace).Character.Value.IsAlive) then
+        let monster = (snd monsterPlace).Character.Value :?> Monster
+        match monster.Type with
         | Rat -> aiCowardMonster monsterPlace state
         | Lurker -> aiLurkerPredatorMonster monsterPlace state
     else

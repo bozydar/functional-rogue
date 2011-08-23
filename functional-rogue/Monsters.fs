@@ -1,48 +1,50 @@
 ﻿module Monsters
 
+open Characters
+
 type MonsterType =
     | Rat
     | Lurker
 
-type MonsterState =
+type CharacterAiState =
     | Lurking
     | Hunting
     | Default   //this is used for stateless monsters and for state monsters indicates that the monster has just been created and needs a setup
 
 type Monster (monsterType: MonsterType, hp: int) =
-    let guid = System.Guid.NewGuid
+    inherit Character (CharacterType.Monster)
 
-    let mutable state = MonsterState.Default
+    let mutable state = CharacterAiState.Default
 
     let mutable hungerFactor = 0
 
     let mutable hP = hp
 
-    let getMonsterSightRadius =
-        match monsterType with
-        | Rat -> 2
-        | Lurker -> 5
+    let maxHp = hp
 
     member this.Type
         with get() = monsterType
 
-    member this.Guid
-        with get() = guid
+    //member this.Guid
+    //    with get() = guid
 
-    member this.Appearance
+    override this.Appearance
         with get() =
             match monsterType with
             | Rat -> 'r'
             | Lurker -> 'l'
 
-    member this.CurrentHP
+    override this.CurrentHP
         with get() = hP
 
-    member this.GetMeleeDamage
+    override this.GetMeleeDamage
         with get() = 4
     
-    member this.SightRadius
-        with get() = getMonsterSightRadius
+    override this.SightRadius
+        with get() =
+            match monsterType with
+            | Rat -> 2
+            | Lurker -> 5
 
     member this.State
         with get() = state
@@ -52,11 +54,14 @@ type Monster (monsterType: MonsterType, hp: int) =
         with get() = hungerFactor
         and set(value) = hungerFactor <- value
 
-    member this.IsAlive
+    override this.IsAlive
         with get() = hP > 0
 
-    member this.HitWithDamage (damage: int) = 
+    override this.HitWithDamage (damage: int) = 
         hP <- hP - damage
+
+    override this.MaxHP
+        with get() = maxHp
 
 let createNewMonster (monsterType: MonsterType) : Monster =
     match monsterType with
