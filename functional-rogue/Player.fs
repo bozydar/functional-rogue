@@ -31,7 +31,7 @@ type Player (name : string, hp : int) =
 
     let mutable wornItems : WornItems = { Head = Option.None; Hand = Option.None; Torso = Option.None; Legs = Option.None }
 
-    member this.Name 
+    override this.Name 
         with get() = name
 
     override this.CurrentHP

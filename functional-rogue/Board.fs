@@ -151,7 +151,7 @@ let killCharacter (victim: Character) (board: Board) =
     let victimPlace = Seq.find (fun x -> (snd x).Character.IsSome && (snd x).Character.Value = victim) allBoardPlaces
     let corpseItem = {
         Id = 0;
-        Name = "some" + " corpse";
+        Name = victim.Name + " corpse";
         Wearing = {
                     OnHead = false;
                     InHand = false;

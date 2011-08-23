@@ -24,3 +24,5 @@ type Character (characterType: CharacterType)=
     abstract IsAlive : bool with get
 
     abstract HitWithDamage : int -> unit
+
+    abstract Name : string with get
