@@ -57,7 +57,7 @@ let moveAvatar command state =
     let playerCharacter = getPlayerCharacter board
     
     let preResult =
-        if (isObstacle board newPosition) then
+        if (isMovementObstacle board newPosition) then
             board
         else
             board |> moveCharacter playerCharacter newPosition

@@ -148,7 +148,7 @@ let putRandomMonstersOnBoard (board:Board) =
         | _ ->
             let x = rnd boardWidth
             let y = rnd boardHeight
-            if((isObstacle board (Point (x,y)))) then
+            if((isMovementObstacle board (Point (x,y)))) then
                 findEmptySpotsAndPutMonsters n board
             else
                 findEmptySpotsAndPutMonsters (n-1) (board |> Board.moveCharacter (createNewMonster(getRandomMonsterType ())) (new Point(x, y)))

@@ -47,7 +47,7 @@ let getGoodLurkingPositionsInSightSortedFromBest (monsterPlace: (Point*Place)) (
     let center = fst monsterPlace
     for x in (max 1 (center.X - sightRadius))..(min (center.X + sightRadius) (boardWidth - 2)) do
         for y in (max 1 (center.Y - sightRadius))..(min (center.Y + sightRadius) (boardHeight - 2)) do
-            if not(isObstacle state.Board (Point(x,y))) || (fst monsterPlace) = (Point(x,y)) then
+            if not(isMovementObstacle state.Board (Point(x,y))) || (fst monsterPlace) = (Point(x,y)) then
                 let obstaclesCount = countObstaclesAroundPoint (Point(x,y)) state.Board
                 if (obstaclesCount > 3 && obstaclesCount < 8) then
                     let bonus = calculateDistanceBonus center (Point(x,y))
@@ -84,7 +84,7 @@ let aStar (startPoint: Point) (endPoint: Point) (board: Board) : (Point list) =
             for x in (max 0 (current.point.X - 1))..(min (current.point.X + 1) (boardWidth - 1)) do
                 for y in (max 0 (current.point.Y - 1))..(min (current.point.Y + 1) (boardHeight - 1)) do
                     let mutable tentativeIsBetter = true
-                    if (Point(x,y) = endPoint || not(isObstacle board (Point(x,y)))) && (not( listContains (Point(x,y)) closedSet )) then
+                    if (Point(x,y) = endPoint || not(isMovementObstacle board (Point(x,y)))) && (not( listContains (Point(x,y)) closedSet )) then
                         let tentativeGScore = current.gScore + 1    //TODO: change this to something else later (terrain difficulty, etc.)
                         if not( listContains (Point(x,y)) openSet) then
                             openSet <- openSet @ [{ point = Point(x,y); cameFrom = current.point; gScore = tentativeGScore; hScore = (estimateCostToEnd (Point(x,y)) endPoint); fScore = (tentativeGScore + (estimateCostToEnd (Point(x,y)) endPoint))}]
@@ -112,7 +112,7 @@ let performRandomMovement (monsterPlace: (Point*Place)) (state:State) : State =
     let y = (fst monsterPlace).Y
     for tmpx in (max (x - 1) 0)..(min (x + 1) (boardWidth - 1)) do
         for tmpy in (max (y - 1) 0)..(min (y + 1) (boardHeight - 1)) do
-            if (not(tmpx = x && tmpy = y) && not(isObstacle state.Board (Point(tmpx,tmpy)))) then
+            if (not(tmpx = x && tmpy = y) && not(isMovementObstacle state.Board (Point(tmpx,tmpy)))) then
                 possibleNewLocations <- possibleNewLocations @ [Point(tmpx,tmpy)]
     let resultState = { state with Board = state.Board |> Board.moveCharacter (snd monsterPlace).Character.Value (possibleNewLocations.[rnd possibleNewLocations.Length]) }
     resultState
@@ -143,7 +143,7 @@ let getSpotsWithDangerScore (enemies: (Point*Character) list) (monsterPlace: Poi
     let mutable spots = []
     for x in ((monsterPlace).X - 1)..((monsterPlace).X + 1) do
         for y in ((monsterPlace).Y - 1)..((monsterPlace).Y + 1) do
-            if not(isObstacle state.Board (Point(x,y))) then
+            if not(isMovementObstacle state.Board (Point(x,y))) then
                 spots <- spots @ [(Point(x,y),(calculateDangerScore (Point(x,y)) enemies))]
     spots
 
