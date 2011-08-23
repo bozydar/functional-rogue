@@ -62,7 +62,7 @@ let mainLoop () =
 
         if not(State.get().Player.IsAlive) then
             ()
-        else5
+        else
             let consoleKeyInfo = if printAll then new ConsoleKeyInfo('5', ConsoleKey.NumPad5, false, false, false) else System.Console.ReadKey(true)
         
             let command = 
