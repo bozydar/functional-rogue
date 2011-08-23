@@ -18,6 +18,7 @@ type Tile =
     | Tree
     | SmallPlants
     | Bush
+    | Glass
 
 let obstacles = set [ Wall; ClosedDoor; Tree ]
 
@@ -63,7 +64,7 @@ let boardContains (point: Point) =
 let get (board: Board) (point: Point) = if boardContains point then Array2D.get board point.X point.Y else Place.Wall
 
 let isMovementObstacle (board: Board) (point: Point) =
-    ((get board point).Tile = Tile.Wall || (get board point).Tile = Tile.ClosedDoor || (get board point).Tile = Tile.Tree || (get board point).Character.IsSome)
+    ((get board point).Tile = Tile.Wall || (get board point).Tile = Tile.ClosedDoor || (get board point).Tile = Tile.Tree || (get board point).Tile = Tile.Glass || (get board point).Character.IsSome)
 
 let isOpticalObstacle (board: Board) (point: Point) =
     ((get board point).Tile = Tile.Wall || (get board point).Tile = Tile.ClosedDoor || (get board point).Tile = Tile.Tree || (get board point).Tile = Tile.Bush)

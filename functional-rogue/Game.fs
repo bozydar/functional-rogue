@@ -148,8 +148,10 @@ let mainLoop () =
     let thePlayer = new Player(mainMenuReply.Name, 10)
 
     let board = 
-        generateLevel LevelType.Cave
-        |> Board.moveCharacter thePlayer (new Point(8, 4))
+        //generateLevel LevelType.Cave
+        let level, position = generateStartLocationWithInitialPlayerPositon
+        level
+        |> Board.moveCharacter thePlayer (position)
 
     let entryState = {         
         Board = board; 
