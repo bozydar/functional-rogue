@@ -4,7 +4,7 @@ open System.Drawing
 open Board
 open Items
 open Monsters
-
+open Characters
 
 // level generation utilities
 
@@ -151,7 +151,7 @@ let putRandomMonstersOnBoard (board:Board) =
             if((isObstacle board (Point (x,y)))) then
                 findEmptySpotsAndPutMonsters n board
             else
-                findEmptySpotsAndPutMonsters (n-1) (board |> Board.moveCharacter { Type = CharacterType.Monster; Monster =  Some(createNewMonster(getRandomMonsterType ())) } (new Point(x, y)))
+                findEmptySpotsAndPutMonsters (n-1) (board |> Board.moveCharacter (createNewMonster(getRandomMonsterType ())) (new Point(x, y)))
     findEmptySpotsAndPutMonsters 10 board
 
 

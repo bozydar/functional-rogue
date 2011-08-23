@@ -1,30 +1,26 @@
 ﻿module Characters
 
-open Board
+type CharacterType = 
+    | Avatar
+    | Monster
+    | NPC
 
-type Command = 
-    | Up
-    | Down
-    | Left
-    | Right
-    | Wait
-    | Quit
-    | Unknown
+[<AbstractClass>]
+type Character (characterType: CharacterType)=
 
-(*
-type CharacterMessage = {
-    Command: Commad
-}
+    member this.Type
+        with get() = characterType
 
-let private charactersAgent () = 
+    abstract CurrentHP : int with get
+
+    abstract MaxHP : int with get
+
+    abstract GetMeleeDamage : int with get
     
-    MailboxProcessor<CharacterMessage>.Start (fun inbox ->
-        let rec loop avatar = async {
-            let! msg = inbox.Receive()
-            match msg with
-            | Move
-            let newAvatar = 
-                
-        }
-    )
-    *)
+    abstract SightRadius : int with get
+
+    abstract Appearance : char with get
+
+    abstract IsAlive : bool with get
+
+    abstract HitWithDamage : int -> unit

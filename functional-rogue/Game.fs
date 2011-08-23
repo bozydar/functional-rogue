@@ -14,7 +14,7 @@ open Player
 open Monsters
 open AI
 open Turn
-
+open Characters
 
 let evaluateBoardFramePosition state = 
     let playerPosition = getPlayerPosition state.Board
@@ -90,7 +90,7 @@ let mainLoop () =
         | Unknown -> loop false
         | Up | Down | Left | Right | UpLeft | UpRight | DownLeft | DownRight  ->
             State.get () 
-            |> moveCharacter command
+            |> moveAvatar command
             |> Turn.next
             Screen.showBoard ()
             loop false
@@ -140,27 +140,31 @@ let mainLoop () =
             Screen.showBoard ()
             loop false
 
+    let mainMenuReply = showMainMenu ()
+
+    let thePlayer = new Player(mainMenuReply.Name, 10)
+
     let board = 
         generateLevel LevelType.Cave
-        |> Board.moveCharacter {Type = CharacterType.Avatar; Monster = Option.None} (new Point(8, 4))
+        |> Board.moveCharacter thePlayer (new Point(8, 4))
 
-    let mainMenuReply = showMainMenu ()
     let entryState = {         
         Board = board; 
         BoardFramePosition = point 0 0;
-        Player = { 
-                    Name = mainMenuReply.Name; 
-                    HP = 5; MaxHP = 10; 
-                    Magic = 5; 
-                    MaxMagic = 10; 
-                    Gold = 0; 
-                    Iron = 0; 
-                    Uranium = 0; 
-                    SightRadius = 10; 
-                    Items = []; 
-                    WornItems = { Head = None; Hand = None; Torso = None; Legs = None};
-                    ShortCuts = Map []
-                 };
+        Player = thePlayer
+//        Player = { 
+//                    Name = mainMenuReply.Name; 
+//                    HP = 5; MaxHP = 10; 
+//                    Magic = 5; 
+//                    MaxMagic = 10; 
+//                    Gold = 0; 
+//                    Iron = 0; 
+//                    Uranium = 0; 
+//                    SightRadius = 10; 
+//                    Items = []; 
+//                    WornItems = { Head = None; Hand = None; Torso = None; Legs = None};
+//                    ShortCuts = Map []
+//                 };
         TurnNumber = 0;
         UserMessages = [];
         Monsters = []

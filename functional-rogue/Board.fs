@@ -6,6 +6,7 @@ open Utils
 open Config
 open Items
 open Monsters
+open Characters
 
 type Tile =
     | Wall 
@@ -20,21 +21,16 @@ type Tile =
 
 let obstacles = set [ Wall; ClosedDoor; Tree ]
 
-type CharacterType = 
-    | Avatar
-    | Monster
-    | NPC
-
 type LevelType = 
     | Test
     | Dungeon
     | Cave
     | Forest
 
-type Character = {
-    Type: CharacterType
-    Monster: Monster option
-}    
+//type Character = {
+//    Type: CharacterType
+//    Monster: Monster option
+//}    
 
 type Ore = 
     | NoneOre
@@ -98,10 +94,18 @@ let monsterPlaces (board: Board) =
 let getPlayerPosition (board: Board) = 
     let preResult = Seq.tryFind (fun (point, place) -> 
         match place.Character with 
-        | Some(character1) -> character1 = {Type = Avatar; Monster = Option.None}
+        | Some(character1) -> character1.Type = Avatar
         | _ -> false) (places board)
     let point, _ = preResult.Value
     point
+
+let getPlayerCharacter (board: Board) =
+    let preResult = Seq.tryFind (fun (point, place) -> 
+        match place.Character with 
+        | Some(character1) -> character1.Type = Avatar
+        | _ -> false) (places board)
+    let _ , place = preResult.Value
+    place.Character.Value
 
 let moveCharacter (character: Character) (newPosition: Point) (board: Board) =
     let allBoardPlaces = places board
@@ -165,8 +169,8 @@ let meleeAttack (attacker: Character) (defender: Character) (board: Board) =
     //check if distance = 1
     if max (abs ((fst attackerPlace).X - (fst defenderPlace).X)) (abs ((fst attackerPlace).Y - (fst defenderPlace).Y)) = 1 then
         let defenderResult = defender
-        defenderResult.Monster.Value.HitWithDamage attacker.Monster.Value.GetMeleeDamage
-        if  (defenderResult.Monster.Value.IsAlive) then
+        defender.HitWithDamage attacker.GetMeleeDamage
+        if  (defender.IsAlive) then
             updateCharacter defender defenderResult board
         else
             killCharacter defender board
