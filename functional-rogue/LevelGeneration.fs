@@ -5,6 +5,41 @@ open Board
 open Items
 open Monsters
 open Characters
+open Config
+
+// predefined parts
+
+let generateStartingLevelShip =
+    let result = Array2D.create 15 5 { Tile = Tile.Grass; Items = []; Ore = Ore.NoneOre; Character = Option.None; IsSeen = false; WasSeen = Settings.EntireLevelSeen }
+    let wall = { Tile = Tile.Wall; Items = []; Ore = Ore.NoneOre; Character = Option.None; IsSeen = false; WasSeen = Settings.EntireLevelSeen }
+    let glass = { Tile = Tile.Glass; Items = []; Ore = Ore.NoneOre; Character = Option.None; IsSeen = false; WasSeen = Settings.EntireLevelSeen }
+    let door = { Tile = Tile.ClosedDoor; Items = []; Ore = Ore.NoneOre; Character = Option.None; IsSeen = false; WasSeen = Settings.EntireLevelSeen }
+    let floor = { Tile = Tile.Floor; Items = []; Ore = Ore.NoneOre; Character = Option.None; IsSeen = false; WasSeen = Settings.EntireLevelSeen }
+    result.[0,2] <- glass
+    result.[1,1] <- glass
+    result.[1,2] <- glass
+    result.[1,3] <- glass
+    result.[2,0] <- wall
+    result.[2,1] <- wall
+    result.[2,2] <- floor
+    result.[2,3] <- wall
+    result.[2,4] <- wall
+    result.[3,0] <- wall
+    result.[3,1] <- floor
+    result.[3,2] <- floor
+    result.[3,3] <- floor
+    result.[3,4] <- wall
+    result.[4,0] <- glass
+    result.[4,1] <- floor
+    result.[4,2] <- floor
+    result.[4,3] <- floor
+    result.[4,4] <- glass
+    result.[5,0] <- wall
+    result.[5,1] <- wall
+    result.[5,2] <- door
+    result.[5,3] <- wall
+    result.[5,4] <- wall
+    result
 
 // level generation utilities
 
@@ -383,6 +418,12 @@ let generateForest: Board =
     board <- scatterTilesRamdomlyOnBoard board Tile.Bush Tile.Grass 0.05 false
     board <- scatterTilesRamdomlyOnBoard board Tile.SmallPlants Tile.Grass 0.05 false
     board
+
+let generateStartLocationWithInitialPlayerPositon: (Board*Point) =
+    let result = generateForest
+    let ship = generateStartingLevelShip
+    Array2D.blit ship 0 0 result 30 10 (Array2D.length1 ship) (Array2D.length2 ship)
+    (result,(Point(33,12)))
 
 // main level generation switch
 let generateLevel levelType : Board = 
