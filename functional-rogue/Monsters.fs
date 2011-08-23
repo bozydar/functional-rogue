@@ -34,6 +34,12 @@ type Monster (monsterType: MonsterType, hp: int) =
             | Rat -> 'r'
             | Lurker -> 'l'
 
+    override this.Name 
+        with get() =
+            match monsterType with
+            | Rat -> "Rat"
+            | Lurker -> "Lurker"
+
     override this.CurrentHP
         with get() = hP
 
