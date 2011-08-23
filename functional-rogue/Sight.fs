@@ -17,7 +17,7 @@ let visiblePositions (where: Point) distance board =
                 let p = fPoint.ToPoint
                 if boardContains p then
                     yield p
-                if isObstacle board p then 
+                if isOpticalObstacle board p then 
                     ()
                 elif j < distance then
                     yield! loop1 (fPoint + move) (j + 1)

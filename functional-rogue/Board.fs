@@ -62,7 +62,11 @@ let boardContains (point: Point) =
                     
 let get (board: Board) (point: Point) = if boardContains point then Array2D.get board point.X point.Y else Place.Wall
 
-let isObstacle (board: Board) (point: Point) = ((get board point).Tile = Tile.Wall || (get board point).Tile = Tile.ClosedDoor || (get board point).Tile = Tile.Tree || (get board point).Character.IsSome)
+let isMovementObstacle (board: Board) (point: Point) =
+    ((get board point).Tile = Tile.Wall || (get board point).Tile = Tile.ClosedDoor || (get board point).Tile = Tile.Tree || (get board point).Character.IsSome)
+
+let isOpticalObstacle (board: Board) (point: Point) =
+    ((get board point).Tile = Tile.Wall || (get board point).Tile = Tile.ClosedDoor || (get board point).Tile = Tile.Tree || (get board point).Tile = Tile.Bush)
 
 let set (point: Point) (value: Place) (board: Board) : Board =
     let result = Array2D.copy board 
@@ -139,7 +143,7 @@ let countObstaclesAroundPoint (point: Point) (board: Board) : int =
     for tmpx in (max 0 (point.X - 1))..(min (point.X + 1) (boardWidth - 1)) do
         for tmpy in (max 0 (point.Y - 1))..(min (point.Y + 1) (boardHeight - 1)) do
             if not(tmpx = point.X && tmpy = point.Y) then
-                count <- count + (if(isObstacle board (Point(tmpx,tmpy))) then 1 else 0)
+                count <- count + (if(isMovementObstacle board (Point(tmpx,tmpy))) then 1 else 0)
     count
 
 let killCharacter (victim: Character) (board: Board) =
