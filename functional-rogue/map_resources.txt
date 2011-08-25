@@ -1,7 +1,9 @@
 ﻿//This is a resource containing some predefined map objects
 //0 - this is the background
-//1 - wall
-//2 - glass
+//# - wall
+//g - glass
+//. - floor
+//+ - closed door
 //This is the ship the player starts the game in
 =StartLocationShip
 00##g#000000
