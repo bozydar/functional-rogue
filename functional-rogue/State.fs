@@ -14,6 +14,7 @@ type State = {
     TurnNumber: int;
     UserMessages: (int*string) list
     Monsters: Monster list
+    AllBoards : System.Collections.Generic.Dictionary<System.Guid,Board>
 } 
 
 type private StateAgentMessage = 

@@ -87,6 +87,8 @@ let private screenWritter () =
                                 | SmallPlants -> {Char = '*'; FGColor = ConsoleColor.DarkGreen; BGColor = ConsoleColor.Black}
                                 | Bush -> {Char = '&'; FGColor = ConsoleColor.DarkGreen; BGColor = ConsoleColor.Black}
                                 | Glass -> {Char = '#'; FGColor = ConsoleColor.Blue; BGColor = ConsoleColor.Black}
+                                | StairsDown -> {Char = '>'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
+                                | StairsUp -> {Char = '<'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
                                 | _ -> empty
                 if not item.IsSeen then {result with FGColor = ConsoleColor.DarkGray } else result
             else empty
@@ -96,7 +98,7 @@ let private screenWritter () =
                 // move board                                
                 let virtualX = x + boardFramePosition.X
                 let virtualY = y + boardFramePosition.Y
-                screen.[x, y] <- toTextel board.[virtualX, virtualY]
+                screen.[x, y] <- toTextel board.Places.[virtualX, virtualY]
         screen      
         
     let writeString (position: Point) (text: String) (screen: screen) = 
@@ -126,6 +128,7 @@ let private screenWritter () =
         |> writeString (point leftPanelPos.Location.X (leftPanelPos.Location.Y + 4)) (sprintf "Gold: %d" state.Player.Gold)
         |> writeString (point leftPanelPos.Location.X (leftPanelPos.Location.Y + 5)) (sprintf "Uranium: %d" state.Player.Uranium)
         |> writeString (point leftPanelPos.Location.X (leftPanelPos.Location.Y + 6)) (sprintf "Turn: %d" state.TurnNumber)
+        |> writeString (point leftPanelPos.Location.X (leftPanelPos.Location.Y + 7)) (sprintf "Map Level: %d" state.Board.Level)
 
     let writeMessage state screen =
         if( state.UserMessages.Length > 0 && (fst (state.UserMessages.Head)) = state.TurnNumber - 1) then

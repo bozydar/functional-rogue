@@ -86,6 +86,8 @@ let mainLoop () =
                 | Key 'h' -> Harvest
                 | Key 'W' -> Wear
                 | Key 'T' -> TakeOff
+                | Key '>' -> GoDownEnter
+                | Key '<' -> GoUp
                 | _ -> Unknown                        
         
             match command with
@@ -94,6 +96,18 @@ let mainLoop () =
             | Up | Down | Left | Right | UpLeft | UpRight | DownLeft | DownRight  ->
                 State.get () 
                 |> moveAvatar command
+                |> Turn.next
+                Screen.showBoard ()
+                loop false
+            | GoDownEnter ->
+                State.get () 
+                |> performGoDownEnterAction command
+                |> Turn.next
+                Screen.showBoard ()
+                loop false
+            | GoUp ->
+                State.get () 
+                |> performGoUpAction command
                 |> Turn.next
                 Screen.showBoard ()
                 loop false
@@ -152,6 +166,9 @@ let mainLoop () =
         let level, position = generateStartLocationWithInitialPlayerPositon
         level
         |> Board.moveCharacter thePlayer (position)
+    
+    let initialBoards = new System.Collections.Generic.Dictionary<System.Guid,Board>()
+    initialBoards.Add(Guid.NewGuid(), board)
 
     let entryState = {         
         Board = board; 
@@ -159,7 +176,8 @@ let mainLoop () =
         Player = thePlayer
         TurnNumber = 0;
         UserMessages = [];
-        Monsters = []
+        Monsters = [];
+        AllBoards = initialBoards
     }
     State.set entryState
     loop true      

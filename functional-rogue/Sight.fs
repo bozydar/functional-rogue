@@ -34,6 +34,6 @@ let setVisibilityStates state  =
     let positions = visiblePositions playerPosition state.Player.SightRadius state.Board    
     let preResult = Array2D.mapi (fun x y place -> 
         let p = point x y
-        if Seq.exists ((=) p) positions then {place with IsSeen = true; WasSeen = true} else {place with IsSeen = false}) state.Board
-    {state with Board = preResult}
+        if Seq.exists ((=) p) positions then {place with IsSeen = true; WasSeen = true} else {place with IsSeen = false}) state.Board.Places
+    {state with Board = { state.Board with Places = preResult }}
     
