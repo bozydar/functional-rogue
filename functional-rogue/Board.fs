@@ -19,6 +19,8 @@ type Tile =
     | SmallPlants
     | Bush
     | Glass
+    | StairsDown
+    | StairsUp
 
 let obstacles = set [ Wall; ClosedDoor; Tree ]
 
@@ -28,10 +30,10 @@ type LevelType =
     | Cave
     | Forest
 
-//type Character = {
-//    Type: CharacterType
-//    Monster: Monster option
-//}    
+type TransportTarget = {
+    BoardId : Guid;
+    TargetCoordinates : Point
+}   
 
 type Ore = 
     | NoneOre
@@ -46,22 +48,26 @@ type Place = {
     Character : Character option;    
     IsSeen : bool;
     WasSeen : bool;
+    TransportTarget : TransportTarget option
 } with
     static member EmptyPlace = 
-            {Tile = Tile.Empty; Items = []; Character = Option.None; IsSeen = false; WasSeen = Settings.EntireLevelSeen; Ore = NoneOre }
+            {Tile = Tile.Empty; Items = []; Character = Option.None; IsSeen = false; WasSeen = Settings.EntireLevelSeen; Ore = NoneOre; TransportTarget = Option.None}
     static member Wall = 
-            {Tile = Tile.Wall; Items = []; Character = Option.None; IsSeen = false; WasSeen = Settings.EntireLevelSeen; Ore = NoneOre }
+            {Tile = Tile.Wall; Items = []; Character = Option.None; IsSeen = false; WasSeen = Settings.EntireLevelSeen; Ore = NoneOre; TransportTarget = Option.None }
 
 let boardHeight = 24
 let boardWidth = 79
 
-type Board = Place[,] 
-    
+type Board = {
+    Guid : System.Guid;
+    Places : Place[,];
+    Level : int
+}
     
 let boardContains (point: Point) = 
     boardWidth > point.X  && boardHeight > point.Y && point.X >= 0 && point.Y >= 0
                     
-let get (board: Board) (point: Point) = if boardContains point then Array2D.get board point.X point.Y else Place.Wall
+let get (board: Board) (point: Point) = if boardContains point then Array2D.get board.Places point.X point.Y else Place.Wall
 
 let isMovementObstacle (board: Board) (point: Point) =
     ((get board point).Tile = Tile.Wall || (get board point).Tile = Tile.ClosedDoor || (get board point).Tile = Tile.Tree || (get board point).Tile = Tile.Glass || (get board point).Character.IsSome)
@@ -70,9 +76,9 @@ let isOpticalObstacle (board: Board) (point: Point) =
     ((get board point).Tile = Tile.Wall || (get board point).Tile = Tile.ClosedDoor || (get board point).Tile = Tile.Tree || (get board point).Tile = Tile.Bush)
 
 let set (point: Point) (value: Place) (board: Board) : Board =
-    let result = Array2D.copy board 
+    let result = Array2D.copy board.Places 
     Array2D.set result point.X point.Y value
-    result
+    { board with Places = result }
 
 let modify (point: Point) (modifier: Place -> Place) (board: Board) =
     let current = get board point 
@@ -82,7 +88,7 @@ let places (board: Board) =
     seq {
         for x = 0 to boardWidth - 1 do
             for y = 0 to boardHeight - 1 do
-                let item = Array2D.get board x y
+                let item = Array2D.get board.Places x y
                 yield (new Point(x, y), item)
     }
 
@@ -90,7 +96,7 @@ let monsterPlaces (board: Board) =
     let tempSeq = seq {
         for x = 0 to boardWidth - 1 do
             for y = 0 to boardHeight - 1 do
-                let item = Array2D.get board x y
+                let item = Array2D.get board.Places x y
                 if (item.Character.IsSome && item.Character.Value.Type = CharacterType.Monster) then
                     yield (new Point(x, y), item)
     }
@@ -185,7 +191,7 @@ let meleeAttack (attacker: Character) (defender: Character) (board: Board) =
     else
         board
 
-let emptyBoard : Board = Array2D.create boardWidth boardHeight Place.EmptyPlace
+//let emptyBoard : Board = { Places = Array2D.create boardWidth boardHeight Place.EmptyPlace }
 
 type IModifier =
     abstract member Modify: Board -> Board
@@ -217,7 +223,7 @@ type Room(rect: Rectangle) =
             let width = Array2D.length1 room
             let height = Array2D.length2 room
             let result = board
-            Array2D.blit room 0 0 result rect.X rect.Y width height
+            Array2D.blit room 0 0 result.Places rect.X rect.Y width height
             result
 
 type Tunnel(rect: Rectangle, randomizeSize: bool) =
@@ -270,7 +276,7 @@ type Tunnel(rect: Rectangle, randomizeSize: bool) =
             let width = Array2D.length1 tunnel
             let height = Array2D.length2 tunnel
             let result = board
-            Array2D.blit tunnel 0 0 result rect.X rect.Y width height
+            Array2D.blit tunnel 0 0 result.Places rect.X rect.Y width height
             result
 
 type private BoardMessage = 
@@ -285,10 +291,10 @@ let private createProcessor board =
             let! msg = inbox.Receive()
             match msg with 
             | GetAt(point, outbox) -> 
-                outbox.Reply(Array2D.get board point.X point.Y)
+                outbox.Reply(Array2D.get board.Places point.X point.Y)
                 return! loop board
             | SetAt(point, place) ->
-                board.[point.X, point.Y] <- place
+                board.Places.[point.X, point.Y] <- place
                 return! loop board
             | Apply(func) ->
                 return! loop (func board)
@@ -297,7 +303,8 @@ let private createProcessor board =
         }
         loop board)
         
-let private agent = createProcessor <| Array2D.create boardWidth boardHeight Place.EmptyPlace
+// WARNING!!! The crap below... what is it for? what guid to put in here?
+let private agent = createProcessor <| { Guid = Guid.NewGuid(); Places = Array2D.create boardWidth boardHeight Place.EmptyPlace; Level = 0 }
 
 // TODO: refact functions to use BoardMessage structure
 
