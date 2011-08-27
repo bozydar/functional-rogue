@@ -21,6 +21,8 @@ type Tile =
     | Glass
     | StairsDown
     | StairsUp
+    | MainMapForest
+    | MainMapGrassland
 
 let obstacles = set [ Wall; ClosedDoor; Tree ]
 
@@ -61,7 +63,8 @@ let boardWidth = 79
 type Board = {
     Guid : System.Guid;
     Places : Place[,];
-    Level : int
+    Level : int;
+    MainMapLocation: Point option
 }
     
 let boardContains (point: Point) = 
@@ -304,7 +307,7 @@ let private createProcessor board =
         loop board)
         
 // WARNING!!! The crap below... what is it for? what guid to put in here?
-let private agent = createProcessor <| { Guid = Guid.NewGuid(); Places = Array2D.create boardWidth boardHeight Place.EmptyPlace; Level = 0 }
+let private agent = createProcessor <| { Guid = Guid.NewGuid(); Places = Array2D.create boardWidth boardHeight Place.EmptyPlace; Level = 0; MainMapLocation = Option.None }
 
 // TODO: refact functions to use BoardMessage structure
 
