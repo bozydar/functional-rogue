@@ -62,7 +62,7 @@ let placeStairsUp (backgroundTile:Tile) (cameFrom: TransportTarget) (board: Boar
     (result, stairsPoint)
 
 let maybePlaceStairsDown (backgroundTile:Tile) (level: int) (board: Board) =
-    if (rnd 100) > (level*2*10) then
+    if (rnd 100) > (level*(-2)*10) then
         let rec getRandomBackgroundPlace () =
             let x = rnd2 1 (boardWidth - 2)
             let y = rnd2 1 (boardHeight - 2)
