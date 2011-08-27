@@ -161,14 +161,19 @@ let mainLoop () =
 
     let thePlayer = new Player(mainMenuReply.Name, 10)
 
-    let board = 
-        //generateLevel LevelType.Cave
-        let level, position = generateStartLocationWithInitialPlayerPositon
-        level
-        |> Board.moveCharacter thePlayer (position)
+    //initial maps setup
+    let mainMapBoard, mainMapPoint = generateMainMap
+
+    let startLevel, startLevelPosition = generateStartLocationWithInitialPlayerPositon mainMapPoint
+    let board = startLevel |> Board.moveCharacter thePlayer (startLevelPosition)
+
+    let mainBoardStartPlace = mainMapBoard.Places.[mainMapPoint.X,mainMapPoint.Y]
+    mainMapBoard.Places.[mainMapPoint.X,mainMapPoint.Y] <- { mainBoardStartPlace with TransportTarget = Some({ BoardId = board.Guid; TargetCoordinates = startLevelPosition })}
     
     let initialBoards = new System.Collections.Generic.Dictionary<System.Guid,Board>()
-    initialBoards.Add(Guid.NewGuid(), board)
+    initialBoards.Add(board.Guid, board)
+    initialBoards.Add(mainMapBoard.Guid, mainMapBoard)
+    //end maps setup
 
     let entryState = {         
         Board = board; 
@@ -177,7 +182,8 @@ let mainLoop () =
         TurnNumber = 0;
         UserMessages = [];
         Monsters = [];
-        AllBoards = initialBoards
+        AllBoards = initialBoards;
+        MainMapGuid = mainMapBoard.Guid
     }
     State.set entryState
     loop true      
