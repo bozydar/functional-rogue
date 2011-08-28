@@ -33,7 +33,8 @@ type Command =
     | Harvest
     | Wear
     | TakeOff
-
+    | GoDownEnter
+    | GoUp
 
 let private commandToSize command = 
     match command with
@@ -47,21 +48,33 @@ let private commandToSize command =
     | DownRight -> new Size(1, 1)
     | _ -> new Size(0, 0)
 
+let switchToTheMainMapBoard (oldBoard: Board) (playerPoint: Point) (state: State) =
+    let playerPlace = oldBoard.Places.[playerPoint.X,playerPoint.Y]
+    let currentPlayer = getPlayerCharacter oldBoard
+    let newBoard = state.AllBoards.[state.MainMapGuid]
+    let startPlace = newBoard.Places.[oldBoard.MainMapLocation.Value.X,oldBoard.MainMapLocation.Value.Y]
+    newBoard.Places.[oldBoard.MainMapLocation.Value.X,oldBoard.MainMapLocation.Value.Y] <- { startPlace with Character = Some(currentPlayer) }
+    oldBoard.Places.[playerPoint.X,playerPoint.Y] <- { oldBoard.Places.[playerPoint.X,playerPoint.Y] with Character = Option.None }
+    state.AllBoards.[oldBoard.Guid] <- oldBoard
+    { state with Board = newBoard }
+
 let moveAvatar command state = 
     let board = state.Board
     let playerPosition = getPlayerPosition board
-
     let move = commandToSize command
     let newPosition = playerPosition + move
-    let newPlace = get board newPosition
-    let playerCharacter = getPlayerCharacter board
+    if (newPosition.X < 0 || newPosition.X >= boardWidth || newPosition.Y < 0 || newPosition.Y >= boardHeight) then
+        switchToTheMainMapBoard board playerPosition state
+    else
+        let newPlace = get board newPosition
+        let playerCharacter = getPlayerCharacter board
     
-    let preResult =
-        if (isMovementObstacle board newPosition) then
-            board
-        else
-            board |> moveCharacter playerCharacter newPosition
-    {state with Board = preResult}
+        let preResult =
+            if (isMovementObstacle board newPosition) then
+                board
+            else
+                board |> moveCharacter playerCharacter newPosition
+        {state with Board = preResult}
 
 let private operateDoor command board =
     let playerPosition = getPlayerPosition board
@@ -69,12 +82,53 @@ let private operateDoor command board =
     let newDoor = {Place.EmptyPlace with Tile = (if (command = OpenDoor) then Tile.OpenDoor else Tile.ClosedDoor)}
     for x in (max 0 (playerPosition.X - 1))..(min boardWidth (playerPosition.X + 1)) do
         for y in (max 0 (playerPosition.Y - 1))..(min boardHeight (playerPosition.Y + 1)) do
-            if(not(x = playerPosition.X && y = playerPosition.Y) && board.[x,y].Tile = oldDoor.Tile) then
-                Array2D.set board x y newDoor
+            if(not(x = playerPosition.X && y = playerPosition.Y) && board.Places.[x,y].Tile = oldDoor.Tile) then
+                Array2D.set board.Places x y newDoor
     board 
 
 let performCloseOpenAction command state =
-    { state with Board = operateDoor command state.Board }    
+    { state with Board = operateDoor command state.Board } 
+
+let switchBoards (oldBoard: Board) (playerPoint: Point) (state: State) =
+    let playerPlace = oldBoard.Places.[playerPoint.X,playerPoint.Y]
+    let currentPlayer = getPlayerCharacter oldBoard
+    let newBoard = state.AllBoards.[playerPlace.TransportTarget.Value.BoardId]
+    let startPlace = newBoard.Places.[playerPlace.TransportTarget.Value.TargetCoordinates.X,playerPlace.TransportTarget.Value.TargetCoordinates.Y]
+    newBoard.Places.[playerPlace.TransportTarget.Value.TargetCoordinates.X,playerPlace.TransportTarget.Value.TargetCoordinates.Y] <- { startPlace with Character = Some(currentPlayer) }
+    oldBoard.Places.[playerPoint.X,playerPoint.Y] <- { oldBoard.Places.[playerPoint.X,playerPoint.Y] with Character = Option.None }
+    state.AllBoards.[oldBoard.Guid] <- oldBoard
+    { state with Board = newBoard }
+    
+let performGoDownEnterAction (command: Command) state =
+    let currentBoard = state.Board  
+    let playerPosition = getPlayerPosition currentBoard
+    let currentPlayer = getPlayerCharacter currentBoard
+    let playerPlace = currentBoard.Places.[playerPosition.X,playerPosition.Y]
+    if (playerPlace.Tile = Tile.StairsDown || playerPlace.Tile = Tile.MainMapForest || playerPlace.Tile = Tile.MainMapGrassland) then
+        if (playerPlace.TransportTarget.IsNone) then
+            let targetMapType = 
+                match playerPlace.Tile with
+                | Tile.MainMapForest | Tile.MainMapGrassland -> LevelType.Forest
+                | _ -> LevelType.Cave
+            let newBoard, newPoint = generateLevel targetMapType (Some({BoardId = currentBoard.Guid; TargetCoordinates = playerPosition})) (Some(currentBoard.Level - 1))
+            state.AllBoards.Add(newBoard.Guid, newBoard)
+            currentBoard.Places.[playerPosition.X,playerPosition.Y] <- {playerPlace with TransportTarget = Some({ BoardId = newBoard.Guid; TargetCoordinates = newPoint.Value }) }
+        switchBoards currentBoard playerPosition state
+    else
+        state |> addMessage (sprintf "There are no stairs down nor entrance here.")
+
+let performGoUpAction (command: Command) state =
+    let currentBoard = state.Board  
+    let playerPosition = getPlayerPosition currentBoard
+    let currentPlayer = getPlayerCharacter currentBoard
+    let playerPlace = currentBoard.Places.[playerPosition.X,playerPosition.Y]
+    if (playerPlace.Tile = Tile.StairsUp) then
+        if (playerPlace.TransportTarget.IsNone) then
+            let newBoard, newPoint = generateLevel LevelType.Cave (Some({BoardId = currentBoard.Guid; TargetCoordinates = playerPosition})) (Some(currentBoard.Level + 1))
+            state.AllBoards.Add(newBoard.Guid, newBoard)
+        switchBoards currentBoard playerPosition state
+    else
+        state |> addMessage (sprintf "There are no stairs up nor exit here.")
 
 let performTakeAction state =     
     let playerPosition = getPlayerPosition state.Board

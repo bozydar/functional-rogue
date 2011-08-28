@@ -23,12 +23,12 @@ let getDifferentSpeciesTheMonsterCanAttackInMelee (monsterPlace: (Point*Place)) 
     let mutable result = []
     for x in (max 0 ((fst monsterPlace).X - distance))..(min (boardWidth - 1) ((fst monsterPlace).X + distance)) do
         for y in (max 0 ((fst monsterPlace).Y - distance))..(min (boardHeight - 1) ((fst monsterPlace).Y + distance)) do
-            if( state.Board.[x,y].Character.IsSome &&
-                (state.Board.[x,y].Character.Value.Type = CharacterType.Avatar
-                    || state.Board.[x,y].Character.Value.Type = CharacterType.NPC
+            if( state.Board.Places.[x,y].Character.IsSome &&
+                (state.Board.Places.[x,y].Character.Value.Type = CharacterType.Avatar
+                    || state.Board.Places.[x,y].Character.Value.Type = CharacterType.NPC
                     || (
-                        state.Board.[x,y].Character.Value.Type = CharacterType.Monster &&
-                        (state.Board.[x,y].Character.Value :?> Monster).Type <> monster.Type
+                        state.Board.Places.[x,y].Character.Value.Type = CharacterType.Monster &&
+                        (state.Board.Places.[x,y].Character.Value :?> Monster).Type <> monster.Type
                         )
                 )) then
                 result <- result @ [Point(x,y)]
@@ -123,15 +123,15 @@ let getDifferentSpeciesTheMonsterCanSee (monsterPlace: (Point*Place)) (state:Sta
     let mutable result = []
     for x in (max 0 ((fst monsterPlace).X - distance))..(min (boardWidth - 1) ((fst monsterPlace).X + distance)) do
         for y in (max 0 ((fst monsterPlace).Y - distance))..(min (boardHeight - 1) ((fst monsterPlace).Y + distance)) do
-            if( state.Board.[x,y].Character.IsSome &&
-                (state.Board.[x,y].Character.Value.Type = CharacterType.Avatar
-                    || state.Board.[x,y].Character.Value.Type = CharacterType.NPC
+            if( state.Board.Places.[x,y].Character.IsSome &&
+                (state.Board.Places.[x,y].Character.Value.Type = CharacterType.Avatar
+                    || state.Board.Places.[x,y].Character.Value.Type = CharacterType.NPC
                     || (
-                        state.Board.[x,y].Character.Value.Type = CharacterType.Monster &&
-                        (state.Board.[x,y].Character.Value :?> Monster).Type <> monster.Type
+                        state.Board.Places.[x,y].Character.Value.Type = CharacterType.Monster &&
+                        (state.Board.Places.[x,y].Character.Value :?> Monster).Type <> monster.Type
                         )
                 )) then
-                result <- result @ [(Point(x,y),state.Board.[x,y].Character.Value)]
+                result <- result @ [(Point(x,y),state.Board.Places.[x,y].Character.Value)]
     result
 
 let rec calculateDangerScore (place: Point) (enemies: (Point*Character) list) =
@@ -190,7 +190,7 @@ let aiLurkerPredatorMonster (monsterPlace: (Point*Place)) (state:State) : State 
         //else
         let victims = getDifferentSpeciesTheMonsterCanAttackInMelee monsterPlace state
         if (victims.Length > 0) then
-                { state with Board = state.Board |> Board.meleeAttack monster state.Board.[victims.Head.X,victims.Head.Y].Character.Value }
+                { state with Board = state.Board |> Board.meleeAttack monster state.Board.Places.[victims.Head.X,victims.Head.Y].Character.Value }
         elif (sortedDiffSpeciesByDist.Length > 0) then
             state
             |> State.updateCharacter (snd monsterPlace).Character.Value monster
