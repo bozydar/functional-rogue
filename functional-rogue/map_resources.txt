@@ -1,0 +1,17 @@
+﻿//This is a resource containing some predefined map objects
+//0 - this is the background
+//# - wall
+//g - glass
+//. - floor
+//+ - closed door
+//This is the ship the player starts the game in
+=StartLocationShip
+00##g#000000
+0g#..#000000
+gg...+0000>0
+0g#..#000000
+00##g#000000
+
+=SomeRandomShit
+01011
+10101

@@ -86,6 +86,8 @@ let mainLoop () =
                 | Key 'h' -> Harvest
                 | Key 'W' -> Wear
                 | Key 'T' -> TakeOff
+                | Key '>' -> GoDownEnter
+                | Key '<' -> GoUp
                 | _ -> Unknown                        
         
             match command with
@@ -94,6 +96,18 @@ let mainLoop () =
             | Up | Down | Left | Right | UpLeft | UpRight | DownLeft | DownRight  ->
                 State.get () 
                 |> moveAvatar command
+                |> Turn.next
+                Screen.showBoard ()
+                loop false
+            | GoDownEnter ->
+                State.get () 
+                |> performGoDownEnterAction command
+                |> Turn.next
+                Screen.showBoard ()
+                loop false
+            | GoUp ->
+                State.get () 
+                |> performGoUpAction command
                 |> Turn.next
                 Screen.showBoard ()
                 loop false
@@ -147,9 +161,19 @@ let mainLoop () =
 
     let thePlayer = new Player(mainMenuReply.Name, 10)
 
-    let board = 
-        generateLevel LevelType.Forest
-        |> Board.moveCharacter thePlayer (new Point(8, 4))
+    //initial maps setup
+    let mainMapBoard, mainMapPoint = generateMainMap
+
+    let startLevel, startLevelPosition = generateStartLocationWithInitialPlayerPositon mainMapPoint
+    let board = startLevel |> Board.moveCharacter thePlayer (startLevelPosition)
+
+    let mainBoardStartPlace = mainMapBoard.Places.[mainMapPoint.X,mainMapPoint.Y]
+    mainMapBoard.Places.[mainMapPoint.X,mainMapPoint.Y] <- { mainBoardStartPlace with TransportTarget = Some({ BoardId = board.Guid; TargetCoordinates = startLevelPosition })}
+    
+    let initialBoards = new System.Collections.Generic.Dictionary<System.Guid,Board>()
+    initialBoards.Add(board.Guid, board)
+    initialBoards.Add(mainMapBoard.Guid, mainMapBoard)
+    //end maps setup
 
     let entryState = {         
         Board = board; 
@@ -157,7 +181,9 @@ let mainLoop () =
         Player = thePlayer
         TurnNumber = 0;
         UserMessages = [];
-        Monsters = []
+        Monsters = [];
+        AllBoards = initialBoards;
+        MainMapGuid = mainMapBoard.Guid
     }
     State.set entryState
     loop true      

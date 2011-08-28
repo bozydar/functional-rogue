@@ -5,28 +5,84 @@ open Board
 open Items
 open Monsters
 open Characters
+open Config
+open Resources
+
+// predefined parts
+
+let simplifiedObjectToMapPart (input: char[,]) (background: Tile) =
+    let backgroundTile = { Tile = background; Items = []; Ore = Ore.NoneOre; Character = Option.None; IsSeen = false; WasSeen = Settings.EntireLevelSeen; TransportTarget = Option.None }
+    let wall = { Tile = Tile.Wall; Items = []; Ore = Ore.NoneOre; Character = Option.None; IsSeen = false; WasSeen = Settings.EntireLevelSeen; TransportTarget = Option.None }
+    let glass = { Tile = Tile.Glass; Items = []; Ore = Ore.NoneOre; Character = Option.None; IsSeen = false; WasSeen = Settings.EntireLevelSeen; TransportTarget = Option.None }
+    let closedDoor = { Tile = Tile.ClosedDoor; Items = []; Ore = Ore.NoneOre; Character = Option.None; IsSeen = false; WasSeen = Settings.EntireLevelSeen; TransportTarget = Option.None }
+    let floor = { Tile = Tile.Floor; Items = []; Ore = Ore.NoneOre; Character = Option.None; IsSeen = false; WasSeen = Settings.EntireLevelSeen; TransportTarget = Option.None }
+    let stairsDown = { Tile = Tile.StairsDown; Items = []; Ore = Ore.NoneOre; Character = Option.None; IsSeen = false; WasSeen = Settings.EntireLevelSeen; TransportTarget = Option.None }
+    let stairsUp = { Tile = Tile.StairsUp; Items = []; Ore = Ore.NoneOre; Character = Option.None; IsSeen = false; WasSeen = Settings.EntireLevelSeen; TransportTarget = Option.None }
+    input |> Array2D.map (fun i ->
+        match i with
+        | '0' -> backgroundTile
+        | '#' -> wall
+        | 'g' -> glass
+        | '+' -> closedDoor
+        | '.' -> floor
+        | '>' -> stairsDown
+        | '<' -> stairsUp
+        | _ -> backgroundTile
+    )
+
+let generateStartingLevelShip (background: Tile) =
+    let simplifiedShip = ResourceManager.Instance.SimplifiedMapObjects.["StartLocationShip"]
+    simplifiedObjectToMapPart simplifiedShip background
 
 // level generation utilities
 
 let scatterTilesRamdomlyOnBoard (board: Board) (tileToPut:Tile) (backgroundTile:Tile) (probability:float) (createBorder:bool) : Board =
     let background = {Place.EmptyPlace with Tile = backgroundTile}
     let placeToPut = {Place.EmptyPlace with Tile = tileToPut}
-    Array2D.mapi (fun x y i ->
+    let newPlaces = board.Places |> Array2D.mapi (fun x y i ->
         if(not(i.Tile = backgroundTile)) then
             i
         elif(createBorder && (x = 0 || x = (boardWidth - 1) || y = 0 || y = (boardHeight - 1))) then
             placeToPut
         else
             if((float)(rnd 100) < (probability * (float)100)) then placeToPut else i
-           ) board
+           ) 
+    { board with Places = newPlaces }
 
-let countTileNeighbours (board: Board) x y (tileType:Tile)=
+let placeStairsUp (backgroundTile:Tile) (cameFrom: TransportTarget) (board: Board) =
+    let rec getRandomBackgroundPlace () =
+        let x = rnd2 1 (boardWidth - 2)
+        let y = rnd2 1 (boardHeight - 2)
+        if (board.Places.[x,y].Tile = backgroundTile) then
+            Point(x,y)
+        else
+            getRandomBackgroundPlace ()
+    let stairsPoint = getRandomBackgroundPlace()
+    let result = Board.set (stairsPoint) {Place.EmptyPlace with Tile = Tile.StairsUp; TransportTarget = Some(cameFrom)} board
+    (result, stairsPoint)
+
+let maybePlaceStairsDown (backgroundTile:Tile) (level: int) (board: Board) =
+    if (rnd 100) > (level*(-2)*10) then
+        let rec getRandomBackgroundPlace () =
+            let x = rnd2 1 (boardWidth - 2)
+            let y = rnd2 1 (boardHeight - 2)
+            if (board.Places.[x,y].Tile = backgroundTile) then
+                Point(x,y)
+            else
+                getRandomBackgroundPlace ()
+        let stairsPoint = getRandomBackgroundPlace()
+        let result = Board.set (stairsPoint) {Place.EmptyPlace with Tile = Tile.StairsDown; TransportTarget = Option.None} board
+        result
+    else
+        board
+
+let countTileNeighbours (places: Place[,]) x y (tileType:Tile)=
     let tileToSearch = {Place.EmptyPlace with Tile = tileType}
     let mutable count = 0
     for tmpx in x - 1 .. x + 1 do
         for tmpy in y - 1 .. y + 1 do
             if not(tmpx = x && tmpy = y) then
-                count <- count + (if(board.[tmpx,tmpy] = tileToSearch) then 1 else 0)
+                count <- count + (if(places.[tmpx,tmpy] = tileToSearch) then 1 else 0)
     count
 
 let rec smoothOutTheLevel board howManyTimes (tileToGrow:Tile) (backgroundTile:Tile) (rule:(int*int)) =
@@ -47,22 +103,22 @@ let rec smoothOutTheLevel board howManyTimes (tileToGrow:Tile) (backgroundTile:T
 
 
 type DisjointLocationSet (board: Board, basicTile:Tile) =
-     let mutable flags = Array2D.create (Array2D.length1 board) (Array2D.length2 board) -1
+     let mutable flags = Array2D.create (Array2D.length1 board.Places) (Array2D.length2 board.Places) -1
      let mutable current = 0
 
      let createSets =
         let rec floodLocation (board: Board) (flags: int[,]) x y current =
             let mutable tmpFlags = flags
-            if(board.[x,y].Tile = basicTile && tmpFlags.[x,y] = -1) then
+            if(board.Places.[x,y].Tile = basicTile && tmpFlags.[x,y] = -1) then
                 Array2D.set tmpFlags x y current
-                for floodx in (max (x - 1) 0) .. (min (x + 1) ((Array2D.length1 board) - 1)) do
-                    for floody in (max (y - 1) 0) .. (min (y + 1) ((Array2D.length2 board) - 1)) do
+                for floodx in (max (x - 1) 0) .. (min (x + 1) ((Array2D.length1 board.Places) - 1)) do
+                    for floody in (max (y - 1) 0) .. (min (y + 1) ((Array2D.length2 board.Places) - 1)) do
                         tmpFlags <- floodLocation board tmpFlags floodx floody current
             tmpFlags
 
-        for x in 0 .. (Array2D.length1 board) - 1 do
-            for y in 0 .. (Array2D.length2 board) - 1 do
-                if(board.[x,y].Tile = basicTile && flags.[x,y] = -1) then
+        for x in 0 .. (Array2D.length1 board.Places) - 1 do
+            for y in 0 .. (Array2D.length2 board.Places) - 1 do
+                if(board.Places.[x,y].Tile = basicTile && flags.[x,y] = -1) then
                     current <- current + 1
                     flags <- (floodLocation board flags x y current)
 
@@ -70,8 +126,8 @@ type DisjointLocationSet (board: Board, basicTile:Tile) =
      let mutable randomSetPoint = Array.create current (0,0)
      
      let countSizes =
-        for x in 0 .. (Array2D.length1 board) - 1 do
-            for y in 0 .. (Array2D.length2 board) - 1 do
+        for x in 0 .. (Array2D.length1 board.Places) - 1 do
+            for y in 0 .. (Array2D.length2 board.Places) - 1 do
                 if(flags.[x,y] > 0) then
                     setSizes.[flags.[x,y] - 1] <- (setSizes.[flags.[x,y] - 1] + 1)
                     randomSetPoint.[flags.[x,y] - 1] <- (x,y)
@@ -83,9 +139,9 @@ type DisjointLocationSet (board: Board, basicTile:Tile) =
             let searchForMainSectionPiont (board: Board) x y i depth =
                 let mutable result = (-1,-1)
                 let minX = max (x - depth) 0
-                let maxX = (min (x + depth) ((Array2D.length1 board) - 1))
+                let maxX = (min (x + depth) ((Array2D.length1 board.Places) - 1))
                 let minY = max (y - depth) 0
-                let maxY = (min (y + depth) ((Array2D.length2 board) - 1))
+                let maxY = (min (y + depth) ((Array2D.length2 board.Places) - 1))
                 for searchx in minX .. maxX do
                     for searchy in minY .. maxY do
                         if (searchx = minX || searchx = maxX) || (searchy = minY || searchy = maxY) then
@@ -129,8 +185,8 @@ type DisjointLocationSet (board: Board, basicTile:Tile) =
 
                     let connectPointToSection board x y i =
                         let targetx, targety = searchForClosestMainSectionPoint board x y i 0
-                        digTunnel board x y targetx targety i
-                    tmpBoard <- connectPointToSection tmpBoard x y (theLargestSectionIndex + 1)
+                        digTunnel board.Places x y targetx targety i
+                    tmpBoard <- { tmpBoard with Places = connectPointToSection tmpBoard x y (theLargestSectionIndex + 1) }
             tmpBoard
 
 // monsters related code
@@ -223,17 +279,14 @@ let addOre board =
     }
     board |>> modifiers
 
-let generateTest: Board = 
+let generateTest: (Board*Point option) = 
     let mutable board = Array2D.create boardWidth boardHeight {Place.EmptyPlace with Tile = Tile.Floor}
     let rooms = (generateRooms []) |> Seq.take 4 |> Seq.toList
     let rec addRooms rooms board =
         match rooms with
         | [] -> board
         | item::t -> addRooms t <| (item :> IModifier).Modify board 
-    addRooms rooms board
-    |> addOre
-    |> addItems
-    |> putRandomMonstersOnBoard
+    (((addRooms rooms { Guid = System.Guid.NewGuid(); Places = board; Level = 0; MainMapLocation = Option.None}) |> addOre |> addItems |> putRandomMonstersOnBoard),Option.None)
 
 // dungeon generation section
 
@@ -269,23 +322,23 @@ let generateDungeonTunnels sections sectionWidth sectionHeight sectionsHorizonta
 
 let isGoodPlaceForDoor (board : Board) x y =
     let mutable result = false
-    if( x > 0 && x < (boardWidth - 1) && y > 0 && y < (boardHeight - 1) && board.[x,y].Tile = Tile.Floor) then
-        if (board.[x,y-1].Tile = Tile.Floor && board.[x,y+1].Tile = Tile.Floor) then
-            if (board.[x-1, y].Tile = Tile.Wall && board.[x+1, y].Tile = Tile.Wall) then
-                if (board.[x-1,y-1].Tile = Tile.Floor || board.[x+1,y-1].Tile = Tile.Floor || board.[x-1,y+1].Tile = Tile.Floor || board.[x+1,y+1].Tile = Tile.Floor) then
+    if( x > 0 && x < (boardWidth - 1) && y > 0 && y < (boardHeight - 1) && board.Places.[x,y].Tile = Tile.Floor) then
+        if (board.Places.[x,y-1].Tile = Tile.Floor && board.Places.[x,y+1].Tile = Tile.Floor) then
+            if (board.Places.[x-1, y].Tile = Tile.Wall && board.Places.[x+1, y].Tile = Tile.Wall) then
+                if (board.Places.[x-1,y-1].Tile = Tile.Floor || board.Places.[x+1,y-1].Tile = Tile.Floor || board.Places.[x-1,y+1].Tile = Tile.Floor || board.Places.[x+1,y+1].Tile = Tile.Floor) then
                     result <- true
-        if (board.[x-1,y].Tile = Tile.Floor && board.[x+1,y].Tile = Tile.Floor) then
-            if (board.[x,y-1].Tile = Tile.Wall && board.[x,y+1].Tile = Tile.Wall) then
-                if (board.[x-1,y-1].Tile = Tile.Floor || board.[x+1,y-1].Tile = Tile.Floor || board.[x-1,y+1].Tile = Tile.Floor || board.[x+1,y+1].Tile = Tile.Floor) then
+        if (board.Places.[x-1,y].Tile = Tile.Floor && board.Places.[x+1,y].Tile = Tile.Floor) then
+            if (board.Places.[x,y-1].Tile = Tile.Wall && board.Places.[x,y+1].Tile = Tile.Wall) then
+                if (board.Places.[x-1,y-1].Tile = Tile.Floor || board.Places.[x+1,y-1].Tile = Tile.Floor || board.Places.[x-1,y+1].Tile = Tile.Floor || board.Places.[x+1,y+1].Tile = Tile.Floor) then
                     result <- true
     result
 
 let addRandomDoors (board : Board) =
     let closedDoor = {Place.EmptyPlace with Tile = Tile.ClosedDoor}
     let floor = {Place.EmptyPlace with Tile = Tile.Floor}
-    Array2D.mapi (fun x y i -> if (i = floor && (isGoodPlaceForDoor board x y) && (rnd 100) < 30) then closedDoor else i) board
+    { board with Places = Array2D.mapi (fun x y i -> if (i = floor && (isGoodPlaceForDoor board x y) && (rnd 100) < 30) then closedDoor else i) board.Places }
 
-let generateDungeon: Board = 
+let generateDungeon: (Board*Point option) = 
     let mutable board = Array2D.create boardWidth boardHeight {Place.EmptyPlace with Tile = Tile.Wall}
     let sectionsHorizontal = 4
     let sectionsVertical = 3
@@ -293,14 +346,14 @@ let generateDungeon: Board =
     let sectionHeight = ((boardHeight - 1) / sectionsVertical) - 1
     let sections = [for x in 0..(sectionsHorizontal - 1) do for y in 0..(sectionsVertical - 1) do yield (x, y)]
 
-    let rec addRooms rooms board =
+    let rec addRooms rooms (board: Board) =
         match rooms with
         | [] -> board
         | item::t -> addRooms t <| (item :> IModifier).Modify board 
-    let resultBoard = addRooms (generateDungeonTunnels sections sectionWidth sectionHeight sectionsHorizontal sectionsVertical) board
-    addRandomDoors resultBoard
+    let resultBoard = addRooms (generateDungeonTunnels sections sectionWidth sectionHeight sectionsHorizontal sectionsVertical) { Guid = System.Guid.NewGuid(); Places = board; Level = 0; MainMapLocation = Option.None}
+    (addRandomDoors resultBoard
     |> addOre
-    |> addItems
+    |> addItems, Option.None)
 
 // dungeon BSP generation method
 
@@ -355,34 +408,48 @@ let generateBSPDungeon =
         | [] -> board
         | item::t -> addRooms t <| (item :> IModifier).Modify board 
 
-    let mutable board = Array2D.create boardWidth boardHeight {Place.EmptyPlace with Tile = Tile.Wall}
+    let mutable board = { Guid = System.Guid.NewGuid(); Places = Array2D.create boardWidth boardHeight {Place.EmptyPlace with Tile = Tile.Wall}; Level = 0; MainMapLocation = Option.None}
     let tunnelsList = createTwoConnectedSections 1 1 (boardWidth - 2) (boardHeight - 2)
     addRooms tunnelsList board
 
 //cave generation section
     
-let generateCave: Board = 
-    let mutable board = Array2D.create boardWidth boardHeight {Place.EmptyPlace with Tile = Tile.Floor}
+let generateCave (cameFrom: TransportTarget option) (level: int) : (Board*Point option) =
+    let mutable board =  { Guid = System.Guid.NewGuid(); Places = Array2D.create boardWidth boardHeight {Place.EmptyPlace with Tile = Tile.Floor}; Level = level; MainMapLocation = Option.None}
     board <- scatterTilesRamdomlyOnBoard board Tile.Wall Tile.Floor 0.5 true
-    board <- smoothOutTheLevel board 2 Tile.Wall Tile.Floor (4,5)
+    board <- { board with Places = smoothOutTheLevel board.Places 2 Tile.Wall Tile.Floor (4,5) }
     let sections = new DisjointLocationSet(board, Tile.Floor)
-    sections.ConnectUnconnected
-    //|> addGold
-    |> addItems
-    |> addOre
-    |> putRandomMonstersOnBoard
+    let initial = sections.ConnectUnconnected |> addItems |> addOre
+    if (cameFrom.IsSome) then
+        let resultBoard, startpoint = initial |> placeStairsUp Tile.Floor cameFrom.Value
+        (resultBoard
+        |> putRandomMonstersOnBoard
+        |> maybePlaceStairsDown Tile.Floor level, Some(startpoint))
+    else
+        (initial |> putRandomMonstersOnBoard, Option.None)
 
 // jungle/forest generation
 
-let generateForest: Board =
-    let mutable board = Array2D.create boardWidth boardHeight {Place.EmptyPlace with Tile = Tile.Grass}
-    board <- scatterTilesRamdomlyOnBoard board Tile.Tree Tile.Grass 0.25 true
-    board <- smoothOutTheLevel board 1 Tile.Tree Tile.Grass (1,4)
+let generateForest (cameFrom:Point) : (Board*Point option) =
+    let mutable board = { Guid = System.Guid.NewGuid(); Places = Array2D.create boardWidth boardHeight {Place.EmptyPlace with Tile = Tile.Grass}; Level = 0; MainMapLocation = Some(cameFrom)}
+    board <- scatterTilesRamdomlyOnBoard board Tile.Tree Tile.Grass 0.25 false
+    board <- { board with Places = smoothOutTheLevel board.Places 1 Tile.Tree Tile.Grass (1,4) }
     let sections = new DisjointLocationSet(board, Tile.Grass)
     board <- sections.ConnectUnconnected
     board <- scatterTilesRamdomlyOnBoard board Tile.Bush Tile.Grass 0.05 false
     board <- scatterTilesRamdomlyOnBoard board Tile.SmallPlants Tile.Grass 0.05 false
-    board
+    (board, Some(Point(35,15)))
+
+let generateStartLocationWithInitialPlayerPositon (cameFrom:Point) : (Board*Point) =
+    let result, startpoint = generateForest cameFrom
+    let ship = generateStartingLevelShip Tile.Grass
+    Array2D.blit ship 0 0 result.Places 30 10 (Array2D.length1 ship) (Array2D.length2 ship)
+    (result,(Point(33,12)))
+
+let generateMainMap: (Board*Point) =
+    let mutable board = { Guid = System.Guid.NewGuid(); Places = Array2D.create boardWidth boardHeight {Place.EmptyPlace with Tile = Tile.MainMapGrassland}; Level = 0; MainMapLocation = Option.None}
+    board <- scatterTilesRamdomlyOnBoard board Tile.MainMapForest Tile.MainMapGrassland 0.25 true
+    (board,Point(4,4))
 
 let generateEmpty : Board =
     Array2D.create boardWidth boardHeight {Place.EmptyPlace with Tile = Tile.Floor}
@@ -391,11 +458,11 @@ let generateEmpty : Board =
     //|> Board.modify (new Point(8, 9)) (fun _ -> {Place.EmptyPlace with Tile = Tile.Wall})
 
 // main level generation switch
-let generateLevel levelType : Board = 
+let generateLevel levelType (cameFrom: TransportTarget option) (level: int option) : (Board*Point option) = 
     match levelType with
     | LevelType.Test -> generateTest
     | LevelType.Dungeon -> generateDungeon// generateBSPDungeon //generateDungeon
-    | LevelType.Cave -> generateCave
-    | LevelType.Forest -> generateForest
+    | LevelType.Cave -> generateCave cameFrom (defaultArg level 0)
+    | LevelType.Forest -> generateForest cameFrom.Value.TargetCoordinates
     | LevelType.Empty -> generateEmpty
 
