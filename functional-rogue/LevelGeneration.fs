@@ -384,6 +384,12 @@ let generateForest: Board =
     board <- scatterTilesRamdomlyOnBoard board Tile.SmallPlants Tile.Grass 0.05 false
     board
 
+let generateEmpty : Board =
+    Array2D.create boardWidth boardHeight {Place.EmptyPlace with Tile = Tile.Floor}
+    |> Board.modify (new Point(8, 8)) (fun _ -> {Place.EmptyPlace with Tile = Tile.Wall})
+    |> Board.modify (new Point(8, 9)) (fun _ -> {Place.EmptyPlace with Tile = Tile.Wall})
+    //|> Board.modify (new Point(8, 9)) (fun _ -> {Place.EmptyPlace with Tile = Tile.Wall})
+
 // main level generation switch
 let generateLevel levelType : Board = 
     match levelType with
@@ -391,4 +397,5 @@ let generateLevel levelType : Board =
     | LevelType.Dungeon -> generateDungeon// generateBSPDungeon //generateDungeon
     | LevelType.Cave -> generateCave
     | LevelType.Forest -> generateForest
+    | LevelType.Empty -> generateEmpty
 

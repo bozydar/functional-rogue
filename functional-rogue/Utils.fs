@@ -74,3 +74,18 @@ let (|Keys|_|) (charsOrConsoleKeys : list<obj>) (input : ConsoleKeyInfo) =
 module Map =    
     let tryGetItem key (map : Map<_,_>) =
         if map.ContainsKey key then Some(map.[key]) else None
+module List =
+    let removeAt index input =
+        input 
+        // Associate each element with a boolean flag specifying whether 
+        // we want to keep the element in the resulting list
+        |> List.mapi (fun i el -> (i <> index, el)) 
+        // Remove elements for which the flag is 'false' and drop the flags
+        |> List.filter fst |> List.map snd
+    let insertAt index newEl input =
+        // For each element, we generate a list of elements that should
+        // replace the original one - either singleton list or two elements
+        // for the specified index
+        input 
+        |> List.mapi (fun i el -> if i = index then [newEl; el] else [el])
+        |> List.concat
