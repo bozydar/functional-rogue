@@ -456,6 +456,6 @@ let generateLevel levelType (cameFrom: TransportTarget option) (level: int optio
     match levelType with
     | LevelType.Test -> generateTest
     | LevelType.Dungeon -> generateDungeon// generateBSPDungeon //generateDungeon
-    | LevelType.Cave -> generateCave cameFrom (if level.IsSome then level.Value else 0)
+    | LevelType.Cave -> generateCave cameFrom (defaultArg level 0)
     | LevelType.Forest -> generateForest cameFrom.Value.TargetCoordinates
 
