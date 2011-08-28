@@ -31,6 +31,7 @@ type LevelType =
     | Dungeon
     | Cave
     | Forest
+    | Empty
 
 type TransportTarget = {
     BoardId : Guid;
