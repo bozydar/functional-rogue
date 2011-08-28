@@ -148,7 +148,7 @@ let mainLoop () =
     let thePlayer = new Player(mainMenuReply.Name, 10)
 
     let board = 
-        generateLevel LevelType.Cave
+        generateLevel LevelType.Forest
         |> Board.moveCharacter thePlayer (new Point(8, 4))
 
     let entryState = {         

@@ -26,6 +26,7 @@ type LevelType =
     | Dungeon
     | Cave
     | Forest
+    | Empty
 
 //type Character = {
 //    Type: CharacterType
