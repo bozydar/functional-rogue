@@ -451,10 +451,14 @@ let generateMainMap: (Board*Point) =
     board <- scatterTilesRamdomlyOnBoard board Tile.MainMapForest Tile.MainMapGrassland 0.25 true
     (board,Point(4,4))
 
-let generateEmpty : Board =
-    Array2D.create boardWidth boardHeight {Place.EmptyPlace with Tile = Tile.Floor}
-    |> Board.modify (new Point(8, 8)) (fun _ -> {Place.EmptyPlace with Tile = Tile.Wall})
-    |> Board.modify (new Point(8, 9)) (fun _ -> {Place.EmptyPlace with Tile = Tile.Wall})
+let generateEmpty : (Board * Point option) =
+    let places = 
+        Array2D.create boardWidth boardHeight {Place.EmptyPlace with Tile = Tile.Floor}        
+    let board = 
+        { Guid = System.Guid.NewGuid(); Places = places; Level = 0; MainMapLocation = Option.None }
+        |> Board.modify (new Point(8, 8)) (fun _ -> {Place.EmptyPlace with Tile = Tile.Wall})
+        |> Board.modify (new Point(8, 9)) (fun _ -> {Place.EmptyPlace with Tile = Tile.Wall})
+    (board, Option.Some(new Point(5,5)))
     //|> Board.modify (new Point(8, 9)) (fun _ -> {Place.EmptyPlace with Tile = Tile.Wall})
 
 // main level generation switch
