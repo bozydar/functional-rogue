@@ -23,6 +23,9 @@ type Tile =
     | StairsUp
     | MainMapForest
     | MainMapGrassland
+    | MainMapWater
+    | MainMapMountains
+    | MainMapCoast
 
 let obstacles = set [ Wall; ClosedDoor; Tree ]
 
