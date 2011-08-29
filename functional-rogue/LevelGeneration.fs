@@ -36,6 +36,22 @@ let generateStartingLevelShip (background: Tile) =
 
 // level generation utilities
 
+let noise (x: float) (y: float) =
+    let n= (float)((x + y * 57.0) * (2.0*13.0))
+    ( 1.0 - ( ( n * (n * n * 15731.0 + 789221.0) + 1376312589.0) % 2147483641.0) / 1073741824.0 )
+
+let perlinNoise (x: int) (y: int) =
+    let startFrequency = 32.0
+    let startAmplitude = 1.0/1024.0
+    let rec total (f: float) (a: float) =
+        match f with
+        | 1.0 -> (noise ((float)x*f) ((float)y*f)) * a
+        | _ ->
+            let freq = (f/2.0)
+            let amplitude = a*4.0
+            ((noise ((float)x*f) ((float)y*f)) * a) + total freq amplitude
+    total startFrequency startAmplitude
+
 let scatterTilesRamdomlyOnBoard (board: Board) (tileToPut:Tile) (backgroundTile:Tile) (probability:float) (createBorder:bool) : Board =
     let background = {Place.EmptyPlace with Tile = backgroundTile}
     let placeToPut = {Place.EmptyPlace with Tile = tileToPut}
@@ -447,7 +463,15 @@ let generateStartLocationWithInitialPlayerPositon (cameFrom:Point) : (Board*Poin
     (result,(Point(33,12)))
 
 let generateMainMap: (Board*Point) =
-    let mutable board = { Guid = System.Guid.NewGuid(); Places = Array2D.create boardWidth boardHeight {Place.EmptyPlace with Tile = Tile.MainMapGrassland}; Level = 0; MainMapLocation = Option.None}
+    let noiseValueToMap (value: float) =
+        if value < -0.7 then Tile.MainMapWater
+        else if value < -0.3 then Tile.MainMapCoast
+        else if value > 0.8 then Tile.MainMapMountains
+        else if value > 0.3 then Tile.MainMapForest
+        else Tile.MainMapGrassland
+        
+    //let noise = Array2D.init boardWidth boardHeight (fun x y -> noiseValueToMap (perlinNoise x y))
+    let mutable board = { Guid = System.Guid.NewGuid(); Places = Array2D.init boardWidth boardHeight (fun x y -> {Place.EmptyPlace with Tile = noiseValueToMap (perlinNoise x y)}); Level = 0; MainMapLocation = Option.None}
     board <- scatterTilesRamdomlyOnBoard board Tile.MainMapForest Tile.MainMapGrassland 0.25 true
     (board,Point(4,4))
 
