@@ -475,6 +475,20 @@ let generateForest (cameFrom:Point) : (Board*Point option) =
     board <- scatterTilesRamdomlyOnBoard board Tile.SmallPlants Tile.Grass 0.05 false
     (board, Some(Point(35,15)))
 
+let generateGrassland (cameFrom:Point) : (Board*Point option) =
+    let mutable board = { Guid = System.Guid.NewGuid(); Places = Array2D.create boardWidth boardHeight {Place.EmptyPlace with Tile = Tile.Grass}; Level = 0; MainMapLocation = Some(cameFrom)}
+    board <- scatterTilesRamdomlyOnBoard board Tile.Tree Tile.Grass 0.01 false
+    board <- scatterTilesRamdomlyOnBoard board Tile.Bush Tile.Grass 0.05 false
+    board <- scatterTilesRamdomlyOnBoard board Tile.SmallPlants Tile.Grass 0.05 false
+    (board, Some(Point(35,15)))
+
+let generateCoast (cameFrom:Point) : (Board*Point option) =
+    let mutable board = { Guid = System.Guid.NewGuid(); Places = Array2D.create boardWidth boardHeight {Place.EmptyPlace with Tile = Tile.Sand}; Level = 0; MainMapLocation = Some(cameFrom)}
+    board <- scatterTilesRamdomlyOnBoard board Tile.Tree Tile.Sand 0.01 false
+    board <- scatterTilesRamdomlyOnBoard board Tile.Bush Tile.Sand 0.05 false
+    board <- scatterTilesRamdomlyOnBoard board Tile.SmallPlants Tile.Sand 0.05 false
+    (board, Some(Point(35,15)))
+
 let generateStartLocationWithInitialPlayerPositon (cameFrom:Point) : (Board*Point) =
     let result, startpoint = generateForest cameFrom
     let ship = generateStartingLevelShip Tile.Grass
@@ -532,4 +546,6 @@ let generateLevel levelType (cameFrom: TransportTarget option) (level: int optio
     | LevelType.Dungeon -> generateDungeon// generateBSPDungeon //generateDungeon
     | LevelType.Cave -> generateCave cameFrom (defaultArg level 0)
     | LevelType.Forest -> generateForest cameFrom.Value.TargetCoordinates
+    | LevelType.Grassland -> generateGrassland cameFrom.Value.TargetCoordinates
+    | LevelType.Coast -> generateCoast cameFrom.Value.TargetCoordinates
 
