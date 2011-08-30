@@ -52,7 +52,7 @@ type private Line =
 
 
 [<AllowNullLiteral>]
-type ViewBump =    
+type private ViewBump =    
     val mutable X : int
     val mutable Y : int
     val mutable Parent : ViewBump
@@ -196,6 +196,33 @@ let visiblePositions (where : Point) radius board =
         checkQuadrant &visited where.X where.Y -1 1 minExtentX maxExtentY visitTile isTileBlocked
 
     !result
+
+/// Returns true if there where a case when isOpticalObstacle returs true
+let private bresenham (isOpticalObstacle : Point -> bool) (point0 : Point) (point1 : Point) : bool =
+    let x0, y0 = point0.X, point0.Y
+    let x1, y1 = point1.X, point1.Y
+    let steep = abs(y1 - y0) > abs(x1 - x0)
+    let x0, y0, x1, y1 =
+        if steep then y0, x0, y1, x1 else x0, y0, x1, y1
+    let x0, y0, x1, y1 =
+        if x0 > x1 then x1, y1, x0, y0 else x0, y0, x1, y1
+    let dx, dy = x1 - x0, abs(y1 - y0)
+    let s = if y0 < y1 then 1 else -1
+    let rec loop e x y =
+        if x <= x1 then
+            let exit = if steep then isOpticalObstacle (new Point(y, x)) else isOpticalObstacle (new Point(x, y))
+            if exit then 
+                true
+            elif e < dy then
+                loop (e-dy+dx) (x+1) (y+s)
+            else
+                loop (e-dy) (x+1) y
+        else
+            false
+    loop (dx/2) x0 y0
+
+let canSee (board : Board) (from : Point) (where : Point) : bool = 
+    not <| bresenham (fun point -> Board.isOpticalObstacle board point) from where
 
 let setVisibilityStates state  = 
     let playerPosition = getPlayerPosition state.Board
