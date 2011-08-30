@@ -195,7 +195,7 @@ let visiblePositions (where : Point) radius board =
         checkQuadrant &visited where.X where.Y -1 -1 minExtentX minExtentY visitTile isTileBlocked
         checkQuadrant &visited where.X where.Y -1 1 minExtentX maxExtentY visitTile isTileBlocked
 
-    !result
+    where :: !result
 
 /// Returns true if there where a case when isOpticalObstacle returs true
 let private bresenham (isOpticalObstacle : Point -> bool) (point0 : Point) (point1 : Point) : bool =
