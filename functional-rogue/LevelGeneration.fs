@@ -36,6 +36,40 @@ let generateStartingLevelShip (background: Tile) =
 
 // level generation utilities
 
+let noise (x: float) (y: float) =
+    let n= (float)((x + y * 57.0) * (2.0*13.0))
+    ( 1.0 - ( ( n * (n * n * 15731.0 + 789221.0) + 1376312589.0) % 2147483641.0) / 1073741824.0 )
+
+let applyMaskModifier (source: float[,]) =
+    let halfWidth = (float)boardWidth/2.0
+    let halfHeight = (float)boardHeight/2.0
+    source |> Array2D.mapi (fun x y i ->
+        let resultx = if ((float)x < halfWidth ) then (float)x/halfWidth else 2.0 - (float)x/halfWidth
+        let resulty = if ((float)y < halfHeight ) then (float)y/halfHeight else 2.0 - (float)y/halfHeight
+        if(x = 0 || x = (boardWidth-1) || y = 0 || y = (boardHeight-1)) then
+            0.0
+        else
+            ( (i+1.0) * resultx * resulty )
+        ) 
+
+let smoothOutNoise (noiseArray: float[,]) : float[,] = 
+    let getCornersValues x y =
+        (noiseArray.[x-1,y-1] + noiseArray.[x-1,y+1] + noiseArray.[x+1,y-1] + noiseArray.[x+1,y+1]) / 16.0
+    let getSidesValues x y =
+        (noiseArray.[x,y-1] + noiseArray.[x,y+1] + noiseArray.[x-1,y] + noiseArray.[x+1,y]) / 8.0
+    Array2D.mapi (fun x y i -> if(x = 0 || x = (boardWidth-1) || y = 0 || y = (boardHeight-1)) then i else (getCornersValues x y) + (getSidesValues x y) + (i/4.0)) noiseArray
+
+let perlinNoise (x: int) (y: int) =
+    let startFrequency = 32.0
+    let startAmplitude = 1.0/1024.0
+    let rec total (f: float) (a: float) =
+        match f with
+        | 1.0 -> (noise ((float)x*f) ((float)y*f)) * a
+        | _ ->
+            let freq = (f/2.0)
+            let amplitude = a*4.0
+            ((noise ((float)x*f) ((float)y*f)) * a) + total freq amplitude
+    total startFrequency startAmplitude
 let scatterTilesRamdomlyOnBoard (board: Board) (tileToPut:Tile) (backgroundTile:Tile) (probability:float) (createBorder:bool) : Board =
     let background = {Place.EmptyPlace with Tile = backgroundTile}
     let placeToPut = {Place.EmptyPlace with Tile = tileToPut}
@@ -86,7 +120,7 @@ let countTileNeighbours (places: Place[,]) x y (tileType:Tile)=
     count
 
 let rec smoothOutTheLevel board howManyTimes (tileToGrow:Tile) (backgroundTile:Tile) (rule:(int*int)) =
-    let background = {Place.EmptyPlace with Tile = Tile.Floor}
+    let background = {Place.EmptyPlace with Tile = backgroundTile}
     let toGrow = {Place.EmptyPlace with Tile = tileToGrow}
     let min, max = rule
     match howManyTimes with
@@ -440,6 +474,19 @@ let generateForest (cameFrom:Point) : (Board*Point option) =
     board <- scatterTilesRamdomlyOnBoard board Tile.SmallPlants Tile.Grass 0.05 false
     (board, Some(Point(35,15)))
 
+let generateGrassland (cameFrom:Point) : (Board*Point option) =
+    let mutable board = { Guid = System.Guid.NewGuid(); Places = Array2D.create boardWidth boardHeight {Place.EmptyPlace with Tile = Tile.Grass}; Level = 0; MainMapLocation = Some(cameFrom)}
+    board <- scatterTilesRamdomlyOnBoard board Tile.Tree Tile.Grass 0.01 false
+    board <- scatterTilesRamdomlyOnBoard board Tile.Bush Tile.Grass 0.05 false
+    board <- scatterTilesRamdomlyOnBoard board Tile.SmallPlants Tile.Grass 0.05 false
+    (board, Some(Point(35,15)))
+
+let generateCoast (cameFrom:Point) : (Board*Point option) =
+    let mutable board = { Guid = System.Guid.NewGuid(); Places = Array2D.create boardWidth boardHeight {Place.EmptyPlace with Tile = Tile.Sand}; Level = 0; MainMapLocation = Some(cameFrom)}
+    board <- scatterTilesRamdomlyOnBoard board Tile.Tree Tile.Sand 0.01 false
+    board <- scatterTilesRamdomlyOnBoard board Tile.Bush Tile.Sand 0.05 false
+    board <- scatterTilesRamdomlyOnBoard board Tile.SmallPlants Tile.Sand 0.05 false
+    (board, Some(Point(35,15)))
 let generateStartLocationWithInitialPlayerPositon (cameFrom:Point) : (Board*Point) =
     let result, startpoint = generateForest cameFrom
     let ship = generateStartingLevelShip Tile.Grass
@@ -447,9 +494,48 @@ let generateStartLocationWithInitialPlayerPositon (cameFrom:Point) : (Board*Poin
     (result,(Point(33,12)))
 
 let generateMainMap: (Board*Point) =
-    let mutable board = { Guid = System.Guid.NewGuid(); Places = Array2D.create boardWidth boardHeight {Place.EmptyPlace with Tile = Tile.MainMapGrassland}; Level = 0; MainMapLocation = Option.None}
-    board <- scatterTilesRamdomlyOnBoard board Tile.MainMapForest Tile.MainMapGrassland 0.25 true
-    (board,Point(4,4))
+    let noiseValueToMap (value: float) =
+        if value < 0.12 then Tile.MainMapWater
+        else if value < 0.17 then Tile.MainMapCoast
+        else if value > 0.9 then Tile.MainMapMountains
+        else if value > 0.3 then Tile.MainMapForest
+        else Tile.MainMapGrassland
+     
+    let noise = Array2D.init boardWidth boardHeight (fun x y -> perlinNoise x y)   
+    let smoothNoise = smoothOutNoise (smoothOutNoise noise)
+    let withMask = applyMaskModifier smoothNoise
+
+    let board = { Guid = System.Guid.NewGuid(); Places = Array2D.init boardWidth boardHeight (fun x y -> {Place.EmptyPlace with Tile = noiseValueToMap (withMask.[x,y])}); Level = 0; MainMapLocation = Option.None}
+
+    //TODO: this to be deleted later... for this is map file generation for dev purposes
+    let tileToStr (tile:Tile) =
+        match tile with
+        | Tile.MainMapCoast -> "."
+        | Tile.MainMapForest -> "&"
+        | Tile.MainMapGrassland -> "\""
+        | Tile.MainMapMountains -> "^"
+        | Tile.MainMapWater -> "~"
+        | _ -> " "
+
+    let strings =
+        let mutable result : string list = []
+        for y in 0..(boardHeight-1) do
+            let mutable line = ""
+            for x in 0..(boardWidth-1) do
+                line <- line + tileToStr(board.Places.[x,y].Tile)
+            result <- result @ [line]
+        result
+    System.IO.File.WriteAllLines("C:\\tratata.txt", strings)
+    //TODO: later delete the above
+
+    let rec findRandomStartLocation board =
+        let x = rnd boardWidth
+        let y = rnd boardHeight
+        if (board.Places.[x,y].Tile = Tile.MainMapForest) then
+            Point(x,y)
+        else findRandomStartLocation board
+
+    (board,(findRandomStartLocation board))
 
 let generateEmpty : (Board * Point option) =
     let places = 
@@ -460,7 +546,6 @@ let generateEmpty : (Board * Point option) =
         |> Board.modify (new Point(8, 9)) (fun _ -> {Place.EmptyPlace with Tile = Tile.Wall})
     (board, Option.Some(new Point(5,5)))
     //|> Board.modify (new Point(8, 9)) (fun _ -> {Place.EmptyPlace with Tile = Tile.Wall})
-
 // main level generation switch
 let generateLevel levelType (cameFrom: TransportTarget option) (level: int option) : (Board*Point option) = 
     match levelType with
@@ -468,5 +553,7 @@ let generateLevel levelType (cameFrom: TransportTarget option) (level: int optio
     | LevelType.Dungeon -> generateDungeon// generateBSPDungeon //generateDungeon
     | LevelType.Cave -> generateCave cameFrom (defaultArg level 0)
     | LevelType.Forest -> generateForest cameFrom.Value.TargetCoordinates
+    | LevelType.Grassland -> generateGrassland cameFrom.Value.TargetCoordinates
+    | LevelType.Coast -> generateCoast cameFrom.Value.TargetCoordinates
     | LevelType.Empty -> generateEmpty
 

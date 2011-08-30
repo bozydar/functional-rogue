@@ -91,10 +91,14 @@ let private screenWritter () =
                                 | SmallPlants -> {Char = '*'; FGColor = ConsoleColor.DarkGreen; BGColor = ConsoleColor.Black}
                                 | Bush -> {Char = '&'; FGColor = ConsoleColor.DarkGreen; BGColor = ConsoleColor.Black}
                                 | Glass -> {Char = '#'; FGColor = ConsoleColor.Blue; BGColor = ConsoleColor.Black}
+                                | Sand -> {Char = '.'; FGColor = ConsoleColor.Yellow; BGColor = ConsoleColor.Black}
                                 | StairsDown -> {Char = '>'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
                                 | StairsUp -> {Char = '<'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
                                 | MainMapForest -> {Char = '&'; FGColor = ConsoleColor.DarkGreen; BGColor = ConsoleColor.Black}
                                 | MainMapGrassland -> {Char = '"'; FGColor = ConsoleColor.Green; BGColor = ConsoleColor.Black}
+                                | MainMapMountains -> {Char = '^'; FGColor = ConsoleColor.Gray; BGColor = ConsoleColor.Black}
+                                | MainMapWater -> {Char = '~'; FGColor = ConsoleColor.Blue; BGColor = ConsoleColor.Black}
+                                | MainMapCoast -> {Char = '.'; FGColor = ConsoleColor.Yellow; BGColor = ConsoleColor.Black}
                                 | _ -> empty
                 if not item.IsSeen then {result with FGColor = ConsoleColor.DarkGray } else result
             else empty
