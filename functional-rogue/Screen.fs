@@ -56,13 +56,17 @@ let private screenWritter () =
         let toTextel item =  
             if item.WasSeen then
                 let result = 
-                    match item.Character with
-                    | Some(character1) -> 
-                        match character1.Type with
-                        | Avatar -> {Char = '@'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
-                        | Monster -> {Char = character1.Appearance; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Red}
-                        | NPC -> {Char = 'P'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.White}
-                    | _ -> 
+                    let character = 
+                        if item.IsSeen && item.Character.IsSome then
+                            match item.Character.Value.Type with
+                            | Avatar -> {Char = '@'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
+                            | Monster -> {Char = item.Character.Value.Appearance; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Red}
+                            | NPC -> {Char = 'P'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.White}
+                         else
+                            empty
+                    if character <> empty then
+                        character
+                    else
                         match item.Items with
                         | h::_ when not <| Set.contains item.Tile obstacles -> 
                                 match h.Type with 
