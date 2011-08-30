@@ -40,6 +40,25 @@ let noise (x: float) (y: float) =
     let n= (float)((x + y * 57.0) * (2.0*13.0))
     ( 1.0 - ( ( n * (n * n * 15731.0 + 789221.0) + 1376312589.0) % 2147483641.0) / 1073741824.0 )
 
+let applyMaskModifier (source: float[,]) =
+    let halfWidth = (float)boardWidth/2.0
+    let halfHeight = (float)boardHeight/2.0
+    source |> Array2D.mapi (fun x y i ->
+        let resultx = if ((float)x < halfWidth ) then (float)x/halfWidth else 2.0 - (float)x/halfWidth
+        let resulty = if ((float)y < halfHeight ) then (float)y/halfHeight else 2.0 - (float)y/halfHeight
+        if(x = 0 || x = (boardWidth-1) || y = 0 || y = (boardHeight-1)) then
+            0.0
+        else
+            ( (i+1.0) * resultx * resulty )
+        ) 
+
+let smoothOutNoise (noiseArray: float[,]) : float[,] = 
+    let getCornersValues x y =
+        (noiseArray.[x-1,y-1] + noiseArray.[x-1,y+1] + noiseArray.[x+1,y-1] + noiseArray.[x+1,y+1]) / 16.0
+    let getSidesValues x y =
+        (noiseArray.[x,y-1] + noiseArray.[x,y+1] + noiseArray.[x-1,y] + noiseArray.[x+1,y]) / 8.0
+    Array2D.mapi (fun x y i -> if(x = 0 || x = (boardWidth-1) || y = 0 || y = (boardHeight-1)) then i else (getCornersValues x y) + (getSidesValues x y) + (i/4.0)) noiseArray
+
 let perlinNoise (x: int) (y: int) =
     let startFrequency = 32.0
     let startAmplitude = 1.0/1024.0
@@ -464,16 +483,47 @@ let generateStartLocationWithInitialPlayerPositon (cameFrom:Point) : (Board*Poin
 
 let generateMainMap: (Board*Point) =
     let noiseValueToMap (value: float) =
-        if value < -0.7 then Tile.MainMapWater
-        else if value < -0.3 then Tile.MainMapCoast
-        else if value > 0.8 then Tile.MainMapMountains
+        if value < 0.12 then Tile.MainMapWater
+        else if value < 0.17 then Tile.MainMapCoast
+        else if value > 0.9 then Tile.MainMapMountains
         else if value > 0.3 then Tile.MainMapForest
         else Tile.MainMapGrassland
-        
-    //let noise = Array2D.init boardWidth boardHeight (fun x y -> noiseValueToMap (perlinNoise x y))
-    let mutable board = { Guid = System.Guid.NewGuid(); Places = Array2D.init boardWidth boardHeight (fun x y -> {Place.EmptyPlace with Tile = noiseValueToMap (perlinNoise x y)}); Level = 0; MainMapLocation = Option.None}
-    board <- scatterTilesRamdomlyOnBoard board Tile.MainMapForest Tile.MainMapGrassland 0.25 true
-    (board,Point(4,4))
+     
+    let noise = Array2D.init boardWidth boardHeight (fun x y -> perlinNoise x y)   
+    let smoothNoise = smoothOutNoise (smoothOutNoise noise)
+    let withMask = applyMaskModifier smoothNoise
+
+    let board = { Guid = System.Guid.NewGuid(); Places = Array2D.init boardWidth boardHeight (fun x y -> {Place.EmptyPlace with Tile = noiseValueToMap (withMask.[x,y])}); Level = 0; MainMapLocation = Option.None}
+
+    //TODO: this to be deleted later... for this is map file generation for dev purposes
+    let tileToStr (tile:Tile) =
+        match tile with
+        | Tile.MainMapCoast -> "."
+        | Tile.MainMapForest -> "&"
+        | Tile.MainMapGrassland -> "\""
+        | Tile.MainMapMountains -> "^"
+        | Tile.MainMapWater -> "~"
+        | _ -> " "
+
+    let strings =
+        let mutable result : string list = []
+        for y in 0..(boardHeight-1) do
+            let mutable line = ""
+            for x in 0..(boardWidth-1) do
+                line <- line + tileToStr(board.Places.[x,y].Tile)
+            result <- result @ [line]
+        result
+    System.IO.File.WriteAllLines("C:\\tratata.txt", strings)
+    //TODO: later delete the above
+
+    let rec findRandomStartLocation board =
+        let x = rnd boardWidth
+        let y = rnd boardHeight
+        if (board.Places.[x,y].Tile = Tile.MainMapForest) then
+            Point(x,y)
+        else findRandomStartLocation board
+
+    (board,(findRandomStartLocation board))
 
 // main level generation switch
 let generateLevel levelType (cameFrom: TransportTarget option) (level: int option) : (Board*Point option) = 
