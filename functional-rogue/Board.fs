@@ -76,7 +76,7 @@ let boardContains (point: Point) =
 let get (board: Board) (point: Point) = if boardContains point then Array2D.get board.Places point.X point.Y else Place.Wall
 
 let isMovementObstacle (board: Board) (point: Point) =
-    ((get board point).Tile = Tile.Wall || (get board point).Tile = Tile.ClosedDoor || (get board point).Tile = Tile.Tree || (get board point).Tile = Tile.Glass || (get board point).Character.IsSome)
+    ((get board point).Tile = Tile.Wall || (get board point).Tile = Tile.ClosedDoor || (get board point).Tile = Tile.Tree || (get board point).Tile = Tile.Glass || (get board point).Tile = Tile.MainMapWater || (get board point).Character.IsSome)
 
 let isOpticalObstacle (board: Board) (point: Point) =
     ((get board point).Tile = Tile.Wall || (get board point).Tile = Tile.ClosedDoor || (get board point).Tile = Tile.Tree || (get board point).Tile = Tile.Bush)
