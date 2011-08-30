@@ -65,6 +65,7 @@ type Board = {
     Guid : System.Guid;
     Places : Place[,];
     Level : int;
+    /// Defines the main map location which the current map is connected to.
     MainMapLocation: Point option
 }
     
