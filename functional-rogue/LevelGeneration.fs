@@ -121,7 +121,7 @@ let countTileNeighbours (places: Place[,]) x y (tileType:Tile)=
     count
 
 let rec smoothOutTheLevel board howManyTimes (tileToGrow:Tile) (backgroundTile:Tile) (rule:(int*int)) =
-    let background = {Place.EmptyPlace with Tile = Tile.Floor}
+    let background = {Place.EmptyPlace with Tile = backgroundTile}
     let toGrow = {Place.EmptyPlace with Tile = tileToGrow}
     let min, max = rule
     match howManyTimes with
