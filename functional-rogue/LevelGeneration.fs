@@ -111,6 +111,21 @@ let maybePlaceStairsDown (backgroundTile:Tile) (level: int) (board: Board) =
     else
         board
 
+let maybePlaceCaveEntrance (backgroundTile:Tile) (probability:float) (board: Board) =
+    if((float)(rnd 100) < (probability * (float)100)) then
+        let rec getRandomBackgroundPlace () =
+            let x = rnd2 1 (boardWidth - 2)
+            let y = rnd2 1 (boardHeight - 2)
+            if (board.Places.[x,y].Tile = backgroundTile) then
+                Point(x,y)
+            else
+                getRandomBackgroundPlace ()
+        let entrancePoint = getRandomBackgroundPlace()
+        let result = Board.set (entrancePoint) {Place.EmptyPlace with Tile = Tile.StairsDown; TransportTarget = Option.None} board
+        result
+    else
+        board
+
 let countTileNeighbours (places: Place[,]) x y (tileType:Tile)=
     let tileToSearch = {Place.EmptyPlace with Tile = tileType}
     let mutable count = 0
@@ -467,6 +482,7 @@ let generateCave (cameFrom: TransportTarget option) (level: int) : (Board*Point 
 
 let generateForest (cameFrom:Point) : (Board*Point option) =
     let mutable board = { Guid = System.Guid.NewGuid(); Places = Array2D.create boardWidth boardHeight {Place.EmptyPlace with Tile = Tile.Grass}; Level = 0; MainMapLocation = Some(cameFrom)}
+    board <- maybePlaceCaveEntrance Tile.Grass 0.10 board
     board <- scatterTilesRamdomlyOnBoard board Tile.Tree Tile.Grass 0.25 false
     board <- { board with Places = smoothOutTheLevel board.Places 1 Tile.Tree Tile.Grass (1,4) }
     let sections = new DisjointLocationSet(board, Tile.Grass)
@@ -477,6 +493,7 @@ let generateForest (cameFrom:Point) : (Board*Point option) =
 
 let generateGrassland (cameFrom:Point) : (Board*Point option) =
     let mutable board = { Guid = System.Guid.NewGuid(); Places = Array2D.create boardWidth boardHeight {Place.EmptyPlace with Tile = Tile.Grass}; Level = 0; MainMapLocation = Some(cameFrom)}
+    board <- maybePlaceCaveEntrance Tile.Grass 0.05 board
     board <- scatterTilesRamdomlyOnBoard board Tile.Tree Tile.Grass 0.01 false
     board <- scatterTilesRamdomlyOnBoard board Tile.Bush Tile.Grass 0.05 false
     board <- scatterTilesRamdomlyOnBoard board Tile.SmallPlants Tile.Grass 0.05 false
