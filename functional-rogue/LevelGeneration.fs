@@ -7,6 +7,7 @@ open Monsters
 open Characters
 open Config
 open Resources
+open Quantity
 
 // predefined parts
 
@@ -309,7 +310,7 @@ let addOre board =
             let value = rnd2 1 10
             yield (fun board -> 
                 Board.modify (point posX posY) (fun place -> 
-                    {place with Ore = Uranium(value)} ) board)
+                    {place with Ore = Uranium(QuantityValue(value))} ) board)
     }
     board |>> modifiers
 
