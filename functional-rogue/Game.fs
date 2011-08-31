@@ -15,6 +15,7 @@ open Monsters
 open AI
 open Turn
 open Characters
+open System.IO
 
 let evaluateBoardFramePosition state = 
     let playerPosition = getPlayerPosition state.Board
@@ -91,7 +92,10 @@ let mainLoop () =
                 | _ -> Unknown                        
         
             match command with
-            | Quit -> ()
+            | Quit -> 
+                State.get ()  
+                |> writeState
+                ()
             | Unknown -> loop false
             | Up | Down | Left | Right | UpLeft | UpRight | DownLeft | DownRight  ->
                 State.get () 
@@ -175,15 +179,20 @@ let mainLoop () =
     initialBoards.Add(mainMapBoard.Guid, mainMapBoard)
     //end maps setup
 
-    let entryState = {         
-        Board = board; 
-        BoardFramePosition = point 0 0;
-        Player = thePlayer
-        TurnNumber = 0;
-        UserMessages = [];
-        AllBoards = initialBoards;
-        MainMapGuid = mainMapBoard.Guid
-    }
+    let entryState =
+        try
+            loadState ()
+        with
+            | :? FileNotFoundException ->
+                    {         
+                        Board = board; 
+                        BoardFramePosition = point 0 0;
+                        Player = thePlayer
+                        TurnNumber = 0;
+                        UserMessages = [];
+                        AllBoards = initialBoards;
+                        MainMapGuid = mainMapBoard.Guid
+                    }
     State.set entryState
     loop true      
 
