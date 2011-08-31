@@ -35,6 +35,7 @@ type LevelType =
     | Dungeon
     | Cave
     | Forest
+    | Empty
     | Grassland
     | Coast
 
@@ -48,6 +49,8 @@ type Ore =
     | Iron of int
     | Gold of int
     | Uranium of int
+    | Water of int
+    | ContaminatedWater of int 
 
 type Place = {
     Tile : Tile; 
@@ -70,6 +73,7 @@ type Board = {
     Guid : System.Guid;
     Places : Place[,];
     Level : int;
+    /// Defines the main map location which the current map is connected to.
     MainMapLocation: Point option
 }
     

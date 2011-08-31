@@ -56,13 +56,17 @@ let private screenWritter () =
         let toTextel item =  
             if item.WasSeen then
                 let result = 
-                    match item.Character with
-                    | Some(character1) -> 
-                        match character1.Type with
-                        | Avatar -> {Char = '@'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
-                        | Monster -> {Char = character1.Appearance; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Red}
-                        | NPC -> {Char = 'P'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.White}
-                    | _ -> 
+                    let character = 
+                        if item.IsSeen && item.Character.IsSome then
+                            match item.Character.Value.Type with
+                            | Avatar -> {Char = '@'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
+                            | Monster -> {Char = item.Character.Value.Appearance; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Red}
+                            | NPC -> {Char = 'P'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.White}
+                         else
+                            empty
+                    if character <> empty then
+                        character
+                    else
                         match item.Items with
                         | h::_ when not <| Set.contains item.Tile obstacles -> 
                                 match h.Type with 
@@ -70,7 +74,6 @@ let private screenWritter () =
                                 | Sword -> {Char = '/'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
                                 | Hat -> {Char = ']'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
                                 | Corpse -> {Char = '%'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
-                                | _ -> {Char = 'i'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
                         | _ -> 
                             match item.Ore with
                             | Iron(_) -> {Char = '$'; FGColor = ConsoleColor.Black; BGColor = ConsoleColor.Gray}
@@ -133,8 +136,10 @@ let private screenWritter () =
         |> writeString (point leftPanelPos.Location.X (leftPanelPos.Location.Y + 3)) (sprintf "Iron: %d" state.Player.Iron)
         |> writeString (point leftPanelPos.Location.X (leftPanelPos.Location.Y + 4)) (sprintf "Gold: %d" state.Player.Gold)
         |> writeString (point leftPanelPos.Location.X (leftPanelPos.Location.Y + 5)) (sprintf "Uranium: %d" state.Player.Uranium)
-        |> writeString (point leftPanelPos.Location.X (leftPanelPos.Location.Y + 6)) (sprintf "Turn: %d" state.TurnNumber)
-        |> writeString (point leftPanelPos.Location.X (leftPanelPos.Location.Y + 7)) (sprintf "Map Level: %d" state.Board.Level)
+        |> writeString (point leftPanelPos.Location.X (leftPanelPos.Location.Y + 6)) (sprintf "Water: %d" state.Player.Uranium)
+        |> writeString (point leftPanelPos.Location.X (leftPanelPos.Location.Y + 7)) (sprintf "Cont. Water: %d" state.Player.Uranium)
+        |> writeString (point leftPanelPos.Location.X (leftPanelPos.Location.Y + 8)) (sprintf "Turn: %d" state.TurnNumber)
+        |> writeString (point leftPanelPos.Location.X (leftPanelPos.Location.Y + 9)) (sprintf "Map Level: %d" state.Board.Level)
 
     let writeMessage state screen =
         if( state.UserMessages.Length > 0 && (fst (state.UserMessages.Head)) = state.TurnNumber - 1) then

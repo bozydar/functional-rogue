@@ -93,8 +93,8 @@ let switchBoards (oldBoard: Board) (playerPoint: Point) (state: State) =
     let playerPlace = oldBoard.Places.[playerPoint.X,playerPoint.Y]
     let currentPlayer = getPlayerCharacter oldBoard
     let newBoard = state.AllBoards.[playerPlace.TransportTarget.Value.BoardId]
-    let startPlace = newBoard.Places.[playerPlace.TransportTarget.Value.TargetCoordinates.X,playerPlace.TransportTarget.Value.TargetCoordinates.Y]
-    newBoard.Places.[playerPlace.TransportTarget.Value.TargetCoordinates.X,playerPlace.TransportTarget.Value.TargetCoordinates.Y] <- { startPlace with Character = Some(currentPlayer) }
+    let startPlace = newBoard.Places.[playerPlace.TransportTarget.Value.TargetCoordinates.X, playerPlace.TransportTarget.Value.TargetCoordinates.Y]
+    newBoard.Places.[playerPlace.TransportTarget.Value.TargetCoordinates.X, playerPlace.TransportTarget.Value.TargetCoordinates.Y] <- { startPlace with Character = Some(currentPlayer) }
     oldBoard.Places.[playerPoint.X,playerPoint.Y] <- { oldBoard.Places.[playerPoint.X,playerPoint.Y] with Character = Option.None }
     state.AllBoards.[oldBoard.Guid] <- oldBoard
     { state with Board = newBoard }
@@ -113,7 +113,7 @@ let performGoDownEnterAction (command: Command) state =
                 | Tile.MainMapCoast -> LevelType.Coast
                 | _ -> LevelType.Cave
             let newBoard, newPoint = generateLevel targetMapType (Some({BoardId = currentBoard.Guid; TargetCoordinates = playerPosition})) (Some(currentBoard.Level - 1))
-            state.AllBoards.Add(newBoard.Guid, newBoard)
+            state.AllBoards.Add(newBoard.Guid, newBoard)                    
             currentBoard.Places.[playerPosition.X,playerPosition.Y] <- {playerPlace with TransportTarget = Some({ BoardId = newBoard.Guid; TargetCoordinates = newPoint.Value }) }
         switchBoards currentBoard playerPosition state
     else
@@ -161,7 +161,7 @@ let performHarvest state =
     | Uranium(quantity) -> state.Player.Uranium <- state.Player.Uranium + quantity
     | _ -> ()
     match takenOre with
-        | Iron(quantity) | Gold(quantity) | Uranium(quantity) ->
+        | Iron(quantity) | Gold(quantity) | Uranium(quantity) | Water(quantity) | ContaminatedWater(quantity) ->
             let pickUpMessage = sprintf "You have harvested ore %s. Quantity: %i" (repr takenOre) quantity
             let board1 = 
                 state.Board
