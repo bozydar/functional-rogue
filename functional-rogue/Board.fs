@@ -20,6 +20,7 @@ type Tile =
     | Bush
     | Glass
     | Sand
+    | Water
     | StairsDown
     | StairsUp
     | MainMapForest
@@ -49,7 +50,7 @@ type Ore =
     | Iron of int
     | Gold of int
     | Uranium of int
-    | Water of int
+    | CleanWater of int
     | ContaminatedWater of int 
 
 type Place = {
