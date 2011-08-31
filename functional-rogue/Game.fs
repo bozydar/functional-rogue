@@ -181,7 +181,6 @@ let mainLoop () =
         Player = thePlayer
         TurnNumber = 0;
         UserMessages = [];
-        Monsters = [];
         AllBoards = initialBoards;
         MainMapGuid = mainMapBoard.Guid
     }

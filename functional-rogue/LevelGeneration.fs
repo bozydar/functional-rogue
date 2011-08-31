@@ -70,7 +70,6 @@ let perlinNoise (x: int) (y: int) =
             let amplitude = a*4.0
             ((noise ((float)x*f) ((float)y*f)) * a) + total freq amplitude
     total startFrequency startAmplitude
-
 let scatterTilesRamdomlyOnBoard (board: Board) (tileToPut:Tile) (backgroundTile:Tile) (probability:float) (createBorder:bool) : Board =
     let background = {Place.EmptyPlace with Tile = backgroundTile}
     let placeToPut = {Place.EmptyPlace with Tile = tileToPut}
@@ -505,7 +504,6 @@ let generateCoast (cameFrom:Point) : (Board*Point option) =
     board <- scatterTilesRamdomlyOnBoard board Tile.Bush Tile.Sand 0.05 false
     board <- scatterTilesRamdomlyOnBoard board Tile.SmallPlants Tile.Sand 0.05 false
     (board, Some(Point(35,15)))
-
 let generateStartLocationWithInitialPlayerPositon (cameFrom:Point) : (Board*Point) =
     let result, startpoint = generateForest cameFrom
     let ship = generateStartingLevelShip Tile.Grass
@@ -556,6 +554,15 @@ let generateMainMap: (Board*Point) =
 
     (board,(findRandomStartLocation board))
 
+let generateEmpty : (Board * Point option) =
+    let places = 
+        Array2D.create boardWidth boardHeight {Place.EmptyPlace with Tile = Tile.Floor}        
+    let board = 
+        { Guid = System.Guid.NewGuid(); Places = places; Level = 0; MainMapLocation = Option.None }
+        |> Board.modify (new Point(8, 8)) (fun _ -> {Place.EmptyPlace with Tile = Tile.Wall})
+        |> Board.modify (new Point(8, 9)) (fun _ -> {Place.EmptyPlace with Tile = Tile.Wall})
+    (board, Option.Some(new Point(5,5)))
+    //|> Board.modify (new Point(8, 9)) (fun _ -> {Place.EmptyPlace with Tile = Tile.Wall})
 // main level generation switch
 let generateLevel levelType (cameFrom: TransportTarget option) (level: int option) : (Board*Point option) = 
     match levelType with
@@ -565,4 +572,5 @@ let generateLevel levelType (cameFrom: TransportTarget option) (level: int optio
     | LevelType.Forest -> generateForest cameFrom.Value.TargetCoordinates
     | LevelType.Grassland -> generateGrassland cameFrom.Value.TargetCoordinates
     | LevelType.Coast -> generateCoast cameFrom.Value.TargetCoordinates
+    | LevelType.Empty -> generateEmpty
 
