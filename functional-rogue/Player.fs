@@ -4,6 +4,7 @@ open System
 open System.Collections.Generic
 open Items
 open Characters
+open Quantity
 
 type WornItems = {
     Head : option<Item>;
@@ -24,6 +25,10 @@ type Player (name : string, hp : int) =
     let mutable gold : int = 0
 
     let mutable uranium : int = 0
+
+    let mutable water : int = 0
+
+    let mutable contaminatedWater : int = 0
 
     let mutable items : list<Item> = []
 
@@ -55,6 +60,14 @@ type Player (name : string, hp : int) =
     member this.Uranium
         with get() = uranium
         and set(value) = uranium <- value
+
+    member this.Water
+        with get() = water
+        and set(value) = water <- value
+
+    member this.ContaminatedWater
+        with get() = contaminatedWater
+        and set(value) = contaminatedWater <- value
 
     override this.SightRadius
         with get() = 10

@@ -7,6 +7,7 @@ open Config
 open Items
 open Monsters
 open Characters
+open Quantity
 
 type Tile =
     | Wall 
@@ -46,11 +47,20 @@ type TransportTarget = {
 
 type Ore = 
     | NoneOre
-    | Iron of int
-    | Gold of int
-    | Uranium of int
-    | Water of int
-    | ContaminatedWater of int 
+    | Iron of Quantity
+    | Gold of Quantity
+    | Uranium of Quantity
+    | Water of Quantity
+    | ContaminatedWater of Quantity
+    member this.Quantity 
+        with get() = 
+            match this with
+            | Iron(value) -> value
+            | Gold(value) -> value
+            | Uranium(value) -> value
+            | Water(value) -> value
+            | ContaminatedWater(value) -> value
+            | _ -> QuantityValue(0)
 
 type Place = {
     Tile : Tile; 
