@@ -125,6 +125,51 @@ let maybePlaceCaveEntrance (backgroundTile:Tile) (probability:float) (board: Boa
     else
         board
 
+let maybePlaceSomeOre (backgroundTile:Tile) (level: int) (board: Board) =
+    if (rnd 100) < (min 90 (level*(-2)*15)) then // probablity for underground levels 30%, 60%, 90%, 90%, 90%,...
+        let rec getRandomBackgroundPlace () =
+            let x = rnd2 1 (boardWidth - 2)
+            let y = rnd2 1 (boardHeight - 2)
+            if (board.Places.[x,y].Tile = backgroundTile) then
+                Point(x,y)
+            else
+                getRandomBackgroundPlace ()
+        let getRandomOreSupply (amount: int) =
+            let randomResult = rnd 100
+            if (randomResult < 20) then Ore.Uranium(amount) // 20%
+            else if (randomResult < 50) then Ore.Gold(amount)   //30%
+            else Ore.Iron(amount)   //50%
+        let orePoint = getRandomBackgroundPlace()
+        let orePlace = Board.get board orePoint
+        let result = Board.set orePoint { orePlace with Ore = getRandomOreSupply(rnd 10)} board
+        result
+    else
+        board
+
+let placeLake (backgroundTile:Tile) (board: Board) =
+    let rec getRandomBackgroundPlaceNotTooCloseToBorder () =
+        let x = rnd2 6 (boardWidth - 7)
+        let y = rnd2 6 (boardHeight - 7)
+        if (board.Places.[x,y].Tile = backgroundTile) then
+            Point(x,y)
+        else
+            getRandomBackgroundPlaceNotTooCloseToBorder ()
+    let rec growRandomLake (currentPoint: Point) (size: int) (board: Board) =
+        match size with
+        | 0 -> board
+        | _ ->
+            let thePlace = Board.get board currentPoint
+            let nextPoint = Point(min (boardWidth - 1) (max 0 (currentPoint.X + (rnd 3) - 1)), min (boardHeight - 1) (max 0 (currentPoint.Y + (rnd 3) - 1)))
+            growRandomLake nextPoint (size - 1) (Board.set currentPoint { thePlace with Tile = Tile.Water; Ore = Ore.CleanWater System.Int32.MaxValue } board)
+    let startPoint = getRandomBackgroundPlaceNotTooCloseToBorder()
+    growRandomLake startPoint 25 board
+
+let maybePlaceSomeWater (backgroundTile:Tile) (probability:float) (board: Board) =
+    if((float)(rnd 100) < (probability * (float)100)) then
+        placeLake backgroundTile board
+    else
+        board
+
 let countTileNeighbours (places: Place[,]) x y (tileType:Tile)=
     let tileToSearch = {Place.EmptyPlace with Tile = tileType}
     let mutable count = 0
@@ -468,14 +513,15 @@ let generateCave (cameFrom: TransportTarget option) (level: int) : (Board*Point 
     board <- scatterTilesRamdomlyOnBoard board Tile.Wall Tile.Floor 0.5 true
     board <- { board with Places = smoothOutTheLevel board.Places 2 Tile.Wall Tile.Floor (4,5) }
     let sections = new DisjointLocationSet(board, Tile.Floor)
-    let initial = sections.ConnectUnconnected |> addItems |> addOre
+    let initial = sections.ConnectUnconnected |> addItems |> maybePlaceSomeOre Tile.Floor level
     if (cameFrom.IsSome) then
         let resultBoard, startpoint = initial |> placeStairsUp Tile.Floor cameFrom.Value
         (resultBoard
         |> putRandomMonstersOnBoard
-        |> maybePlaceStairsDown Tile.Floor level, Some(startpoint))
+        |> maybePlaceStairsDown Tile.Floor level
+        , Some(startpoint))
     else
-        (initial |> putRandomMonstersOnBoard, Option.None)
+        (initial |> putRandomMonstersOnBoard |> maybePlaceSomeOre Tile.Floor level, Option.None)
 
 // jungle/forest generation
 
@@ -492,6 +538,7 @@ let generateForest (cameFrom:Point) : (Board*Point option) =
 
 let generateGrassland (cameFrom:Point) : (Board*Point option) =
     let mutable board = { Guid = System.Guid.NewGuid(); Places = Array2D.create boardWidth boardHeight {Place.EmptyPlace with Tile = Tile.Grass}; Level = 0; MainMapLocation = Some(cameFrom)}
+    board <- maybePlaceSomeWater Tile.Grass 1.0 board
     board <- maybePlaceCaveEntrance Tile.Grass 0.05 board
     board <- scatterTilesRamdomlyOnBoard board Tile.Tree Tile.Grass 0.01 false
     board <- scatterTilesRamdomlyOnBoard board Tile.Bush Tile.Grass 0.05 false
@@ -504,6 +551,7 @@ let generateCoast (cameFrom:Point) : (Board*Point option) =
     board <- scatterTilesRamdomlyOnBoard board Tile.Bush Tile.Sand 0.05 false
     board <- scatterTilesRamdomlyOnBoard board Tile.SmallPlants Tile.Sand 0.05 false
     (board, Some(Point(35,15)))
+
 let generateStartLocationWithInitialPlayerPositon (cameFrom:Point) : (Board*Point) =
     let result, startpoint = generateForest cameFrom
     let ship = generateStartingLevelShip Tile.Grass
