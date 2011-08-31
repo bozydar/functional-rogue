@@ -197,7 +197,6 @@ let aiLurkerPredatorMonster (monsterPlace: (Point*Place)) (state:State) : State 
             |> goTowards monsterPlace (fst (sortedDiffSpeciesByDist.Head))
         else
             state
-    | _ -> state
 
 // some top level functions
 

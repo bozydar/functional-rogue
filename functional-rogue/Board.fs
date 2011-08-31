@@ -49,6 +49,8 @@ type Ore =
     | Iron of int
     | Gold of int
     | Uranium of int
+    | Water of int
+    | ContaminatedWater of int 
 
 type Place = {
     Tile : Tile; 
