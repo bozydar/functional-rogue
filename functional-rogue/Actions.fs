@@ -104,11 +104,13 @@ let performGoDownEnterAction (command: Command) state =
     let playerPosition = getPlayerPosition currentBoard
     let currentPlayer = getPlayerCharacter currentBoard
     let playerPlace = currentBoard.Places.[playerPosition.X,playerPosition.Y]
-    if (playerPlace.Tile = Tile.StairsDown || playerPlace.Tile = Tile.MainMapForest || playerPlace.Tile = Tile.MainMapGrassland) then
+    if (playerPlace.Tile = Tile.StairsDown || playerPlace.Tile = Tile.MainMapForest || playerPlace.Tile = Tile.MainMapGrassland || playerPlace.Tile = Tile.MainMapCoast) then
         if (playerPlace.TransportTarget.IsNone) then
             let targetMapType = 
                 match playerPlace.Tile with
-                | Tile.MainMapForest | Tile.MainMapGrassland -> LevelType.Forest
+                | Tile.MainMapForest -> LevelType.Forest
+                | Tile.MainMapGrassland -> LevelType.Grassland
+                | Tile.MainMapCoast -> LevelType.Coast
                 | _ -> LevelType.Cave
             let newBoard, newPoint = generateLevel targetMapType (Some({BoardId = currentBoard.Guid; TargetCoordinates = playerPosition})) (Some(currentBoard.Level - 1))
             state.AllBoards.Add(newBoard.Guid, newBoard)                    
