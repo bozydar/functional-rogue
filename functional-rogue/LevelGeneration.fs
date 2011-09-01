@@ -160,15 +160,21 @@ let placeLake (backgroundTile:Tile) (board: Board) =
             Point(x,y)
         else
             getRandomBackgroundPlaceNotTooCloseToBorder ()
-    let rec growRandomLake (currentPoint: Point) (size: int) (board: Board) =
+    let rec growRandomLake (currentPoint: Point) (size: int) (waterType: Ore) (board: Board) =
         match size with
         | 0 -> board
         | _ ->
             let thePlace = Board.get board currentPoint
             let nextPoint = Point(min (boardWidth - 1) (max 0 (currentPoint.X + (rnd 3) - 1)), min (boardHeight - 1) (max 0 (currentPoint.Y + (rnd 3) - 1)))
-            growRandomLake nextPoint (size - 1) (Board.set currentPoint { thePlace with Tile = Tile.Water; Ore = Ore.CleanWater Quantity.PositiveInfinity } board)
+            growRandomLake nextPoint (size - 1) waterType (Board.set currentPoint { thePlace with Tile = Tile.Water; Ore = waterType } board)
+    let randomWaterType =
+        let number = rnd 100
+        if number < 20 then
+            Ore.CleanWater Quantity.PositiveInfinity    //20% chance for clean water in a lake
+        else
+            Ore.ContaminatedWater Quantity.PositiveInfinity //80% chance for contaminated water in a lake
     let startPoint = getRandomBackgroundPlaceNotTooCloseToBorder()
-    growRandomLake startPoint 25 board
+    growRandomLake startPoint 25 randomWaterType board
 
 let maybePlaceSomeWater (backgroundTile:Tile) (probability:float) (board: Board) =
     if((float)(rnd 100) < (probability * (float)100)) then
