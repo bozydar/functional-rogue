@@ -127,7 +127,7 @@ let maybePlaceCaveEntrance (backgroundTile:Tile) (probability:float) (board: Boa
         board
 
 let maybePlaceSomeOre (backgroundTile:Tile) (level: int) (board: Board) =
-    if (rnd 100) < (min 90 (level*(-2)*15)) then // probablity for underground levels 30%, 60%, 90%, 90%, 90%,...
+    if (rnd 100) < (min 90 (level*(-2)*10)) then // probablity for underground levels 20%, 40%, 60%, 80%, 90%, 90%, ...
         let rec getRandomBackgroundPlace () =
             let x = rnd2 1 (boardWidth - 2)
             let y = rnd2 1 (boardHeight - 2)
@@ -135,11 +135,13 @@ let maybePlaceSomeOre (backgroundTile:Tile) (level: int) (board: Board) =
                 Point(x,y)
             else
                 getRandomBackgroundPlace ()
-        let getRandomOreKind (amount: int) =
+        let getkaka = Ore.Iron
+        let ss = getkaka((QuantityValue)4)
+        let getRandomOreKind =
             let randomResult = rnd 100
-            if (randomResult < 20) then Ore.Uranium(Quantity.QuantityValue amount) // 20%
-            else if (randomResult < 50) then Ore.Gold(Quantity.QuantityValue amount)   //30%
-            else Ore.Iron(Quantity.QuantityValue amount)   //50%
+            if (randomResult < 20) then Ore.Uranium // 20%
+            else if (randomResult < 50) then Ore.Gold   //30%
+            else Ore.Iron   //50%
 
         let rec placeRandomOres (amount: int) (board: Board) =
             match amount with
@@ -147,7 +149,7 @@ let maybePlaceSomeOre (backgroundTile:Tile) (level: int) (board: Board) =
             | _ ->
                 let orePoint = getRandomBackgroundPlace()
                 let orePlace = Board.get board orePoint
-                placeRandomOres (amount - 1) (Board.set orePoint { orePlace with Ore = getRandomOreKind(rnd 10)} board)
+                placeRandomOres (amount - 1) (Board.set orePoint { orePlace with Ore = getRandomOreKind(Quantity.QuantityValue (rnd 8))} board)
         placeRandomOres (rnd 10) board
     else
         board
@@ -176,9 +178,40 @@ let placeLake (backgroundTile:Tile) (board: Board) =
     let startPoint = getRandomBackgroundPlaceNotTooCloseToBorder()
     growRandomLake startPoint 25 randomWaterType board
 
+let placeStream (backgroundTile:Tile) (board: Board) =
+    let horizontalVariation = rnd 3
+    let verticalVariation = if (horizontalVariation = 1) then (if (rnd 2) = 0 then 0 else 2) else 1
+    let startPointX =
+        match horizontalVariation with
+        | 1 -> (rnd (boardWidth - 5)) + 4
+        | _ -> if(horizontalVariation = 0) then 0 else (boardWidth - 1)
+    let startPointY =
+        match verticalVariation with
+        | 1 -> (rnd (boardHeight - 5)) + 4
+        | _ -> if(verticalVariation = 0) then 0 else (boardHeight - 1)
+    let randomWaterType =
+        let number = rnd 100
+        if number < 70 then
+            Ore.CleanWater Quantity.PositiveInfinity    //70% chance for clean water in a stream
+        else
+            Ore.ContaminatedWater Quantity.PositiveInfinity //30% chance for contaminated water in a stream
+    let rec growRandomStream (currentPoint: Point) (waterType: Ore) (board: Board) =
+        if (currentPoint.X = -1 || currentPoint.X = boardWidth || currentPoint.Y = -1 || currentPoint.Y = boardHeight) then
+            board
+        else
+            let thePlace = Board.get board currentPoint
+            let nextX = currentPoint.X + (min 1 (max (-1) ((rnd 3) - horizontalVariation)))
+            let nexyY = currentPoint.Y + (min 1 (max (-1) ((rnd 3) - verticalVariation)))
+            let nextPoint = Point(nextX , nexyY)
+            growRandomStream nextPoint waterType (Board.set currentPoint { thePlace with Tile = Tile.Water; Ore = waterType } board)
+    growRandomStream (Point(startPointX,startPointY)) randomWaterType board
+
 let maybePlaceSomeWater (backgroundTile:Tile) (probability:float) (board: Board) =
     if((float)(rnd 100) < (probability * (float)100)) then
-        placeLake backgroundTile board
+        if (rnd 2) = 0 then
+            placeLake backgroundTile board  // 50% chance that it's a lake
+        else
+            placeStream backgroundTile board // 50% chance that it's a stream
     else
         board
 
@@ -539,6 +572,7 @@ let generateCave (cameFrom: TransportTarget option) (level: int) : (Board*Point 
 
 let generateForest (cameFrom:Point) : (Board*Point option) =
     let mutable board = { Guid = System.Guid.NewGuid(); Places = Array2D.create boardWidth boardHeight {Place.EmptyPlace with Tile = Tile.Grass}; Level = 0; MainMapLocation = Some(cameFrom)}
+    board <- maybePlaceSomeWater Tile.Grass 0.15 board
     board <- maybePlaceCaveEntrance Tile.Grass 0.10 board
     board <- scatterTilesRamdomlyOnBoard board Tile.Tree Tile.Grass 0.25 false
     board <- { board with Places = smoothOutTheLevel board.Places 1 Tile.Tree Tile.Grass (1,4) }
@@ -550,7 +584,7 @@ let generateForest (cameFrom:Point) : (Board*Point option) =
 
 let generateGrassland (cameFrom:Point) : (Board*Point option) =
     let mutable board = { Guid = System.Guid.NewGuid(); Places = Array2D.create boardWidth boardHeight {Place.EmptyPlace with Tile = Tile.Grass}; Level = 0; MainMapLocation = Some(cameFrom)}
-    board <- maybePlaceSomeWater Tile.Grass 1.0 board
+    board <- maybePlaceSomeWater Tile.Grass 0.25 board
     board <- maybePlaceCaveEntrance Tile.Grass 0.05 board
     board <- scatterTilesRamdomlyOnBoard board Tile.Tree Tile.Grass 0.01 false
     board <- scatterTilesRamdomlyOnBoard board Tile.Bush Tile.Grass 0.05 false
@@ -559,6 +593,7 @@ let generateGrassland (cameFrom:Point) : (Board*Point option) =
 
 let generateCoast (cameFrom:Point) : (Board*Point option) =
     let mutable board = { Guid = System.Guid.NewGuid(); Places = Array2D.create boardWidth boardHeight {Place.EmptyPlace with Tile = Tile.Sand}; Level = 0; MainMapLocation = Some(cameFrom)}
+    board <- maybePlaceSomeWater Tile.Grass 0.35 board
     board <- scatterTilesRamdomlyOnBoard board Tile.Tree Tile.Sand 0.01 false
     board <- scatterTilesRamdomlyOnBoard board Tile.Bush Tile.Sand 0.05 false
     board <- scatterTilesRamdomlyOnBoard board Tile.SmallPlants Tile.Sand 0.05 false
