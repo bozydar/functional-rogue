@@ -155,17 +155,20 @@ let performHarvest state =
     let playerPosition = getPlayerPosition state.Board
     let place = get state.Board playerPosition
     let takenOre = place.Ore
+    if takenOre.Quantity.IsInf then raise <| new NotImplementedException("Here should be asking for not inf")
     match takenOre with
-    | Iron(quantity) -> state.Player.Iron <- state.Player.Iron + quantity
-    | Gold(quantity) -> state.Player.Gold <- state.Player.Gold + quantity
-    | Uranium(quantity) -> state.Player.Uranium <- state.Player.Uranium + quantity
+    | Iron(quantity) -> state.Player.Iron <- state.Player.Iron + quantity.Value
+    | Gold(quantity) -> state.Player.Gold <- state.Player.Gold + quantity.Value
+    | Uranium(quantity) -> state.Player.Uranium <- state.Player.Uranium + quantity.Value
+    | CleanWater(quantity) -> state.Player.Water <- state.Player.Water + quantity.Value
+    | ContaminatedWater(quantity) -> state.Player.ContaminatedWater <- state.Player.ContaminatedWater + quantity.Value
     | _ -> ()
     match takenOre with
         | Iron(quantity) | Gold(quantity) | Uranium(quantity) | CleanWater(quantity) | ContaminatedWater(quantity) ->
-            let pickUpMessage = sprintf "You have harvested ore %s. Quantity: %i" (repr takenOre) quantity
+            let pickUpMessage = sprintf "You have harvested ore %s. Quantity: %s" (repr takenOre) (quantity.ToString())
             let board1 = 
                 state.Board
-                |> set playerPosition {place with Ore = NoneOre}
+                |> fun board -> if not quantity.IsInf then set playerPosition {place with Ore = NoneOre} board else board
             {state with Board = board1} |> addMessage pickUpMessage                
         | NoneOre -> 
             state

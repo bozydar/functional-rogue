@@ -7,6 +7,7 @@ open Monsters
 open Characters
 open Config
 open Resources
+open Quantity
 
 // predefined parts
 
@@ -136,9 +137,9 @@ let maybePlaceSomeOre (backgroundTile:Tile) (level: int) (board: Board) =
                 getRandomBackgroundPlace ()
         let getRandomOreSupply (amount: int) =
             let randomResult = rnd 100
-            if (randomResult < 20) then Ore.Uranium(amount) // 20%
-            else if (randomResult < 50) then Ore.Gold(amount)   //30%
-            else Ore.Iron(amount)   //50%
+            if (randomResult < 20) then Ore.Uranium(Quantity.QuantityValue amount) // 20%
+            else if (randomResult < 50) then Ore.Gold(Quantity.QuantityValue amount)   //30%
+            else Ore.Iron(Quantity.QuantityValue amount)   //50%
         let orePoint = getRandomBackgroundPlace()
         let orePlace = Board.get board orePoint
         let result = Board.set orePoint { orePlace with Ore = getRandomOreSupply(rnd 10)} board
@@ -160,7 +161,7 @@ let placeLake (backgroundTile:Tile) (board: Board) =
         | _ ->
             let thePlace = Board.get board currentPoint
             let nextPoint = Point(min (boardWidth - 1) (max 0 (currentPoint.X + (rnd 3) - 1)), min (boardHeight - 1) (max 0 (currentPoint.Y + (rnd 3) - 1)))
-            growRandomLake nextPoint (size - 1) (Board.set currentPoint { thePlace with Tile = Tile.Water; Ore = Ore.CleanWater System.Int32.MaxValue } board)
+            growRandomLake nextPoint (size - 1) (Board.set currentPoint { thePlace with Tile = Tile.Water; Ore = Ore.CleanWater Quantity.PositiveInfinity } board)
     let startPoint = getRandomBackgroundPlaceNotTooCloseToBorder()
     growRandomLake startPoint 25 board
 
@@ -369,7 +370,7 @@ let addOre board =
             let value = rnd2 1 10
             yield (fun board -> 
                 Board.modify (point posX posY) (fun place -> 
-                    {place with Ore = Uranium(value)} ) board)
+                    {place with Ore = Uranium(QuantityValue(value))} ) board)
     }
     board |>> modifiers
 
