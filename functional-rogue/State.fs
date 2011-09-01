@@ -6,6 +6,9 @@ open Player
 open System.Drawing
 open Monsters
 open Characters
+open System
+open System.IO
+open System.Runtime.Serialization.Formatters.Binary
 
 type State = {
     Board: Board;
@@ -53,3 +56,15 @@ let addMessage (message : string) (state : State) =
 
 let updateCharacter (character: Character) (newCharacter: Character) (state: State) =
     { state with Board = state.Board |> Board.updateCharacter character newCharacter}
+
+let private filePath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + "\\functional-rogue.save";
+
+let writeState (state : State) =
+    let outputStream = File.Create(filePath)
+    let formatter = new BinaryFormatter()
+    formatter.Serialize(outputStream, state)
+
+let loadState () : State =
+    let inputSream = File.OpenRead(filePath)
+    let formatter = new BinaryFormatter()
+    formatter.Deserialize(inputSream) :?> State
