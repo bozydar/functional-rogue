@@ -16,6 +16,7 @@ type ScreenAgentMessage =
     | ShowEquipmentDialog of ChooseEquipmentDialogRequest
     | ShowMessages of State
     | ShowOptions of seq<char * string>
+    | SetCursorPositionOnBoard of Point * State
 and MainMenuReply = {
     Name: String
 } 
@@ -187,7 +188,7 @@ let private screenWritter () =
         ) 
         screen |>> write                
                
-    let refreshScreen (oldScreen: screen) (newScreen: screen)= 
+    let refreshScreen (oldScreen: screen) (newScreen: screen) = 
         let changes = seq {
             for x in 0..screenSize.Width - 1 do
                 for y in 0..screenSize.Height - 1 do
@@ -264,6 +265,11 @@ let private screenWritter () =
                     |> showOptions request
                 refreshScreen screen newScreen
                 return! loop newScreen
+            | SetCursorPositionOnBoard(point, state) ->
+                let realPosition = (Math.Min(boardFrameSize.Width, Math.Max(0, point.X - state.BoardFramePosition.X)),
+                                    Math.Min(boardFrameSize.Height, Math.Max(0, point.Y - state.BoardFramePosition.Y)))
+                Console.SetCursorPosition(realPosition)
+                return! loop screen
 
         }
         loop <| Array2D.create screenSize.Width screenSize.Height empty
@@ -275,5 +281,6 @@ let showBoard () = agent.Post (ShowBoard(State.get ()))
 let showMainMenu () = agent.PostAndReply(fun reply -> ShowMainMenu(reply))
 let showChooseItemDialog items = agent.Post(ShowChooseItemDialog(items))
 let showEquipmentItemDialog items = agent.Post(ShowEquipmentDialog(items))
+let setCursorPositionOnBoard point state = agent.Post(SetCursorPositionOnBoard(point, state))
 let showMessages () = agent.Post (ShowMessages(State.get ()))
 let showOptions options  = agent.Post(ShowOptions(options))
