@@ -135,15 +135,20 @@ let maybePlaceSomeOre (backgroundTile:Tile) (level: int) (board: Board) =
                 Point(x,y)
             else
                 getRandomBackgroundPlace ()
-        let getRandomOreSupply (amount: int) =
+        let getRandomOreKind (amount: int) =
             let randomResult = rnd 100
             if (randomResult < 20) then Ore.Uranium(Quantity.QuantityValue amount) // 20%
             else if (randomResult < 50) then Ore.Gold(Quantity.QuantityValue amount)   //30%
             else Ore.Iron(Quantity.QuantityValue amount)   //50%
-        let orePoint = getRandomBackgroundPlace()
-        let orePlace = Board.get board orePoint
-        let result = Board.set orePoint { orePlace with Ore = getRandomOreSupply(rnd 10)} board
-        result
+
+        let rec placeRandomOres (amount: int) (board: Board) =
+            match amount with
+            | 0 -> board
+            | _ ->
+                let orePoint = getRandomBackgroundPlace()
+                let orePlace = Board.get board orePoint
+                placeRandomOres (amount - 1) (Board.set orePoint { orePlace with Ore = getRandomOreKind(rnd 10)} board)
+        placeRandomOres (rnd 10) board
     else
         board
 
