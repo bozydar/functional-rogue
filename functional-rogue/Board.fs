@@ -21,6 +21,7 @@ type Tile =
     | Bush
     | Glass
     | Sand
+    | Water
     | StairsDown
     | StairsUp
     | MainMapForest
@@ -50,15 +51,15 @@ type Ore =
     | Iron of Quantity
     | Gold of Quantity
     | Uranium of Quantity
-    | Water of Quantity
-    | ContaminatedWater of Quantity
+    | CleanWater of Quantity
+    | ContaminatedWater of Quantity 
     member this.Quantity 
         with get() = 
             match this with
             | Iron(value) -> value
             | Gold(value) -> value
             | Uranium(value) -> value
-            | Water(value) -> value
+            | CleanWater(value) -> value
             | ContaminatedWater(value) -> value
             | _ -> QuantityValue(0)
 
