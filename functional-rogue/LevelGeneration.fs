@@ -180,7 +180,7 @@ let placeLake (backgroundTile:Tile) (board: Board) =
 
 let placeStream (backgroundTile:Tile) (board: Board) =
     let horizontalVariation = rnd 3
-    let verticalVariation = if (horizontalVariation = 1) then (if (rnd 2) = 0 then 0 else 2) else 1
+    let verticalVariation = if (horizontalVariation = 1) then (if (rnd 2) = 0 then 0 else 2) else rnd 3
     let startPointX =
         match horizontalVariation with
         | 1 -> (rnd (boardWidth - 5)) + 4
