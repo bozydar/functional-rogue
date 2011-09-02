@@ -220,11 +220,11 @@ let performHarvest state =
     | Iron(quantity) -> state.Player.Iron <- state.Player.Iron + quantity.Value
     | Gold(quantity) -> state.Player.Gold <- state.Player.Gold + quantity.Value
     | Uranium(quantity) -> state.Player.Uranium <- state.Player.Uranium + quantity.Value
-    | Water(quantity) -> state.Player.Water <- state.Player.Water + quantity.Value
+    | CleanWater(quantity) -> state.Player.Water <- state.Player.Water + quantity.Value
     | ContaminatedWater(quantity) -> state.Player.ContaminatedWater <- state.Player.ContaminatedWater + quantity.Value
     | _ -> ()
     match takenOre with
-        | Iron(quantity) | Gold(quantity) | Uranium(quantity) | Water(quantity) | ContaminatedWater(quantity) ->            
+        | Iron(quantity) | Gold(quantity) | Uranium(quantity) | CleanWater(quantity) | ContaminatedWater(quantity) ->
             let pickUpMessage = sprintf "You have harvested ore %s. Quantity: %s" (repr takenOre) (quantity.ToString())
             let board1 = 
                 state.Board
