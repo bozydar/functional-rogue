@@ -26,8 +26,7 @@ type Command =
     | ShowItems
     | Quit
     | Unknown
-    | OpenDoor
-    | CloseDoor
+    | OpenCloseDoor
     | ShowEquipment
     | ShowMessages
     | Harvest
@@ -76,18 +75,79 @@ let moveAvatar command state =
                 board |> moveCharacter playerCharacter newPosition
         {state with Board = preResult}
 
-let private operateDoor command board =
+let selectPlace (positions : Point list) state : Point option =
+    if positions.Length <> 0 then 
+        let start = positions.Head
+        let left = 
+            fun (position : Point) -> 
+                positions
+                |> List.filter (fun item -> item.X < position.X)  
+                |> List.sortBy (fun item -> -item.X, Math.Abs (position.Y - item.Y))
+                |> fun x -> x @ [position]
+                |> List.head
+        
+        let right = 
+            fun (position : Point) -> 
+                positions
+                |> List.filter (fun item -> item.X > position.X)  
+                |> List.sortBy (fun item -> item.X, Math.Abs (position.Y - item.Y)) 
+                |> fun x -> x @ [position]
+                |> List.head
+
+        let up = 
+            fun (position : Point) -> 
+                positions
+                |> List.filter (fun item -> item.Y < position.Y)  
+                |> List.sortBy (fun item -> -item.Y, Math.Abs (position.X - item.X))
+                |> fun x -> x @ [position]
+                |> List.head
+
+        let down = 
+            fun (position : Point) -> 
+                positions
+                |> List.filter (fun item -> item.Y > position.Y)  
+                |> List.sortBy (fun item -> item.Y, Math.Abs (position.X - item.X))
+                |> fun x -> x @ [position]
+                |> List.head
+
+        let rec loop (current : Point) : Point option =
+            setCursorPositionOnBoard current state
+            let keyInfo = System.Console.ReadKey(true)
+            match keyInfo with 
+            | Keys [ConsoleKey.UpArrow; '8'] -> loop (up current) //Up
+            | Keys [ConsoleKey.DownArrow; '2'] -> loop (down current) //Down        
+            | Keys [ConsoleKey.LeftArrow; '4'] -> loop (left current) //Left            
+            | Keys [ConsoleKey.RightArrow; '6'] -> loop (right current) //Right
+            | Key ConsoleKey.Enter -> Some(current)
+            | Key ConsoleKey.Escape -> None
+            | _ -> loop current
+        loop start                
+    else
+        None
+
+let private operateDoor command state =
+    let board = state.Board
     let playerPosition = getPlayerPosition board
-    let oldDoor = {Place.EmptyPlace with Tile = (if (command = OpenDoor) then Tile.ClosedDoor else Tile.OpenDoor)}
-    let newDoor = {Place.EmptyPlace with Tile = (if (command = OpenDoor) then Tile.OpenDoor else Tile.ClosedDoor)}
-    for x in (max 0 (playerPosition.X - 1))..(min boardWidth (playerPosition.X + 1)) do
-        for y in (max 0 (playerPosition.Y - 1))..(min boardHeight (playerPosition.Y + 1)) do
-            if(not(x = playerPosition.X && y = playerPosition.Y) && board.Places.[x,y].Tile = oldDoor.Tile) then
-                Array2D.set board.Places x y newDoor
-    board 
+    let points = 
+        playerPosition 
+        :: [for x in (max 0 (playerPosition.X - 1))..(min boardWidth (playerPosition.X + 1)) do
+                for y in (max 0 (playerPosition.Y - 1))..(min boardHeight (playerPosition.Y + 1)) do
+                    let p = Point(x, y)
+                    if p <> playerPosition then yield p]        
+    let selected = selectPlace points state
+
+    if selected.IsSome then 
+        board |> Board.modify selected.Value (
+            fun (place : Place) -> 
+                match place.Tile with
+                | Tile.OpenDoor -> {place with Tile = Tile.ClosedDoor}  
+                | Tile.ClosedDoor -> {place with Tile = Tile.OpenDoor}
+                | _ -> place)
+    else
+        board
 
 let performCloseOpenAction command state =
-    { state with Board = operateDoor command state.Board } 
+    { state with Board = operateDoor command state } 
 
 let switchBoards (oldBoard: Board) (playerPoint: Point) (state: State) =
     let playerPlace = oldBoard.Places.[playerPoint.X,playerPoint.Y]

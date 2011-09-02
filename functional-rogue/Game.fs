@@ -80,8 +80,7 @@ let mainLoop () =
                 | Key ',' -> Take
                 | Key 'i' -> ShowItems
                 | Key ConsoleKey.Escape -> Quit
-                | Key 'o' -> OpenDoor
-                | Key 'c' -> CloseDoor
+                | Key 'o' -> OpenCloseDoor
                 | Key 'e' -> ShowEquipment
                 | Key 'm' -> ShowMessages
                 | Key 'h' -> Harvest
@@ -125,7 +124,7 @@ let mainLoop () =
                 |> Turn.next
                 Screen.showBoard ()
                 loop false
-            | OpenDoor | CloseDoor ->
+            | OpenCloseDoor ->
                 State.get () 
                 |> Actions.performCloseOpenAction command
                 |> Turn.next
