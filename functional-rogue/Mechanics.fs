@@ -2,6 +2,11 @@
 
 open System
 
+let scratchWound = 1
+let lightWound = 3
+let heavyWound = 9
+let criticalWound = 27
+
 let dice () =
     rnd2 1 20
 
@@ -21,18 +26,23 @@ let percentToLevel (percent : int) : int =
 let levelToModifier (level : int) = 
     [| 2; 0; -2; -5; -8; -11; -15; -20; -24 |].[inBoundary 0 9 level]
     
-let simpleTest parameter bonus level =
-    // get two lowest results
-    let dices = [dice (); dice (); dice ()] |> List.sort |> List.toSeq |> Seq.take 2 
+    
+/// Returns number of successes 
+let countableTest parameter bonus level =
+    let dices = [dice (); dice (); dice ()] |> List.sort |> List.toSeq 
     let modifier = levelToModifier level
     let k = parameter + modifier
     if k > 0 then
-        // check if can be lowered by bonus
-        let overNormal = Seq.sumBy (fun item -> System.Math.Max(0, (item - k))) dices
-        overNormal <= bonus
+        let results = dices |> Seq.scan (fun bonus item -> bonus - Math.Max(0, item - k)) bonus
+        results |> Seq.sumBy (fun item -> if item >= 0 then 1 else 0)
     else
-        false
+        0
 
+/// Returns true for success for simple test
+let simpleTest parameter bonus level =
+    countableTest parameter bonus level >= 2
+
+/// Returns open test result
 let openTest parameter bonus =
     // get two lowest results
     let dices = [dice (); dice (); dice ()] |> List.sort |> List.toSeq |> Seq.take 2 |> Seq.toList
@@ -46,6 +56,7 @@ let openTest parameter bonus =
     else
         -1
 
+/// Returns 1 if *1 wins and -1 if *2 wins. Retries for draws.
 let rec oposedTest parameter1 bonus1 parameter2 bonus2 =
     let left = openTest parameter1 bonus1 
     let right = openTest parameter2 bonus2
