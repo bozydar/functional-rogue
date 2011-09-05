@@ -76,6 +76,36 @@ type Place = {
             {Tile = Tile.Empty; Items = []; Character = Option.None; IsSeen = false; WasSeen = Settings.EntireLevelSeen; Ore = NoneOre; TransportTarget = Option.None}
     static member Wall = 
             {Tile = Tile.Wall; Items = []; Character = Option.None; IsSeen = false; WasSeen = Settings.EntireLevelSeen; Ore = NoneOre; TransportTarget = Option.None }
+    static member GetDescription (place: Place) =
+        let tileDescription = 
+            match place.Tile with
+            | Tile.Floor -> "Floor."
+            | Tile.Wall -> "Wall."
+            | Tile.Glass -> "Glass."
+            | Tile.Grass -> "Grass."
+            | Tile.Bush -> "Some bushes."
+            | Tile.SmallPlants -> "Some plants."
+            | Tile.Tree -> "Tree."
+            | Tile.Sand -> "Sand."
+            | Tile.Water -> "Water."
+            | Tile.ClosedDoor -> "Closed door."
+            | Tile.OpenDoor -> "Open door."
+            | Tile.StairsDown -> "Stairs leading down."
+            | Tile.StairsUp -> "Stairs leading up."
+            | _ -> ""
+        let characterDescription =
+            if place.Character.IsSome then
+                " " + place.Character.Value.Name + " is standing here."
+            else
+                ""
+        let itemsDescription =
+            if place.Items.Length > 1 then
+                " Some items are lying here."
+            elif place.Items.Length > 0 then
+                " " + place.Items.Head.Name + " is lying here."
+            else
+                ""
+        tileDescription + characterDescription + itemsDescription
 
 let boardHeight = 24
 let boardWidth = 79
