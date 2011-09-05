@@ -14,12 +14,12 @@ let percentToLevel (percent : int) : int =
     let result = 
         if percent < 0 then 0
         elif 0 <= percent && percent < 10 then 1
-        elif 10 <= percent && percent < 30 then 2
-        elif 30 <= percent && percent < 60 then 3
-        elif 60 <= percent && percent < 90 then 4
-        elif 90 <= percent && percent < 120 then 5
-        elif 120 <= percent && percent < 160 then 6
-        elif 160 <= percent && percent < 200 then 7
+        elif percent < 30 then 2
+        elif percent < 60 then 3
+        elif percent < 90 then 4
+        elif percent < 120 then 5
+        elif percent < 160 then 6
+        elif percent < 200 then 7
         else 8
     result
 
