@@ -221,7 +221,8 @@ let killCharacter (victim: Character) (board: Board) =
         };
         Offence = Value(0M);
         Defence = Value(0M);
-        Type = Corpse
+        Type = Corpse;
+        MiscProperties = Items.defaultMiscProperties
         }
     board 
         |> modify (fst victimPlace) (fun place -> { place with Character = option.None })
