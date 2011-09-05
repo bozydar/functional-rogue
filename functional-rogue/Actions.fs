@@ -34,6 +34,7 @@ type Command =
     | TakeOff
     | GoDownEnter
     | GoUp
+    | Look
 
 let private commandToSize command = 
     match command with
@@ -148,6 +149,12 @@ let private operateDoor command state =
 
 let performCloseOpenAction command state =
     { state with Board = operateDoor command state } 
+
+let performLookAction command state =
+    let board = state.Board
+    let playerPosition = getPlayerPosition board
+    let points = visiblePositions playerPosition state.Player.SightRadius board    
+    ignore (selectPlace points state)
 
 let switchBoards (oldBoard: Board) (playerPoint: Point) (state: State) =
     let playerPlace = oldBoard.Places.[playerPoint.X,playerPoint.Y]
