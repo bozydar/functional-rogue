@@ -7,7 +7,7 @@ let lightWound = 3
 let heavyWound = 9
 let criticalWound = 27
 
-let dice () =
+let roll () =
     rnd2 1 20
 
 let percentToLevel (percent : int) : int =     
@@ -29,11 +29,11 @@ let levelToModifier (level : int) =
     
 /// Returns number of successes 
 let countableTest parameter bonus level =
-    let dices = [dice (); dice (); dice ()] |> List.sort |> List.toSeq 
+    let dice = [roll (); roll (); roll ()] |> List.sort |> List.toSeq 
     let modifier = levelToModifier level
     let k = parameter + modifier
     if k > 0 then
-        let results = dices |> Seq.scan (fun bonus item -> bonus - Math.Max(0, item - k)) bonus
+        let results = dice |> Seq.scan (fun bonus item -> bonus - Math.Max(0, item - k)) bonus
         results |> Seq.sumBy (fun item -> if item >= 0 then 1 else 0)
     else
         0
@@ -45,13 +45,13 @@ let simpleTest parameter bonus level =
 /// Returns open test result
 let openTest parameter bonus =
     // get two lowest results
-    let dices = [dice (); dice (); dice ()] |> List.sort |> List.toSeq |> Seq.take 2 |> Seq.toList
+    let dice = [roll (); roll (); roll ()] |> List.sort |> List.toSeq |> Seq.take 2 |> Seq.toList
     let k = parameter
     if k > 0 then
         // decrese the best:
-        let toDecrease = Math.Max(0, dices.[0] - k)
+        let toDecrease = Math.Max(0, dice.[0] - k)
         let rest = bonus - toDecrease
-        let result = dices.[1] - rest
+        let result = dice.[1] - rest
         Math.Max(-1, k - result)
     else
         -1
