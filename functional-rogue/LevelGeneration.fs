@@ -33,7 +33,9 @@ let simplifiedObjectToMapPart (input: char[,]) (background: Tile) =
 
 let generateStartingLevelShip (background: Tile) =
     let simplifiedShip = ResourceManager.Instance.SimplifiedMapObjects.["StartLocationShip"]
-    simplifiedObjectToMapPart simplifiedShip background
+    let mapFragment = simplifiedObjectToMapPart simplifiedShip background
+    mapFragment.[3,1] <- { mapFragment.[3,1] with Items = [Items.createPredefinedItem OreExtractor] }
+    mapFragment
 
 // level generation utilities
 
@@ -395,7 +397,8 @@ let addItems board =
         };
         Offence = Value(3M);
         Defence = Value(0M);
-        Type = Stick
+        Type = Stick;
+        MiscProperties = Items.defaultMiscProperties
     }
     let modifiers = seq {
         for i in 1..20 do
