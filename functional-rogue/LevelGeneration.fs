@@ -33,7 +33,9 @@ let simplifiedObjectToMapPart (input: char[,]) (background: Tile) =
 
 let generateStartingLevelShip (background: Tile) =
     let simplifiedShip = ResourceManager.Instance.SimplifiedMapObjects.["StartLocationShip"]
-    simplifiedObjectToMapPart simplifiedShip background
+    let mapFragment = simplifiedObjectToMapPart simplifiedShip background
+    mapFragment.[3,1] <- { mapFragment.[3,1] with Items = [Items.createPredefinedItem OreExtractor] }
+    mapFragment
 
 // level generation utilities
 
@@ -71,7 +73,7 @@ let perlinNoise (x: int) (y: int) =
             let amplitude = a*4.0
             ((noise ((float)x*f) ((float)y*f)) * a) + total freq amplitude
     total startFrequency startAmplitude
-let scatterTilesRamdomlyOnBoard (board: Board) (tileToPut:Tile) (backgroundTile:Tile) (probability:float) (createBorder:bool) : Board =
+let scatterTilesRamdomlyOnBoard (tileToPut:Tile) (backgroundTile:Tile) (probability:float) (createBorder:bool) (board: Board) : Board =
     let background = {Place.EmptyPlace with Tile = backgroundTile}
     let placeToPut = {Place.EmptyPlace with Tile = tileToPut}
     let newPlaces = board.Places |> Array2D.mapi (fun x y i ->
@@ -224,21 +226,23 @@ let countTileNeighbours (places: Place[,]) x y (tileType:Tile)=
                 count <- count + (if(places.[tmpx,tmpy] = tileToSearch) then 1 else 0)
     count
 
-let rec smoothOutTheLevel board howManyTimes (tileToGrow:Tile) (backgroundTile:Tile) (rule:(int*int)) =
+let rec smoothOutTheLevel howManyTimes (tileToGrow:Tile) (backgroundTile:Tile) (rule:(int*int)) board =
     let background = {Place.EmptyPlace with Tile = backgroundTile}
     let toGrow = {Place.EmptyPlace with Tile = tileToGrow}
     let min, max = rule
-    match howManyTimes with
-    | 0 -> board
-    | _ -> smoothOutTheLevel 
-            (Array2D.mapi (fun x y i -> 
-            if(x > 0 && x < (boardWidth - 1) && y > 0 && y < (boardHeight - 1)) then
-                if((countTileNeighbours board x y tileToGrow) < min ) then background
-                elif ((countTileNeighbours board x y tileToGrow) > max) then toGrow
+    let rec smoothOutPlaces places howManyTimes toGrow background min max =
+        match howManyTimes with
+        | 0 -> places
+        | _ -> smoothOutPlaces 
+                (Array2D.mapi (fun x y i -> 
+                if(x > 0 && x < (boardWidth - 1) && y > 0 && y < (boardHeight - 1)) then
+                    if((countTileNeighbours places x y tileToGrow) < min ) then background
+                    elif ((countTileNeighbours places x y tileToGrow) > max) then toGrow
+                    else i
                 else i
-            else i
-                ) board)
-            (howManyTimes - 1) tileToGrow backgroundTile rule
+                    ) places)
+                (howManyTimes - 1) toGrow background min max
+    { board with Places = smoothOutPlaces board.Places howManyTimes toGrow background min max }
 
 
 type DisjointLocationSet (board: Board, basicTile:Tile) =
@@ -383,7 +387,7 @@ let rec generateRooms rooms =
 let addItems board =
     // returns sequence of board modification functions
     let stickOfDoom = {
-        Id = 0;
+        Id = System.Guid.NewGuid();
         Name = "Stick of doom";
         Wearing = {
                     OnHead = false;
@@ -393,7 +397,8 @@ let addItems board =
         };
         Offence = Value(3M);
         Defence = Value(0M);
-        Type = Stick
+        Type = Stick;
+        MiscProperties = Items.defaultMiscProperties
     }
     let modifiers = seq {
         for i in 1..20 do
@@ -401,7 +406,7 @@ let addItems board =
             let posY = rnd boardHeight
             yield (fun board -> 
                 Board.modify (point posX posY) (fun place -> 
-                    {place with Items = { stickOfDoom with Id = i } :: place.Items} ) board)
+                    {place with Items = stickOfDoom :: place.Items} ) board)
     }
     // apply all modification functions on board
     board |>> modifiers
@@ -478,7 +483,7 @@ let addRandomDoors (board : Board) =
     { board with Places = Array2D.mapi (fun x y i -> if (i = floor && (isGoodPlaceForDoor board x y) && (rnd 100) < 30) then closedDoor else i) board.Places }
 
 let generateDungeon: (Board*Point option) = 
-    let mutable board = Array2D.create boardWidth boardHeight {Place.EmptyPlace with Tile = Tile.Wall}
+    let board = Array2D.create boardWidth boardHeight {Place.EmptyPlace with Tile = Tile.Wall}
     let sectionsHorizontal = 4
     let sectionsVertical = 3
     let sectionWidth = ((boardWidth - 1) / sectionsHorizontal) - 1
@@ -554,11 +559,15 @@ let generateBSPDungeon =
 //cave generation section
     
 let generateCave (cameFrom: TransportTarget option) (level: int) : (Board*Point option) =
-    let mutable board =  { Guid = System.Guid.NewGuid(); Places = Array2D.create boardWidth boardHeight {Place.EmptyPlace with Tile = Tile.Floor}; Level = level; MainMapLocation = Option.None}
-    board <- scatterTilesRamdomlyOnBoard board Tile.Wall Tile.Floor 0.5 true
-    board <- { board with Places = smoothOutTheLevel board.Places 2 Tile.Wall Tile.Floor (4,5) }
+    let board =
+        { Guid = System.Guid.NewGuid(); Places = Array2D.create boardWidth boardHeight {Place.EmptyPlace with Tile = Tile.Floor}; Level = level; MainMapLocation = Option.None}
+        |> scatterTilesRamdomlyOnBoard Tile.Wall Tile.Floor 0.5 true
+        |> smoothOutTheLevel 2 Tile.Wall Tile.Floor (4,5)
     let sections = new DisjointLocationSet(board, Tile.Floor)
-    let initial = sections.ConnectUnconnected |> addItems |> maybePlaceSomeOre Tile.Floor level
+    let initial =
+        sections.ConnectUnconnected
+        |> addItems 
+        |> maybePlaceSomeOre Tile.Floor level
     if (cameFrom.IsSome) then
         let resultBoard, startpoint = initial |> placeStairsUp Tile.Floor cameFrom.Value
         (resultBoard
@@ -571,32 +580,36 @@ let generateCave (cameFrom: TransportTarget option) (level: int) : (Board*Point 
 // jungle/forest generation
 
 let generateForest (cameFrom:Point) : (Board*Point option) =
-    let mutable board = { Guid = System.Guid.NewGuid(); Places = Array2D.create boardWidth boardHeight {Place.EmptyPlace with Tile = Tile.Grass}; Level = 0; MainMapLocation = Some(cameFrom)}
-    board <- maybePlaceSomeWater Tile.Grass 0.15 board
-    board <- maybePlaceCaveEntrance Tile.Grass 0.10 board
-    board <- scatterTilesRamdomlyOnBoard board Tile.Tree Tile.Grass 0.25 false
-    board <- { board with Places = smoothOutTheLevel board.Places 1 Tile.Tree Tile.Grass (1,4) }
+    let board =
+        { Guid = System.Guid.NewGuid(); Places = Array2D.create boardWidth boardHeight {Place.EmptyPlace with Tile = Tile.Grass}; Level = 0; MainMapLocation = Some(cameFrom)}
+        |> maybePlaceSomeWater Tile.Grass 0.15
+        |> maybePlaceCaveEntrance Tile.Grass 0.10
+        |> scatterTilesRamdomlyOnBoard Tile.Tree Tile.Grass 0.25 false
+        |> smoothOutTheLevel 1 Tile.Tree Tile.Grass (1,4)
     let sections = new DisjointLocationSet(board, Tile.Grass)
-    board <- sections.ConnectUnconnected
-    board <- scatterTilesRamdomlyOnBoard board Tile.Bush Tile.Grass 0.05 false
-    board <- scatterTilesRamdomlyOnBoard board Tile.SmallPlants Tile.Grass 0.05 false
-    (board, Some(Point(35,15)))
+    let resultBoard =
+        sections.ConnectUnconnected
+        |> scatterTilesRamdomlyOnBoard Tile.Bush Tile.Grass 0.05 false
+        |> scatterTilesRamdomlyOnBoard Tile.SmallPlants Tile.Grass 0.05 false
+    (resultBoard, Some(Point(35,15)))
 
 let generateGrassland (cameFrom:Point) : (Board*Point option) =
-    let mutable board = { Guid = System.Guid.NewGuid(); Places = Array2D.create boardWidth boardHeight {Place.EmptyPlace with Tile = Tile.Grass}; Level = 0; MainMapLocation = Some(cameFrom)}
-    board <- maybePlaceSomeWater Tile.Grass 0.25 board
-    board <- maybePlaceCaveEntrance Tile.Grass 0.05 board
-    board <- scatterTilesRamdomlyOnBoard board Tile.Tree Tile.Grass 0.01 false
-    board <- scatterTilesRamdomlyOnBoard board Tile.Bush Tile.Grass 0.05 false
-    board <- scatterTilesRamdomlyOnBoard board Tile.SmallPlants Tile.Grass 0.05 false
+    let board =
+        { Guid = System.Guid.NewGuid(); Places = Array2D.create boardWidth boardHeight {Place.EmptyPlace with Tile = Tile.Grass}; Level = 0; MainMapLocation = Some(cameFrom)}
+        |> maybePlaceSomeWater Tile.Grass 0.25
+        |> maybePlaceCaveEntrance Tile.Grass 0.05
+        |> scatterTilesRamdomlyOnBoard Tile.Tree Tile.Grass 0.01 false
+        |> scatterTilesRamdomlyOnBoard Tile.Bush Tile.Grass 0.05 false
+        |> scatterTilesRamdomlyOnBoard Tile.SmallPlants Tile.Grass 0.05 false
     (board, Some(Point(35,15)))
 
 let generateCoast (cameFrom:Point) : (Board*Point option) =
-    let mutable board = { Guid = System.Guid.NewGuid(); Places = Array2D.create boardWidth boardHeight {Place.EmptyPlace with Tile = Tile.Sand}; Level = 0; MainMapLocation = Some(cameFrom)}
-    board <- maybePlaceSomeWater Tile.Grass 0.35 board
-    board <- scatterTilesRamdomlyOnBoard board Tile.Tree Tile.Sand 0.01 false
-    board <- scatterTilesRamdomlyOnBoard board Tile.Bush Tile.Sand 0.05 false
-    board <- scatterTilesRamdomlyOnBoard board Tile.SmallPlants Tile.Sand 0.05 false
+    let board =
+        { Guid = System.Guid.NewGuid(); Places = Array2D.create boardWidth boardHeight {Place.EmptyPlace with Tile = Tile.Sand}; Level = 0; MainMapLocation = Some(cameFrom)}
+        |> maybePlaceSomeWater Tile.Grass 0.35
+        |> scatterTilesRamdomlyOnBoard Tile.Tree Tile.Sand 0.01 false
+        |> scatterTilesRamdomlyOnBoard Tile.Bush Tile.Sand 0.05 false
+        |> scatterTilesRamdomlyOnBoard Tile.SmallPlants Tile.Sand 0.05 false
     (board, Some(Point(35,15)))
 
 let generateStartLocationWithInitialPlayerPositon (cameFrom:Point) : (Board*Point) =

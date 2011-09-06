@@ -88,6 +88,7 @@ let mainLoop () =
                 | Key 'T' -> TakeOff
                 | Key '>' -> GoDownEnter
                 | Key '<' -> GoUp
+                | Key 'l' -> Look
                 | _ -> Unknown                        
         
             match command with
@@ -128,6 +129,10 @@ let mainLoop () =
                 State.get () 
                 |> Actions.performCloseOpenAction command
                 |> Turn.next
+                Screen.showBoard ()
+                loop false
+            | Look ->
+                Actions.performLookAction command (State.get ())
                 Screen.showBoard ()
                 loop false
             | Harvest -> 
