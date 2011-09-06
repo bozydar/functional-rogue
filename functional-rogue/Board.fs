@@ -147,14 +147,13 @@ let places (board: Board) =
     }
 
 let monsterPlaces (board: Board) = 
-    let tempSeq = seq {
-        for x = 0 to boardWidth - 1 do
-            for y = 0 to boardHeight - 1 do
-                let item = Array2D.get board.Places x y
-                if (item.Character.IsSome && item.Character.Value.Type = CharacterType.Monster) then
-                    yield (new Point(x, y), item)
-    }
-    Seq.toList tempSeq
+    board
+    |> places
+    |> Seq.choose (fun item -> 
+        match (snd item).Character with 
+        | Some(character) when (character :? Monster) -> Some(item) 
+        | _ -> None)
+    |> Seq.toList
 
 let getPlayerPosition (board: Board) = 
     let preResult = Seq.tryFind (fun (point, place) -> 
@@ -209,7 +208,7 @@ let countObstaclesAroundPoint (point: Point) (board: Board) : int =
 
 let killCharacter (victim: Character) (board: Board) =
     let allBoardPlaces = places board
-    let victimPlace = Seq.find (fun x -> (snd x).Character.IsSome && (snd x).Character.Value = victim) allBoardPlaces
+    let victimPlace = Seq.find (fun x -> (snd x).Character = Some(victim)) allBoardPlaces
     let corpseItem = {
         Id = Guid.NewGuid();
         Name = victim.Name + " corpse";
@@ -230,8 +229,8 @@ let killCharacter (victim: Character) (board: Board) =
 
 let meleeAttack (attacker: Character) (defender: Character) (board: Board) =
     let allBoardPlaces = places board
-    let attackerPlace = Seq.find (fun x -> (snd x).Character.IsSome && (snd x).Character.Value = attacker) allBoardPlaces
-    let defenderPlace = Seq.find (fun x -> (snd x).Character.IsSome && (snd x).Character.Value = defender) allBoardPlaces
+    let attackerPlace = Seq.find (fun x -> (snd x).Character = Some(attacker)) allBoardPlaces
+    let defenderPlace = Seq.find (fun x -> (snd x).Character = Some(defender)) allBoardPlaces
     //check if distance = 1
     if max (abs ((fst attackerPlace).X - (fst defenderPlace).X)) (abs ((fst attackerPlace).Y - (fst defenderPlace).Y)) = 1 then
         let defenderResult = defender

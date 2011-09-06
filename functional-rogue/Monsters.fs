@@ -43,7 +43,7 @@ type Monster (monsterType: MonsterType, hp: int) =
     override this.CurrentHP
         with get() = hP
 
-    override this.GetMeleeDamage
+    override this.MeleeDamage
         with get() = 4
     
     override this.SightRadius
