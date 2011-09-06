@@ -211,7 +211,7 @@ let killCharacter (victim: Character) (board: Board) =
     let allBoardPlaces = places board
     let victimPlace = Seq.find (fun x -> (snd x).Character.IsSome && (snd x).Character.Value = victim) allBoardPlaces
     let corpseItem = {
-        Id = 0;
+        Id = Guid.NewGuid();
         Name = victim.Name + " corpse";
         Wearing = {
                     OnHead = false;
@@ -226,7 +226,7 @@ let killCharacter (victim: Character) (board: Board) =
         }
     board 
         |> modify (fst victimPlace) (fun place -> { place with Character = option.None })
-        |> modify (fst victimPlace) (fun place -> { place with Items = { corpseItem with Id = (rnd Int32.MaxValue) } :: place.Items} )
+        |> modify (fst victimPlace) (fun place -> { place with Items = corpseItem :: place.Items} )
 
 let meleeAttack (attacker: Character) (defender: Character) (board: Board) =
     let allBoardPlaces = places board
