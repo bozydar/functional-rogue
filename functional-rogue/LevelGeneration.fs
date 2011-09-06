@@ -73,6 +73,15 @@ let perlinNoise (x: int) (y: int) =
             let amplitude = a*4.0
             ((noise ((float)x*f) ((float)y*f)) * a) + total freq amplitude
     total startFrequency startAmplitude
+
+let rec getRandomBackgroundPlace (backgroundTile: Tile) (board: Board) =
+            let x = rnd2 1 (boardWidth - 2)
+            let y = rnd2 1 (boardHeight - 2)
+            if (board.Places.[x,y].Tile = backgroundTile) then
+                Point(x,y)
+            else
+                getRandomBackgroundPlace backgroundTile board
+
 let scatterTilesRamdomlyOnBoard (tileToPut:Tile) (backgroundTile:Tile) (probability:float) (createBorder:bool) (board: Board) : Board =
     let background = {Place.EmptyPlace with Tile = backgroundTile}
     let placeToPut = {Place.EmptyPlace with Tile = tileToPut}
@@ -87,27 +96,13 @@ let scatterTilesRamdomlyOnBoard (tileToPut:Tile) (backgroundTile:Tile) (probabil
     { board with Places = newPlaces }
 
 let placeStairsUp (backgroundTile:Tile) (cameFrom: TransportTarget) (board: Board) =
-    let rec getRandomBackgroundPlace () =
-        let x = rnd2 1 (boardWidth - 2)
-        let y = rnd2 1 (boardHeight - 2)
-        if (board.Places.[x,y].Tile = backgroundTile) then
-            Point(x,y)
-        else
-            getRandomBackgroundPlace ()
-    let stairsPoint = getRandomBackgroundPlace()
+    let stairsPoint = getRandomBackgroundPlace backgroundTile board
     let result = Board.set (stairsPoint) {Place.EmptyPlace with Tile = Tile.StairsUp; TransportTarget = Some(cameFrom)} board
     (result, stairsPoint)
 
 let maybePlaceStairsDown (backgroundTile:Tile) (level: int) (board: Board) =
     if (rnd 100) > (level*(-2)*10) then
-        let rec getRandomBackgroundPlace () =
-            let x = rnd2 1 (boardWidth - 2)
-            let y = rnd2 1 (boardHeight - 2)
-            if (board.Places.[x,y].Tile = backgroundTile) then
-                Point(x,y)
-            else
-                getRandomBackgroundPlace ()
-        let stairsPoint = getRandomBackgroundPlace()
+        let stairsPoint = getRandomBackgroundPlace backgroundTile board
         let result = Board.set (stairsPoint) {Place.EmptyPlace with Tile = Tile.StairsDown; TransportTarget = Option.None} board
         result
     else
@@ -115,14 +110,7 @@ let maybePlaceStairsDown (backgroundTile:Tile) (level: int) (board: Board) =
 
 let maybePlaceCaveEntrance (backgroundTile:Tile) (probability:float) (board: Board) =
     if((float)(rnd 100) < (probability * (float)100)) then
-        let rec getRandomBackgroundPlace () =
-            let x = rnd2 1 (boardWidth - 2)
-            let y = rnd2 1 (boardHeight - 2)
-            if (board.Places.[x,y].Tile = backgroundTile) then
-                Point(x,y)
-            else
-                getRandomBackgroundPlace ()
-        let entrancePoint = getRandomBackgroundPlace()
+        let entrancePoint = getRandomBackgroundPlace backgroundTile board
         let result = Board.set (entrancePoint) {Place.EmptyPlace with Tile = Tile.StairsDown; TransportTarget = Option.None} board
         result
     else
@@ -130,13 +118,6 @@ let maybePlaceCaveEntrance (backgroundTile:Tile) (probability:float) (board: Boa
 
 let maybePlaceSomeOre (backgroundTile:Tile) (level: int) (board: Board) =
     if (rnd 100) < (min 90 (level*(-2)*10)) then // probablity for underground levels 20%, 40%, 60%, 80%, 90%, 90%, ...
-        let rec getRandomBackgroundPlace () =
-            let x = rnd2 1 (boardWidth - 2)
-            let y = rnd2 1 (boardHeight - 2)
-            if (board.Places.[x,y].Tile = backgroundTile) then
-                Point(x,y)
-            else
-                getRandomBackgroundPlace ()
         let getkaka = Ore.Iron
         let ss = getkaka((QuantityValue)4)
         let getRandomOreKind =
@@ -149,12 +130,27 @@ let maybePlaceSomeOre (backgroundTile:Tile) (level: int) (board: Board) =
             match amount with
             | 0 -> board
             | _ ->
-                let orePoint = getRandomBackgroundPlace()
+                let orePoint = getRandomBackgroundPlace backgroundTile board
                 let orePlace = Board.get board orePoint
                 placeRandomOres (amount - 1) (Board.set orePoint { orePlace with Ore = getRandomOreKind(Quantity.QuantityValue (rnd 8))} board)
         placeRandomOres (rnd 10) board
     else
         board
+
+let placeSomeRandomItems (backgroundTile:Tile) (levelType: LevelType) (board: Board) =
+    let rec placeRandomItems (amount: int) (board: Board) =
+        match amount with
+        | 0 -> board
+        | _ ->
+            let itemPoint = getRandomBackgroundPlace backgroundTile board
+            let itemPlace = Board.get board itemPoint
+            let item =
+                match levelType with
+                | Cave | Forest | Grassland | Coast ->
+                    [Items.createRandomNaturalItem 0]
+                | _ -> []
+            placeRandomItems (amount - 1) (Board.set itemPoint { itemPlace with Items = itemPlace.Items @ item} board)
+    placeRandomItems (rnd2 4 10) board
 
 let placeLake (backgroundTile:Tile) (board: Board) =
     let rec getRandomBackgroundPlaceNotTooCloseToBorder () =
@@ -496,7 +492,7 @@ let generateDungeon: (Board*Point option) =
         | item::t -> addRooms t <| (item :> IModifier).Modify board 
     let resultBoard = addRooms (generateDungeonTunnels sections sectionWidth sectionHeight sectionsHorizontal sectionsVertical) { Guid = System.Guid.NewGuid(); Places = board; Level = 0; MainMapLocation = Option.None}
     (addRandomDoors resultBoard
-    |> addOre
+    |> placeSomeRandomItems Tile.Floor LevelType.Dungeon
     |> addItems, Option.None)
 
 // dungeon BSP generation method
@@ -566,7 +562,7 @@ let generateCave (cameFrom: TransportTarget option) (level: int) : (Board*Point 
     let sections = new DisjointLocationSet(board, Tile.Floor)
     let initial =
         sections.ConnectUnconnected
-        |> addItems 
+        |> placeSomeRandomItems Tile.Floor LevelType.Cave
         |> maybePlaceSomeOre Tile.Floor level
     if (cameFrom.IsSome) then
         let resultBoard, startpoint = initial |> placeStairsUp Tile.Floor cameFrom.Value
@@ -589,6 +585,7 @@ let generateForest (cameFrom:Point) : (Board*Point option) =
     let sections = new DisjointLocationSet(board, Tile.Grass)
     let resultBoard =
         sections.ConnectUnconnected
+        |> placeSomeRandomItems Tile.Grass LevelType.Forest
         |> scatterTilesRamdomlyOnBoard Tile.Bush Tile.Grass 0.05 false
         |> scatterTilesRamdomlyOnBoard Tile.SmallPlants Tile.Grass 0.05 false
     (resultBoard, Some(Point(35,15)))
@@ -599,6 +596,7 @@ let generateGrassland (cameFrom:Point) : (Board*Point option) =
         |> maybePlaceSomeWater Tile.Grass 0.25
         |> maybePlaceCaveEntrance Tile.Grass 0.05
         |> scatterTilesRamdomlyOnBoard Tile.Tree Tile.Grass 0.01 false
+        |> placeSomeRandomItems Tile.Grass LevelType.Grassland
         |> scatterTilesRamdomlyOnBoard Tile.Bush Tile.Grass 0.05 false
         |> scatterTilesRamdomlyOnBoard Tile.SmallPlants Tile.Grass 0.05 false
     (board, Some(Point(35,15)))
@@ -606,8 +604,9 @@ let generateGrassland (cameFrom:Point) : (Board*Point option) =
 let generateCoast (cameFrom:Point) : (Board*Point option) =
     let board =
         { Guid = System.Guid.NewGuid(); Places = Array2D.create boardWidth boardHeight {Place.EmptyPlace with Tile = Tile.Sand}; Level = 0; MainMapLocation = Some(cameFrom)}
-        |> maybePlaceSomeWater Tile.Grass 0.35
+        |> maybePlaceSomeWater Tile.Sand 0.35
         |> scatterTilesRamdomlyOnBoard Tile.Tree Tile.Sand 0.01 false
+        |> placeSomeRandomItems Tile.Sand LevelType.Coast
         |> scatterTilesRamdomlyOnBoard Tile.Bush Tile.Sand 0.05 false
         |> scatterTilesRamdomlyOnBoard Tile.SmallPlants Tile.Sand 0.05 false
     (board, Some(Point(35,15)))
