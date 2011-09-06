@@ -222,18 +222,27 @@ let performHarvest state =
     let playerPosition = getPlayerPosition state.Board
     let place = get state.Board playerPosition
     let harvestRate =
-        if state.Player.WornItems.Hand.IsSome then
-            state.Player.WornItems.Hand.Value.MiscProperties.OreExtractionRate
-        else
-            0
+        match place.Ore with
+        | Iron(v) | Gold(v) | Uranium(v) ->
+            if state.Player.WornItems.Hand.IsSome then
+                state.Player.WornItems.Hand.Value.MiscProperties.OreExtractionRate
+            else
+                0
+        | _ -> 5    //rate for water
     if harvestRate = 0 then
         state |> addMessage "You cannot harvest anything. You need a special tool for that." 
     else
-        let takenOre = 
+        let takenOre, leftOre = 
             if place.Ore.Quantity.IsInf || place.Ore.Quantity.Value > harvestRate then
-                place.Ore
+                match place.Ore with
+                | Iron(v) -> Iron(Quantity.QuantityValue(harvestRate)),Iron(Quantity.QuantityValue(v.Value - harvestRate))
+                | Gold(v) -> Gold(Quantity.QuantityValue(harvestRate)),Gold(Quantity.QuantityValue(v.Value - harvestRate))
+                | Uranium(v) -> Uranium(Quantity.QuantityValue(harvestRate)),Uranium(Quantity.QuantityValue(v.Value - harvestRate))
+                | CleanWater(v) -> CleanWater(Quantity.QuantityValue(harvestRate)),CleanWater(Quantity.PositiveInfinity)
+                | ContaminatedWater(v) -> ContaminatedWater(Quantity.QuantityValue(harvestRate)),ContaminatedWater(Quantity.PositiveInfinity)
+                | _ -> Ore.NoneOre, place.Ore
             else
-                place.Ore
+                place.Ore, Ore.NoneOre
         if takenOre.Quantity.IsInf then raise <| new NotImplementedException("Here should be asking for not inf")
         match takenOre with
         | Iron(quantity) -> state.Player.Iron <- state.Player.Iron + quantity.Value
@@ -247,7 +256,7 @@ let performHarvest state =
                 let pickUpMessage = sprintf "You have harvested ore %s. Quantity: %s" (repr takenOre) (quantity.ToString())
                 let board1 = 
                     state.Board
-                    |> fun board -> if not quantity.IsInf then set playerPosition {place with Ore = NoneOre} board else board
+                    |> fun board -> if not quantity.IsInf then set playerPosition {place with Ore = leftOre} board else board
                 {state with Board = board1} |> addMessage pickUpMessage                
             | NoneOre -> 
                 state
