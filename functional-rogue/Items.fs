@@ -1,7 +1,9 @@
 ﻿module Items
 
+open System
+
 type Item = {    
-    Id : int;
+    Id : Guid;
     Name : string;
     Wearing : Wearing
     Offence : Factor;
@@ -42,7 +44,7 @@ type PredefinedItems =
 let createPredefinedItem predefinedItem =
     match predefinedItem with
     | OreExtractor ->
-        { Id = 0;
+        { Id = Guid.NewGuid();
             Name = "Ore Extractor";
             Wearing = { OnHead = false;
                         InHand = true;

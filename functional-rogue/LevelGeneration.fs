@@ -387,7 +387,7 @@ let rec generateRooms rooms =
 let addItems board =
     // returns sequence of board modification functions
     let stickOfDoom = {
-        Id = 0;
+        Id = System.Guid.NewGuid();
         Name = "Stick of doom";
         Wearing = {
                     OnHead = false;
@@ -406,7 +406,7 @@ let addItems board =
             let posY = rnd boardHeight
             yield (fun board -> 
                 Board.modify (point posX posY) (fun place -> 
-                    {place with Items = { stickOfDoom with Id = i } :: place.Items} ) board)
+                    {place with Items = stickOfDoom :: place.Items} ) board)
     }
     // apply all modification functions on board
     board |>> modifiers

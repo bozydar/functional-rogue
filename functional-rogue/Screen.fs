@@ -173,7 +173,7 @@ let private screenWritter () =
             for i, item in Seq.mapi (fun i item -> i, item) items do
                 let pos = point 1 i                
                 let char = match findShortCut shortCuts item with Some(value) -> value.ToString() | _ -> ""                
-                yield writeString pos (sprintf "%s (id=%d): %s" char item.Id (itemShortDescription item))
+                yield writeString pos (sprintf "%s (id=%s): %s" char (item.Id.ToString()) (itemShortDescription item))
         }
         screen |>> writeProperties
 
