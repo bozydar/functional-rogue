@@ -75,6 +75,7 @@ let private screenWritter () =
                                 | Sword -> {Char = '/'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
                                 | Hat -> {Char = ']'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
                                 | Corpse -> {Char = '%'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
+                                | Tool -> {Char = '['; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
                         | _ -> 
                             match item.Ore with
                             | Iron(_) -> {Char = '$'; FGColor = ConsoleColor.Black; BGColor = ConsoleColor.Gray}
@@ -145,13 +146,18 @@ let private screenWritter () =
         |> writeString (point leftPanelPos.Location.X (leftPanelPos.Location.Y + 8)) (sprintf "Turn: %d" <| state.TurnNumber)
         |> writeString (point leftPanelPos.Location.X (leftPanelPos.Location.Y + 9)) (sprintf "Map Level: %d" <| state.Board.Level)
 
-    let writeMessage state screen =
+    let writeLastTurnMessageIfAvailable state screen =
         if( state.UserMessages.Length > 0 && (fst (state.UserMessages.Head)) = state.TurnNumber - 1) then
             screen
             |> cleanPartOfScreen (Point(0,(screenSize.Height - 1))) (Size(screenSize.Width, 1))
             |> writeString (point 0 (screenSize.Height - 1)) (snd state.UserMessages.Head)
         else
-            screen
+            screen |> cleanPartOfScreen (Point(0,(screenSize.Height - 1))) (Size(screenSize.Width, 1))
+
+    let writeTemporalMessage (message: string) screen =
+        screen
+        |> cleanPartOfScreen (Point(0,(screenSize.Height - 1))) (Size(screenSize.Width, 1))
+        |> writeString (point 0 (screenSize.Height - 1)) (message)
 
     let writeAllMessages (state : State) screen =
         let rec writeMessagesRecursively (messages: (int*string) list) screen lineNumber =
@@ -167,7 +173,7 @@ let private screenWritter () =
             for i, item in Seq.mapi (fun i item -> i, item) items do
                 let pos = point 1 i                
                 let char = match findShortCut shortCuts item with Some(value) -> value.ToString() | _ -> ""                
-                yield writeString pos (sprintf "%s (id=%d): %s" char item.Id (itemShortDescription item))
+                yield writeString pos (sprintf "%s (id=%s): %s" char (item.Id.ToString()) (itemShortDescription item))
         }
         screen |>> writeProperties
 
@@ -217,7 +223,7 @@ let private screenWritter () =
                     |> Array2D.copy
                     |> writeBoard state.Board state.BoardFramePosition state.Player.SightRadius
                     |> writeStats state
-                    |> writeMessage state
+                    |> writeLastTurnMessageIfAvailable state
                 refreshScreen screen newScreen
                 return! loop newScreen
             | ShowMessages(state) ->
@@ -271,8 +277,15 @@ let private screenWritter () =
             | SetCursorPositionOnBoard(point, state) ->
                 let realPosition = (Math.Min(boardFrameSize.Width, Math.Max(0, point.X - state.BoardFramePosition.X)),
                                     Math.Min(boardFrameSize.Height, Math.Max(0, point.Y - state.BoardFramePosition.Y)))
+                let place = state.Board.Places.[point.X,point.Y]
+                let description = Place.GetDescription place
+                let newScreen =
+                    screen
+                    |> Array2D.copy
+                    |> writeTemporalMessage description
+                refreshScreen screen newScreen
                 Console.SetCursorPosition(realPosition)
-                return! loop screen
+                return! loop newScreen
 
         }
         loop <| Array2D.create screenSize.Width screenSize.Height empty
