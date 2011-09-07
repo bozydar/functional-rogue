@@ -13,8 +13,8 @@ type WornItems = {
     Legs : option<Item>
 } 
 
-type Player (name : string, hp : int, dexterity : int) = 
-    inherit Character (CharacterType.Avatar, hp, dexterity)
+type Player (name : string, hp : int, dexterity : int, sightRadius : int) = 
+    inherit Character (CharacterType.Avatar, hp, dexterity, sightRadius)
 
     let mutable hP = hp
 
@@ -66,9 +66,6 @@ type Player (name : string, hp : int, dexterity : int) =
         with get() = contaminatedWater
         and set(value) = contaminatedWater <- value
 
-    override this.SightRadius
-        with get() = 10
-
     member this.Items
         with get() = items
         and set(value) = items <- value
@@ -82,9 +79,6 @@ type Player (name : string, hp : int, dexterity : int) =
 
     override this.GetMeleeDamage
         with get() = scratchWound, scratchWound, scratchWound
-
-    override this.MaxHP
-        with get() = maxHp
  
 
 let createShortCuts currentShortCuts items =

@@ -54,9 +54,6 @@ let addMessages (messages : string list) (state : State) =
 let addMessage (message : string) (state : State) =
     addMessages [message] state
 
-let updateCharacter (character: Character) (newCharacter: Character) (state: State) =
-    { state with Board = state.Board |> Board.updateCharacter character newCharacter}
-
 let private filePath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + "\\functional-rogue.save";
 
 let writeState (state : State) =
