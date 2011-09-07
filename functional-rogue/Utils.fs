@@ -38,7 +38,11 @@ type Factor with
         | Percent(v) when v = 0M -> true
         | _ -> false
 
-let inBoundary (v: int) min max = Math.Max(Math.Min(v, min), max)
+let inBoundary v min max = 
+    if min > max then failwith "Min should be le max"
+    elif v < min then min
+    elif v > max then max
+    else v    
 
 let intByIndex tuple index = 
     FSharpValue.GetTupleField(tuple, index)  :?> int

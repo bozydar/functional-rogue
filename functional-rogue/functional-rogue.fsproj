@@ -40,8 +40,7 @@
     <Compile Include="Utils.fs" />
     <Compile Include="Quantity.fs" />
     <Compile Include="Config.fs" />
-    <Compile Include="Log.fs" />
-    <Compile Include="Broadcasting.fs" />
+    <Compile Include="Log.fs" />    
     <Compile Include="Items.fs" />
     <Compile Include="Characters.fs" />
     <Compile Include="Monsters.fs" />
