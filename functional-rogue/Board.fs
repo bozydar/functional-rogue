@@ -194,27 +194,6 @@ let countObstaclesAroundPoint (point: Point) (board: Board) : int =
                 count <- count + (if(isMovementObstacle board (Point(tmpx,tmpy))) then 1 else 0)
     count
 
-let killCharacter (victim: Character) (board: Board) =
-    let allBoardPlaces = places board
-    let victimPlace = Seq.find (fun x -> (snd x).Character = Some(victim)) allBoardPlaces
-    let corpseItem = {
-        Id = Guid.NewGuid();
-        Name = victim.Name + " corpse";
-        Wearing = {
-                    OnHead = false;
-                    InHand = false;
-                    OnTorso = false;
-                    OnLegs = false
-        };
-        Offence = Value(0M);
-        Defence = Value(0M);
-        Type = Corpse;
-        MiscProperties = Items.defaultMiscProperties
-        }
-    board 
-        |> modify (fst victimPlace) (fun place -> { place with Character = option.None })
-        |> modify (fst victimPlace) (fun place -> { place with Items = corpseItem :: place.Items} )
-
 
 //let emptyBoard : Board = { Places = Array2D.create boardWidth boardHeight Place.EmptyPlace }
 
