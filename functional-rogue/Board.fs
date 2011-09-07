@@ -24,6 +24,7 @@ type Tile =
     | Water
     | StairsDown
     | StairsUp
+    | Computer
     | MainMapForest
     | MainMapGrassland
     | MainMapWater
@@ -45,6 +46,10 @@ type TransportTarget = {
     BoardId : Guid;
     TargetCoordinates : Point
 }   
+
+type ElectronicMachine = {
+    Id : Guid
+}
 
 type Ore = 
     | NoneOre
@@ -70,12 +75,13 @@ type Place = {
     Character : Character option;    
     IsSeen : bool;
     WasSeen : bool;
-    TransportTarget : TransportTarget option
+    TransportTarget : TransportTarget option;
+    ElectronicMachine : ElectronicMachine option
 } with
     static member EmptyPlace = 
-            {Tile = Tile.Empty; Items = []; Character = Option.None; IsSeen = false; WasSeen = Settings.EntireLevelSeen; Ore = NoneOre; TransportTarget = Option.None}
+            {Tile = Tile.Empty; Items = []; Character = Option.None; IsSeen = false; WasSeen = Settings.EntireLevelSeen; Ore = NoneOre; TransportTarget = None; ElectronicMachine = None}
     static member Wall = 
-            {Tile = Tile.Wall; Items = []; Character = Option.None; IsSeen = false; WasSeen = Settings.EntireLevelSeen; Ore = NoneOre; TransportTarget = Option.None }
+            {Tile = Tile.Wall; Items = []; Character = Option.None; IsSeen = false; WasSeen = Settings.EntireLevelSeen; Ore = NoneOre; TransportTarget = None; ElectronicMachine = None }
     static member GetDescription (place: Place) =
         let tileDescription = 
             match place.Tile with
@@ -92,6 +98,7 @@ type Place = {
             | Tile.OpenDoor -> "Open door."
             | Tile.StairsDown -> "Stairs leading down."
             | Tile.StairsUp -> "Stairs leading up."
+            | Tile.Computer -> "Computer."
             | _ -> ""
         let characterDescription =
             if place.Character.IsSome then

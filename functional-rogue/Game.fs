@@ -89,6 +89,7 @@ let mainLoop () =
                 | Key '>' -> GoDownEnter
                 | Key '<' -> GoUp
                 | Key 'l' -> Look
+                | Key 'U' -> UseObject
                 | _ -> Unknown                        
         
             match command with
@@ -133,6 +134,12 @@ let mainLoop () =
                 loop false
             | Look ->
                 Actions.performLookAction command (State.get ())
+                Screen.showBoard ()
+                loop false
+            | UseObject ->
+                State.get ()
+                |> performUseObjectAction command
+                |> Turn.next
                 Screen.showBoard ()
                 loop false
             | Harvest -> 
