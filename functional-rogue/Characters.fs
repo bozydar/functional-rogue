@@ -49,6 +49,5 @@ type Character (characterType: CharacterType, startingHP: int, startingDexterity
 
     abstract Name : string with get
 
-    member this.HitWithDamage (value : int, attacker : Character)  =
+    member this.HitWithDamage (value : int)  =
         this.CurrentHP <- this.CurrentHP - value
-        // add communicatio with state

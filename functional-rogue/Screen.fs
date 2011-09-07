@@ -164,7 +164,7 @@ let private screenWritter () =
             match messages with
             | head :: tail -> writeMessagesRecursively tail (screen |> (writeString (Point(0, lineNumber)) (sprintf "Turn: %d - %s" (fst head) (snd head)))) (lineNumber + 1)
             | [] -> screen
-        writeMessagesRecursively state.UserMessages screen 0
+        writeMessagesRecursively (state.UserMessages |> Seq.take (Math.Min(state.UserMessages.Length, screenSize.Height - 1)) |> Seq.toList) screen 0
             
     let listAllItems (items : Item list) (shortCuts : Map<char, Item>) screen = 
         //let plainItems = items |> Seq.choose (function | Gold(_) -> Option.None | Plain(_, itemProperties) -> Some itemProperties)

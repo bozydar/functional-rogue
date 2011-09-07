@@ -189,13 +189,13 @@ let aiLurkerPredatorMonster (monsterPlace: (Point*Place)) (state:State) : State 
             //state //|> goTowards monsterPlace (fst (sortedDiffSpeciesByDist.Head))    //go to eat it
         //else
         let victims = getDifferentSpeciesTheMonsterCanAttackInMelee monsterPlace state
-        if (victims.Length > 0) then
-                { state with Board = state.Board |> Mechanics.meleeAttack monster state.Board.Places.[victims.Head.X,victims.Head.Y].Character.Value }
-        elif (sortedDiffSpeciesByDist.Length > 0) then
-            state            
-            |> goTowards monsterPlace (fst (sortedDiffSpeciesByDist.Head))
-        else
-            state
+        state
+        |>  if (victims.Length > 0) then
+                Mechanics.meleeAttack monster state.Board.Places.[victims.Head.X,victims.Head.Y].Character.Value
+            elif (sortedDiffSpeciesByDist.Length > 0) then
+                goTowards monsterPlace (fst (sortedDiffSpeciesByDist.Head))
+            else
+                self
 
 // some top level functions
 

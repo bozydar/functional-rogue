@@ -4,6 +4,8 @@ open System
 open Characters
 open Board
 open Log
+open State
+open Items
 
 let roll () =
     rnd2 1 20
@@ -63,32 +65,61 @@ let rec oposedTest parameter1 bonus1 parameter2 bonus2 =
     elif left < right then -1
     else oposedTest parameter1 bonus1 parameter2 bonus2
 
-let evalMeleeDamage (attacker : Character) (defender : Character) = 
+let private evalMeleeDamage (attacker : Character) (defender : Character) = 
     let forAttacker = countableTest (attacker.Dexterity) 0 1
     let forDefender = countableTest (defender.Dexterity) 0 1
     let delta = forAttacker - forDefender
         
     if delta > 0 then 
         let damage = intByIndex (attacker.GetMeleeDamage) (delta - 1)
-        defender.HitWithDamage(damage, attacker)
+        damage
+        //defender.HitWithDamage(damage, attacker)
+    else 
+        0
 
-let meleeFight (attacker : Character) (defender : Character) = 
-    evalMeleeDamage attacker defender
-    if defender.IsAlive then
-        evalMeleeDamage defender attacker
+let killCharacter (victim: Character) (state: State) =
+    let allBoardPlaces = places (state.Board)
+    let victimPlace = Seq.find (fun x -> (snd x).Character = Some(victim)) allBoardPlaces
+    let corpseItem = {
+        Id = Guid.NewGuid();
+        Name = victim.Name + " corpse";
+        Wearing = {
+                    OnHead = false;
+                    InHand = false;
+                    OnTorso = false;
+                    OnLegs = false
+        };
+        Offence = Value(0M);
+        Defence = Value(0M);
+        Type = Corpse;
+        MiscProperties = Items.defaultMiscProperties
+        }
+    { state with 
+        Board = state.Board
+        |> modify (fst victimPlace) (fun place -> { place with Character = option.None })
+        |> modify (fst victimPlace) (fun place -> { place with Items = corpseItem :: place.Items} ) }
+    |> addMessage (victim.Name + " has died.")
 
-let meleeAttack (attacker: Character) (defender: Character) (board: Board) =
-    let allBoardPlaces = places board
+let meleeAttack (attacker: Character) (defender: Character) (state: State) =        
+    let allBoardPlaces = places state.Board
     let attackerPlace = Seq.find (fun x -> (snd x).Character = Some(attacker)) allBoardPlaces
     let defenderPlace = Seq.find (fun x -> (snd x).Character = Some(defender)) allBoardPlaces
     //check if distance = 1
     if max (abs ((fst attackerPlace).X - (fst defenderPlace).X)) (abs ((fst attackerPlace).Y - (fst defenderPlace).Y)) = 1 then        
-        meleeFight attacker defender
-        board
-        |>> seq {
-            for item in [attacker; defender] do
-                if (not item.IsAlive && item.Type <> Avatar) then
-                    yield killCharacter item                         
-            }
+        let attackDamage = evalMeleeDamage attacker defender                   
+        defender.HitWithDamage(attackDamage)
+
+        state
+        |> State.addMessage (defender.Name + " has got " + attackDamage.ToString() + " of damage.")
+        |>  if defender.IsAlive then
+                let defendDamage = evalMeleeDamage defender attacker     
+                attacker.HitWithDamage defendDamage                 
+                State.addMessage (attacker.Name + " has got " + defendDamage.ToString() + " of damage")
+            else                    
+                killCharacter defender
+        |>  if not attacker.IsAlive then
+                killCharacter attacker
+            else
+                self
     else
-        board
+        state

@@ -43,6 +43,8 @@ let inBoundary (v: int) min max = Math.Max(Math.Min(v, min), max)
 let intByIndex tuple index = 
     FSharpValue.GetTupleField(tuple, index)  :?> int
 
+let self x = x
+
 type FloatingPoint = {
     X: float;
     Y: float
