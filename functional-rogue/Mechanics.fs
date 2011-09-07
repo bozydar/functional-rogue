@@ -24,7 +24,7 @@ let percentToLevel (percent : int) : int =
     result
 
 let levelToModifier (level : int) = 
-    [| 2; 0; -2; -5; -8; -11; -15; -20; -24 |].[inBoundary 0 9 level]
+    [| 2; 0; -2; -5; -8; -11; -15; -20; -24 |].[inBoundary level 0 9]
     
     
 /// Returns number of successes 
