@@ -14,27 +14,33 @@ type CharacterType =
     | NPC
 
 [<AbstractClass>]
-type Character (characterType: CharacterType, startingHP: int, startingDexterity) =
-
-    let mutable hp : int = startingHP
-    let mutable dexterity : int = startingDexterity
+type Character (characterType: CharacterType, startingHP: int, startingDexterity : int, startingSightRadius : int) =
+    let id = System.Guid.NewGuid ()
+    let mutable hp = startingHP
+    let mutable maxHP = startingHP
+    let mutable sightRadius = startingSightRadius
+    let mutable dexterity = startingDexterity
 
     member this.Type
         with get() = characterType
 
     member this.Dexterity 
-        with get() : int = dexterity
+        with get() = dexterity
         and set(value) = dexterity <- value
     
     member this.CurrentHP 
-        with get() : int = hp
+        with get() = hp
         and set(value) = hp <- value
 
-    abstract MaxHP : int with get
+    member this.MaxHP 
+        with get() = maxHP
+        and set(value) = maxHP <- value
 
     abstract GetMeleeDamage : damage with get
     
-    abstract SightRadius : int with get
+    member this.SightRadius  
+        with get() = sightRadius
+        and set(value) = sightRadius <- value
 
     abstract Appearance : char with get
 

@@ -82,15 +82,13 @@ let meleeAttack (attacker: Character) (defender: Character) (board: Board) =
     let attackerPlace = Seq.find (fun x -> (snd x).Character = Some(attacker)) allBoardPlaces
     let defenderPlace = Seq.find (fun x -> (snd x).Character = Some(defender)) allBoardPlaces
     //check if distance = 1
-    if max (abs ((fst attackerPlace).X - (fst defenderPlace).X)) (abs ((fst attackerPlace).Y - (fst defenderPlace).Y)) = 1 then
-        let defenderResult = defender
+    if max (abs ((fst attackerPlace).X - (fst defenderPlace).X)) (abs ((fst attackerPlace).Y - (fst defenderPlace).Y)) = 1 then        
         meleeFight attacker defender
-        if  (defender.IsAlive) then
-            updateCharacter defender defenderResult board
-        else
-            if(defender.Type <> Avatar) then
-                killCharacter defender board
-            else
-                board
+        board
+        |>> seq {
+            for item in [attacker; defender] do
+                if (not item.IsAlive && item.Type <> Avatar) then
+                    yield killCharacter item                         
+            }
     else
         board

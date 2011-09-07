@@ -162,7 +162,7 @@ let mainLoop () =
 
     let mainMenuReply = showMainMenu ()
 
-    let thePlayer = new Player(mainMenuReply.Name, 20, 10)
+    let thePlayer = new Player(mainMenuReply.Name, 20, 10, 10)
 
     //initial maps setup
     let mainMapBoard, mainMapPoint = generateMainMap
