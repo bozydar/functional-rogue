@@ -190,7 +190,7 @@ let aiLurkerPredatorMonster (monsterPlace: (Point*Place)) (state:State) : State 
         //else
         let victims = getDifferentSpeciesTheMonsterCanAttackInMelee monsterPlace state
         if (victims.Length > 0) then
-                { state with Board = state.Board |> Board.meleeAttack monster state.Board.Places.[victims.Head.X,victims.Head.Y].Character.Value }
+                { state with Board = state.Board |> Mechanics.meleeAttack monster state.Board.Places.[victims.Head.X,victims.Head.Y].Character.Value }
         elif (sortedDiffSpeciesByDist.Length > 0) then
             state
             |> State.updateCharacter (snd monsterPlace).Character.Value monster
