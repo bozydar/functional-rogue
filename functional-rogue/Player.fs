@@ -13,8 +13,8 @@ type WornItems = {
     Legs : option<Item>
 } 
 
-type Player (name : string, hp : int) = 
-    inherit Character (CharacterType.Avatar)
+type Player (name : string, hp : int, dexterity : int) = 
+    inherit Character (CharacterType.Avatar, hp, dexterity)
 
     let mutable hP = hp
 
@@ -38,9 +38,6 @@ type Player (name : string, hp : int) =
 
     override this.Name 
         with get() = name
-
-    override this.CurrentHP
-        with get() = hP
 
     //Magic : int;  // magic
     //MaxMagic : int;
@@ -80,17 +77,11 @@ type Player (name : string, hp : int) =
         with get() = wornItems
         and set(value) = wornItems <- value
 
-    override this.IsAlive
-        with get() = hP > 0
-
-    override this.HitWithDamage (damage: int) = 
-        hP <- hP - damage
-
     override this.Appearance
         with get() = '@'
 
     override this.GetMeleeDamage
-        with get() = 4
+        with get() = scratchWound, scratchWound, scratchWound
 
     override this.MaxHP
         with get() = maxHp

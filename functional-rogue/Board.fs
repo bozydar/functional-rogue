@@ -227,23 +227,6 @@ let killCharacter (victim: Character) (board: Board) =
         |> modify (fst victimPlace) (fun place -> { place with Character = option.None })
         |> modify (fst victimPlace) (fun place -> { place with Items = corpseItem :: place.Items} )
 
-let meleeAttack (attacker: Character) (defender: Character) (board: Board) =
-    let allBoardPlaces = places board
-    let attackerPlace = Seq.find (fun x -> (snd x).Character = Some(attacker)) allBoardPlaces
-    let defenderPlace = Seq.find (fun x -> (snd x).Character = Some(defender)) allBoardPlaces
-    //check if distance = 1
-    if max (abs ((fst attackerPlace).X - (fst defenderPlace).X)) (abs ((fst attackerPlace).Y - (fst defenderPlace).Y)) = 1 then
-        let defenderResult = defender
-        defender.HitWithDamage attacker.GetMeleeDamage
-        if  (defender.IsAlive) then
-            updateCharacter defender defenderResult board
-        else
-            if(defender.Type <> Avatar) then
-                killCharacter defender board
-            else
-                board
-    else
-        board
 
 //let emptyBoard : Board = { Places = Array2D.create boardWidth boardHeight Place.EmptyPlace }
 

@@ -1,11 +1,9 @@
 ﻿module Mechanics
 
 open System
-
-let scratchWound = 1
-let lightWound = 3
-let heavyWound = 9
-let criticalWound = 27
+open Characters
+open Board
+open Log
 
 let roll () =
     rnd2 1 20
@@ -33,7 +31,8 @@ let countableTest parameter bonus level =
     let modifier = levelToModifier level
     let k = parameter + modifier
     if k > 0 then
-        let results = dice |> Seq.scan (fun bonus item -> bonus - Math.Max(0, item - k)) bonus
+        let results = dice |> Seq.scan (fun bonus item -> bonus - Math.Max(0, item - k)) bonus |> Seq.skip 1 
+        // count all not negative items
         results |> Seq.sumBy (fun item -> if item >= 0 then 1 else 0)
     else
         0
@@ -63,3 +62,35 @@ let rec oposedTest parameter1 bonus1 parameter2 bonus2 =
     if left > right then 1
     elif left < right then -1
     else oposedTest parameter1 bonus1 parameter2 bonus2
+
+let evalMeleeDamage (attacker : Character) (defender : Character) = 
+    let forAttacker = countableTest (attacker.Dexterity) 0 1
+    let forDefender = countableTest (defender.Dexterity) 0 1
+    let delta = forAttacker - forDefender
+        
+    if delta > 0 then 
+        let damage = intByIndex (attacker.GetMeleeDamage) (delta - 1)
+        defender.HitWithDamage(damage, attacker)
+
+let meleeFight (attacker : Character) (defender : Character) = 
+    evalMeleeDamage attacker defender
+    if defender.IsAlive then
+        evalMeleeDamage defender attacker
+
+let meleeAttack (attacker: Character) (defender: Character) (board: Board) =
+    let allBoardPlaces = places board
+    let attackerPlace = Seq.find (fun x -> (snd x).Character = Some(attacker)) allBoardPlaces
+    let defenderPlace = Seq.find (fun x -> (snd x).Character = Some(defender)) allBoardPlaces
+    //check if distance = 1
+    if max (abs ((fst attackerPlace).X - (fst defenderPlace).X)) (abs ((fst attackerPlace).Y - (fst defenderPlace).Y)) = 1 then
+        let defenderResult = defender
+        meleeFight attacker defender
+        if  (defender.IsAlive) then
+            updateCharacter defender defenderResult board
+        else
+            if(defender.Type <> Avatar) then
+                killCharacter defender board
+            else
+                board
+    else
+        board
