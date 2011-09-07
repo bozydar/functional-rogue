@@ -17,6 +17,7 @@ type ScreenAgentMessage =
     | ShowMessages of State
     | ShowOptions of seq<char * string>
     | SetCursorPositionOnBoard of Point * State
+    | DisplayComputerScreen of (string list) * State
 and MainMenuReply = {
     Name: String
 } 
@@ -99,6 +100,7 @@ let private screenWritter () =
                                 | Water -> {Char = '~'; FGColor = ConsoleColor.Blue; BGColor = ConsoleColor.Black}
                                 | StairsDown -> {Char = '>'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
                                 | StairsUp -> {Char = '<'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
+                                | Computer -> {Char = '#'; FGColor = ConsoleColor.Red; BGColor = ConsoleColor.Black}
                                 | MainMapForest -> {Char = '&'; FGColor = ConsoleColor.DarkGreen; BGColor = ConsoleColor.Black}
                                 | MainMapGrassland -> {Char = '"'; FGColor = ConsoleColor.Green; BGColor = ConsoleColor.Black}
                                 | MainMapMountains -> {Char = '^'; FGColor = ConsoleColor.Gray; BGColor = ConsoleColor.Black}
@@ -124,6 +126,20 @@ let private screenWritter () =
         |> String.iteri (fun i char -> 
             screen.[x + i, y] <- {empty with Char = char})
         screen
+
+    let writeStrings (position: Point) (lines: String list) (fgcolor: ConsoleColor) (screen: screen) =
+        let x = position.X
+        let y = position.Y
+        let rec writeAllLines x y (lines: String list) (screen: screen) =
+            match lines with
+            | head :: tail ->
+                let length = min (screenSize.Width - x) head.Length
+                head.Substring(0, length)
+                |> String.iteri (fun i char -> 
+                    screen.[x + i, y] <- {empty with Char = char; FGColor = fgcolor})
+                writeAllLines x (y+1) tail screen
+            |[] -> screen
+        writeAllLines x y lines screen
     
     let cleanPartOfScreen (point: Point) (size: Size) (screen: screen) =
         for x in (point.X)..(point.X + size.Width - 1)do
@@ -287,7 +303,15 @@ let private screenWritter () =
                 refreshScreen screen newScreen
                 Console.SetCursorPosition(realPosition)
                 return! loop newScreen
-
+            | DisplayComputerScreen(content, state) ->
+                let newScreen = 
+                    screen
+                    |> Array2D.copy
+                    |> cleanPartOfScreen (Point(0,0)) boardFrameSize
+                    |> writeStrings (Point(0,0)) content ConsoleColor.DarkGreen
+                    |> writeStats state
+                refreshScreen screen newScreen
+                return! loop newScreen
         }
         loop <| Array2D.create screenSize.Width screenSize.Height empty
     )
@@ -299,5 +323,6 @@ let showMainMenu () = agent.PostAndReply(fun reply -> ShowMainMenu(reply))
 let showChooseItemDialog items = agent.Post(ShowChooseItemDialog(items))
 let showEquipmentItemDialog items = agent.Post(ShowEquipmentDialog(items))
 let setCursorPositionOnBoard point state = agent.Post(SetCursorPositionOnBoard(point, state))
+let displayComputerScreen content = agent.Post(DisplayComputerScreen(content, State.get()))
 let showMessages () = agent.Post (ShowMessages(State.get ()))
 let showOptions options  = agent.Post(ShowOptions(options))

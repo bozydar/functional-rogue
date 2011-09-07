@@ -11,6 +11,7 @@ open Sight
 open Items
 open Player
 open Characters
+open Computers
 
 type Command = 
     | Up
@@ -35,6 +36,7 @@ type Command =
     | GoDownEnter
     | GoUp
     | Look
+    | UseObject
 
 let private commandToSize command = 
     match command with
@@ -155,6 +157,26 @@ let performLookAction command state =
     let playerPosition = getPlayerPosition board
     let points = visiblePositions playerPosition state.Player.SightRadius board    
     ignore (selectPlace points state)
+
+let performUseObjectAction command state =
+    let board = state.Board
+    let playerPosition = getPlayerPosition board
+    let points = 
+        playerPosition 
+        :: [for x in (max 0 (playerPosition.X - 1))..(min boardWidth (playerPosition.X + 1)) do
+                for y in (max 0 (playerPosition.Y - 1))..(min boardHeight (playerPosition.Y + 1)) do
+                    let p = Point(x, y)
+                    if p <> playerPosition then yield p]        
+    let selected = selectPlace points state
+    if selected.IsSome then 
+        let selectedPlace = board.Places.[selected.Value.X,selected.Value.Y]
+        match selectedPlace.Tile with
+        | Tile.Computer ->
+            state |> operateComputer
+        | _ ->
+            state |> addMessage (sprintf "There is nothing to use here.")
+    else
+        state
 
 let switchBoards (oldBoard: Board) (playerPoint: Point) (state: State) =
     let playerPlace = oldBoard.Places.[playerPoint.X,playerPoint.Y]
