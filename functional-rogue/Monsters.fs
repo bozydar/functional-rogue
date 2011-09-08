@@ -11,16 +11,12 @@ type CharacterAiState =
     | Hunting
     | Default   //this is used for stateless monsters and for state monsters indicates that the monster has just been created and needs a setup
 
-type Monster (monsterType: MonsterType, hp: int) =
-    inherit Character (CharacterType.Monster)
+type Monster (monsterType : MonsterType, hp : int,  dexterity : int, sightRadius : int) =
+    inherit Character (CharacterType.Monster, hp, dexterity, sightRadius)
 
     let mutable state = CharacterAiState.Default
 
     let mutable hungerFactor = 0
-
-    let mutable hP = hp
-
-    let maxHp = hp
 
     member this.Type
         with get() = monsterType
@@ -40,36 +36,18 @@ type Monster (monsterType: MonsterType, hp: int) =
             | Rat -> "Rat"
             | Lurker -> "Lurker"
 
-    override this.CurrentHP
-        with get() = hP
-
-    override this.GetMeleeDamage
-        with get() = 4
+    override this.GetMeleeDamage 
+        with get() : damage = scratchWound, scratchWound, scratchWound
     
-    override this.SightRadius
-        with get() =
-            match monsterType with
-            | Rat -> 2
-            | Lurker -> 5
-
     member this.State
         with get() = state
         and set(value) = state <- value
 
     member this.HungerFactor
         with get() = hungerFactor
-        and set(value) = hungerFactor <- value
-
-    override this.IsAlive
-        with get() = hP > 0
-
-    override this.HitWithDamage (damage: int) = 
-        hP <- hP - damage
-
-    override this.MaxHP
-        with get() = maxHp
+        and set(value) = hungerFactor <- value        
 
 let createNewMonster (monsterType: MonsterType) : Monster =
     match monsterType with
-    | Rat -> new Monster(Rat, 5)
-    | Lurker -> new Monster(Lurker, 20)
+    | Rat -> new Monster(Rat, 5, 10, 2)
+    | Lurker -> new Monster(Lurker, 20, 5, 4)
