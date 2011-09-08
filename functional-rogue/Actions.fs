@@ -69,12 +69,12 @@ let moveAvatar command state =
         let newPlace = get board newPosition
         let playerCharacter = getPlayerCharacter board
     
-        let preResult =
-            if (isMovementObstacle board newPosition) then
-                board
-            else
-                board |> moveCharacter playerCharacter newPosition
-        {state with Board = preResult}
+        if canAttack board newPosition then
+            Mechanics.meleeAttack playerCharacter (get board newPosition).Character.Value state
+        elif isMovementObstacle state.Board newPosition then
+            state
+        else
+            { state with Board = state.Board |> moveCharacter playerCharacter newPosition }
 
 let selectPlace (positions : Point list) state : Point option =
     if positions.Length <> 0 then 
