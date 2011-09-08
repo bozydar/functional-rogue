@@ -133,6 +133,10 @@ let isMovementObstacle (board: Board) (point: Point) =
     || place.Tile = Tile.MainMapMountains 
     || place.Character.IsSome
 
+let canAttack (board: Board) (point: Point) =
+    let place = get board point    
+    place.Character.IsSome
+
 let isOpticalObstacle (board: Board) (point: Point) =
     let place = get board point
     place.Tile = Tile.Wall 
