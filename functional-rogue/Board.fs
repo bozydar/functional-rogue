@@ -48,7 +48,16 @@ type TransportTarget = {
 }   
 
 type ElectronicMachine = {
-    Id : Guid
+    ComputerContent : ComputerContent
+}
+and ComputerContent = {
+    ComputerName : string;
+    Notes : ComputerNote list;
+    CanOperateDoors : bool
+}
+and ComputerNote = {
+    Topic : string;
+    Content : string;
 }
 
 type Ore = 
@@ -159,6 +168,16 @@ let monsterPlaces (board: Board) =
             for y = 0 to boardHeight - 1 do
                 let item = Array2D.get board.Places x y
                 if (item.Character.IsSome && item.Character.Value.Type = CharacterType.Monster) then
+                    yield (new Point(x, y), item)
+    }
+    Seq.toList tempSeq
+
+let getFilteredPlaces (filterFunc: Place -> bool) (board: Board) =
+    let tempSeq = seq {
+        for x = 0 to boardWidth - 1 do
+            for y = 0 to boardHeight - 1 do
+                let item = Array2D.get board.Places x y
+                if (filterFunc item) then
                     yield (new Point(x, y), item)
     }
     Seq.toList tempSeq
