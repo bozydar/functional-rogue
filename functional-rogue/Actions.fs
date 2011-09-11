@@ -122,11 +122,11 @@ let selectPlace (positions : Point list) state : Point option =
             | Keys [ConsoleKey.LeftArrow; '4'] -> loop (left current) //Left            
             | Keys [ConsoleKey.RightArrow; '6'] -> loop (right current) //Right
             | Key ConsoleKey.Enter -> Some(current)
-            | Key ConsoleKey.Escape -> None
+            | Key ConsoleKey.Escape -> Option.None
             | _ -> loop current
         loop start                
     else
-        None
+        Option.None
 
 let private operateDoor command state =
     let board = state.Board
@@ -368,10 +368,10 @@ let takeOff (state : State) =
         else
             ' '                    
     match chosenOption with
-    | 'g' -> state.Player.WornItems <- {state.Player.WornItems with Hand = None }
-    | 'h' -> state.Player.WornItems <- {state.Player.WornItems with Head = None }
-    | 'l' -> state.Player.WornItems <- {state.Player.WornItems with Legs = None }
-    | 't' -> state.Player.WornItems <- {state.Player.WornItems with Torso = None }                      
+    | 'g' -> state.Player.WornItems <- {state.Player.WornItems with Hand = Option.None }
+    | 'h' -> state.Player.WornItems <- {state.Player.WornItems with Head = Option.None }
+    | 'l' -> state.Player.WornItems <- {state.Player.WornItems with Legs = Option.None }
+    | 't' -> state.Player.WornItems <- {state.Player.WornItems with Torso = Option.None }                      
     | _ -> ()
     state
 
