@@ -131,5 +131,4 @@ let operateComputer (electronicMachine: ElectronicMachine) (state: State) =
             State.set newState
             loop content newNav newState
     let comp = electronicMachine.ComputerContent
-    //displayComputerScreen (createDisplayContent comp (MainMenu,0))
     loop comp (MainMenu,0) state 
