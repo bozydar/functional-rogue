@@ -6,38 +6,7 @@ open Items
 open Monsters
 open Characters
 open Config
-open Resources
 open Quantity
-
-// predefined parts
-
-let simplifiedObjectToMapPart (input: char[,]) (background: Tile) =
-    let backgroundTile = { Tile = background; Items = []; Ore = Ore.NoneOre; Character = Option.None; IsSeen = false; WasSeen = Settings.EntireLevelSeen; TransportTarget = Option.None }
-    let wall = { Tile = Tile.Wall; Items = []; Ore = Ore.NoneOre; Character = Option.None; IsSeen = false; WasSeen = Settings.EntireLevelSeen; TransportTarget = Option.None }
-    let glass = { Tile = Tile.Glass; Items = []; Ore = Ore.NoneOre; Character = Option.None; IsSeen = false; WasSeen = Settings.EntireLevelSeen; TransportTarget = Option.None }
-    let closedDoor = { Tile = Tile.ClosedDoor; Items = []; Ore = Ore.NoneOre; Character = Option.None; IsSeen = false; WasSeen = Settings.EntireLevelSeen; TransportTarget = Option.None }
-    let floor = { Tile = Tile.Floor; Items = []; Ore = Ore.NoneOre; Character = Option.None; IsSeen = false; WasSeen = Settings.EntireLevelSeen; TransportTarget = Option.None }
-    let stairsDown = { Tile = Tile.StairsDown; Items = []; Ore = Ore.NoneOre; Character = Option.None; IsSeen = false; WasSeen = Settings.EntireLevelSeen; TransportTarget = Option.None }
-    let stairsUp = { Tile = Tile.StairsUp; Items = []; Ore = Ore.NoneOre; Character = Option.None; IsSeen = false; WasSeen = Settings.EntireLevelSeen; TransportTarget = Option.None }
-    input |> Array2D.map (fun i ->
-        match i with
-        | '0' -> backgroundTile
-        | '#' -> wall
-        | 'g' -> glass
-        | '+' -> closedDoor
-        | '.' -> floor
-        | '>' -> stairsDown
-        | '<' -> stairsUp
-        | _ -> backgroundTile
-    )
-
-let generateStartingLevelShip (background: Tile) =
-    let simplifiedShip = ResourceManager.Instance.SimplifiedMapObjects.["StartLocationShip"]
-    let mapFragment = simplifiedObjectToMapPart simplifiedShip background
-    mapFragment.[3,1] <- { mapFragment.[3,1] with Items = [Items.createPredefinedItem OreExtractor] }
-    mapFragment
-
-// level generation utilities
 
 let noise (x: float) (y: float) =
     let n= (float)((x + y * 57.0) * (2.0*13.0))
@@ -612,10 +581,11 @@ let generateCoast (cameFrom:Point) : (Board*Point option) =
     (board, Some(Point(35,15)))
 
 let generateStartLocationWithInitialPlayerPositon (cameFrom:Point) : (Board*Point) =
-    let result, startpoint = generateForest cameFrom
-    let ship = generateStartingLevelShip Tile.Grass
-    Array2D.blit ship 0 0 result.Places 30 10 (Array2D.length1 ship) (Array2D.length2 ship)
-    (result,(Point(33,12)))
+    let board, startpoint = generateForest cameFrom
+    let board =
+        board
+        |> Predefined.Resources.startLocationShip
+    (board, Point(33,12))
 
 let generateMainMap: (Board*Point) =
     let noiseValueToMap (value: float) =
