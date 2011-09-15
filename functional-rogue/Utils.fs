@@ -49,6 +49,7 @@ let intByIndex tuple index =
 
 let self x = x
 
+(*
 type FloatingPoint = {
     X: float;
     Y: float
@@ -61,6 +62,7 @@ type FloatingPoint = {
         {X = left.X + right.X; Y = left.Y + right.Y}
     static member (+) (left, right: Point) =
         {X = left.X + Convert.ToDouble(right.X); Y = left.Y + Convert.ToDouble(right.Y)}
+*)
 
 let swap (a: _[]) x y =
     let tmp = a.[x]
