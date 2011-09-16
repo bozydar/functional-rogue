@@ -11,14 +11,24 @@ type ComputerNavigation =
     | Note
     | Doors
     | Door
+    | Cameras
+    | Camera
 
 type ComputerCommand =
     | None
     | OpenDoor
     | CloseDoor
 
-let getelectronicDoorPlaces (state: State) =
+let getElectronicDoorPlaces (state: State) =
     state.Board |> getFilteredPlaces (fun place -> (place.Tile = Tile.ClosedDoor || place.Tile = Tile.OpenDoor) && place.ElectronicMachine.IsSome)
+
+let getCameraPlaces (state: State) =
+    state.Board |> getFilteredPlaces (fun place -> (place.ElectronicMachine.IsSome && place.ElectronicMachine.Value.ComputerContent.HasCamera))
+
+//let getCameraView (point: Point) (viewRadius: int) (state: State) =
+//    //state.Board.p
+//    let viewArray = Array2D.create (viewRadius * 2 + 1) (viewRadius * 2 + 1) Place.EmptyPlace
+//    let places = viewArray |> Seq.cast<Place>
 
 let operateComputer (electronicMachine: ElectronicMachine) (state: State) =
     let createDisplayContent (content: ComputerContent) (currentNav: ComputerNavigation*int) =
@@ -32,6 +42,8 @@ let operateComputer (electronicMachine: ElectronicMachine) (state: State) =
                     if content.Notes.Length > 0 then ["Notes"] else []
                     @
                     if content.CanOperateDoors then ["Electronic doors"] else []
+                    @
+                    if (getCameraPlaces state).Length > 0 then ["Cameras"] else []
                 result |> List.mapi (fun i item -> (i+1).ToString() + ". " + item)
             | Notes ->
                 (content.Notes |> List.mapi (fun x item -> (x + 1).ToString() + ". " + item.Topic))
@@ -41,14 +53,24 @@ let operateComputer (electronicMachine: ElectronicMachine) (state: State) =
                 [content.Notes.[itemNr].Content]
                 @ back
             | Doors ->
-                let doorPlaces = getelectronicDoorPlaces state
+                let doorPlaces = getElectronicDoorPlaces state
                 (doorPlaces |> List.mapi (fun x item ->
                     (x + 1).ToString() + ". (" + (fst item).X.ToString() + "," + (fst item).Y.ToString() + ") " + (snd item).ElectronicMachine.Value.ComputerContent.ComputerName + " - " + (if (snd item).Tile = ClosedDoor then "closed" else "open")))
                 @ back
             | Door ->
-                let doorPoint, doorPlace = (getelectronicDoorPlaces state).[itemNr]
+                let doorPoint, doorPlace = (getElectronicDoorPlaces state).[itemNr]
                 [doorPoint.ToString() + " " + doorPlace.ElectronicMachine.Value.ComputerContent.ComputerName + " - " + (if doorPlace.Tile = ClosedDoor then "closed" else "open")]
                 @ [""] @ ["1. " + (if doorPlace.Tile = ClosedDoor then "Open" else "Close")] @ [""]
+                @ back
+            | Cameras ->
+                let cameraPlaces = getCameraPlaces state
+                (cameraPlaces |> List.mapi (fun x item ->
+                    (x + 1).ToString() + ". " + (fst item).ToString() + " " + (snd item).ElectronicMachine.Value.ComputerContent.ComputerName + " camera"))
+                @ back
+            | Camera ->
+                let cameraPoint, cameraPlace = (getCameraPlaces state).[itemNr]
+                [cameraPoint.ToString() + " " + cameraPlace.ElectronicMachine.Value.ComputerContent.ComputerName + " camera"]
+                @ [""] @ [" TODO: CAMERA VIEW HERE! "] @ [""]
                 @ back
             | _ -> []
         let esc = "Hit Esc to exit"
@@ -61,6 +83,7 @@ let operateComputer (electronicMachine: ElectronicMachine) (state: State) =
             let items =
                 (if content.Notes.Length > 0 then [ComputerNavigation.Notes] else [])
                 @ (if content.CanOperateDoors then [ComputerNavigation.Doors] else [])
+                @ (if (getCameraPlaces state).Length > 0 then [ComputerNavigation.Cameras] else [])
             (
             match keyInfo with
             | Keys ['1';'2';'3';'4';'5';'6';'7';'8';'9'] ->
@@ -88,7 +111,7 @@ let operateComputer (electronicMachine: ElectronicMachine) (state: State) =
             match keyInfo with
             | Keys ['b'] -> (MainMenu,0)
             | Keys ['1';'2';'3';'4';'5';'6';'7';'8';'9'] ->
-                let doorPlaces = getelectronicDoorPlaces state
+                let doorPlaces = getElectronicDoorPlaces state
                 let number = (Int32.Parse (keyInfo.KeyChar.ToString())) - 1
                 if number < doorPlaces.Length then (Door,number) else (nav, itemNr)
             | _ -> (nav, itemNr)
@@ -97,8 +120,22 @@ let operateComputer (electronicMachine: ElectronicMachine) (state: State) =
             match keyInfo with
             | Keys ['b'] -> ((Doors,0), None)
             | Keys ['1';'2';'3';'4';'5';'6';'7';'8';'9'] ->
-                let doorPoint, doorPlace = (getelectronicDoorPlaces state).[itemNr]
+                let doorPoint, doorPlace = (getElectronicDoorPlaces state).[itemNr]
                 if (doorPlace.Tile = Tile.ClosedDoor) then ((nav, itemNr), OpenDoor) else ((nav, itemNr), CloseDoor)
+            | _ -> ((nav, itemNr), None)
+        | Cameras ->
+            (
+            match keyInfo with
+            | Keys ['b'] -> (MainMenu,0)
+            | Keys ['1';'2';'3';'4';'5';'6';'7';'8';'9'] ->
+                let cameraPlaces = getCameraPlaces state
+                let number = (Int32.Parse (keyInfo.KeyChar.ToString())) - 1
+                if number < cameraPlaces.Length then (Camera,number) else (nav, itemNr)
+            | _ -> (nav, itemNr)
+            , None)
+        | Camera ->
+            match keyInfo with
+            | Keys ['b'] -> ((Cameras,0), None)
             | _ -> ((nav, itemNr), None)
         | _ -> ((MainMenu, 0),None)
     
@@ -106,7 +143,7 @@ let operateComputer (electronicMachine: ElectronicMachine) (state: State) =
         let nav, itemNr = currentNav
         match command with
         | OpenDoor | CloseDoor ->
-            let doorPoint, doorPlace = (getelectronicDoorPlaces state).[itemNr]
+            let doorPoint, doorPlace = (getElectronicDoorPlaces state).[itemNr]
             let newBoard =
                 state.Board
                 |> Board.modify doorPoint

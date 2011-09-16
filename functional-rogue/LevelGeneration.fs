@@ -37,7 +37,7 @@ let generateStartingLevelShip (background: Tile) =
     let mapFragment = simplifiedObjectToMapPart simplifiedShip background
     mapFragment.[3,1] <- { mapFragment.[3,1] with Items = [Items.createPredefinedItem OreExtractor] }
     let getStartShipDoor =
-        { ComputerContent = { ComputerName = "Ship door"; Notes = []; CanOperateDoors = false } }
+        { ComputerContent = { ComputerName = "Ship door"; Notes = []; CanOperateDoors = false; HasCamera = true } }
     mapFragment.[5,2] <- { mapFragment.[5,2] with ElectronicMachine = Some(getStartShipDoor) }
     mapFragment
 
@@ -619,7 +619,7 @@ let generateStartLocationWithInitialPlayerPositon (cameFrom:Point) : (Board*Poin
     let getStartShipComputer =
         let note1 = { Topic = "Test note 1"; Content = "This is my test note number one." }
         let note2 = { Topic = "Test note 2"; Content = "This is my test note number two. This one is longer." }
-        { ComputerContent = { ComputerName = "TestComp"; Notes = [note1; note2]; CanOperateDoors = true } }
+        { ComputerContent = { ComputerName = "TestComp"; Notes = [note1; note2]; CanOperateDoors = true; HasCamera = false } }
     let result, startpoint = generateForest cameFrom
     let ship = generateStartingLevelShip Tile.Grass
     Array2D.blit ship 0 0 result.Places 30 10 (Array2D.length1 ship) (Array2D.length2 ship)
