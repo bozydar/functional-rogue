@@ -53,7 +53,8 @@ type ElectronicMachine = {
 and ComputerContent = {
     ComputerName : string;
     Notes : ComputerNote list;
-    CanOperateDoors : bool
+    CanOperateDoors : bool;
+    HasCamera : bool;
 }
 and ComputerNote = {
     Topic : string;
