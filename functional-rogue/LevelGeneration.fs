@@ -6,7 +6,6 @@ open Items
 open Monsters
 open Characters
 open Config
-open Resources
 open Quantity
 open State
 
@@ -32,14 +31,14 @@ let simplifiedObjectToMapPart (input: char[,]) (background: Tile) =
         | _ -> backgroundTile
     )
 
-let generateStartingLevelShip (background: Tile) =
-    let simplifiedShip = ResourceManager.Instance.SimplifiedMapObjects.["StartLocationShip"]
-    let mapFragment = simplifiedObjectToMapPart simplifiedShip background
-    mapFragment.[3,1] <- { mapFragment.[3,1] with Items = [Items.createPredefinedItem OreExtractor] }
-    let getStartShipDoor =
-        { ComputerContent = { ComputerName = "Ship door"; Notes = []; CanOperateDoors = false; HasCamera = true } }
-    mapFragment.[5,2] <- { mapFragment.[5,2] with ElectronicMachine = Some(getStartShipDoor) }
-    mapFragment
+//let generateStartingLevelShip (background: Tile) =
+//    let simplifiedShip = ResourceManager.Instance.SimplifiedMapObjects.["StartLocationShip"]
+//    let mapFragment = simplifiedObjectToMapPart simplifiedShip background
+//    mapFragment.[3,1] <- { mapFragment.[3,1] with Items = [Items.createPredefinedItem OreExtractor] }
+//    let getStartShipDoor =
+//        { ComputerContent = { ComputerName = "Ship door"; Notes = []; CanOperateDoors = false; HasCamera = true } }
+//    mapFragment.[5,2] <- { mapFragment.[5,2] with ElectronicMachine = Some(getStartShipDoor) }
+//    mapFragment
 
 // level generation utilities
 
@@ -616,16 +615,10 @@ let generateCoast (cameFrom:Point) : (Board*Point option) =
     (board, Some(Point(35,15)))
 
 let generateStartLocationWithInitialPlayerPositon (cameFrom:Point) : (Board*Point) =
-    let getStartShipComputer =
-        let note1 = { Topic = "Test note 1"; Content = "This is my test note number one." }
-        let note2 = { Topic = "Test note 2"; Content = "This is my test note number two. This one is longer." }
-        let sn = { Topic = "Some test note"; Content = "Nothing interesting here" }
-        let lastNote = { Topic = "Last note"; Content = "This is the last note" }
-        { ComputerContent = { ComputerName = "TestComp"; Notes = [note1; note2; sn; sn; sn; sn; sn; sn; sn; sn; lastNote]; CanOperateDoors = true; HasCamera = false } }
-    let result, startpoint = generateForest cameFrom
-    let ship = generateStartingLevelShip Tile.Grass
-    Array2D.blit ship 0 0 result.Places 30 10 (Array2D.length1 ship) (Array2D.length2 ship)
-    Array2D.set result.Places 33 12 { result.Places.[33,12] with Tile = Tile.Computer; ElectronicMachine = Some(getStartShipComputer) }
+    let board, startpoint = generateForest cameFrom
+    let result =
+        board
+        |> Predefined.Resources.startLocationShip
     (result,(Point(32,12)))
 
 let generateMainMap: (Board*Point) =
