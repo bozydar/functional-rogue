@@ -32,9 +32,24 @@ let getCameraPlaces (state: State) =
 
 let operateComputer (electronicMachine: ElectronicMachine) (state: State) =
     let createDisplayContent (content: ComputerContent) (currentNav: ComputerNavigation*int) =
+        let getListSlice n (list: 'a list) =
+            if list.Length > 9 then
+                let skipped = list |> Seq.ofList |> Seq.skip (n*9) |> Seq.toList
+                if skipped.Length > 9 then
+                    skipped |> Seq.ofList |> Seq.take 9 |> Seq.toList
+                else
+                    skipped
+            else
+                list
+
         let nav, itemNr = currentNav
         let compName = content.ComputerName
         let back = [""] @ ["b. back"] @ [""]
+        let next = ["n. next"]
+        let prev = ["p. previous"]
+        let prevNext (n: int) (itemsNum: int) =
+            let result = (if n > 0 then "p. previous     " else "") + (if itemsNum - (n * 9) > 9 then "n. next" else "")
+            if result.Length > 0 then [""] @ [result] else []
         let mainContent =
             match nav with
             | MainMenu ->
@@ -46,7 +61,8 @@ let operateComputer (electronicMachine: ElectronicMachine) (state: State) =
                     if (getCameraPlaces state).Length > 0 then ["Cameras"] else []
                 result |> List.mapi (fun i item -> (i+1).ToString() + ". " + item)
             | Notes ->
-                (content.Notes |> List.mapi (fun x item -> (x + 1).ToString() + ". " + item.Topic))
+                (content.Notes |> getListSlice itemNr |> List.mapi (fun x item -> (x + 1).ToString() + ". " + item.Topic))
+                @ prevNext itemNr content.Notes.Length
                 @ back
             | Note ->
                 [content.Notes.[itemNr].Topic] @ [""] @
@@ -78,6 +94,8 @@ let operateComputer (electronicMachine: ElectronicMachine) (state: State) =
 
     let keyToComputerNavAndCommand (keyInfo: ConsoleKeyInfo) (currentNav: ComputerNavigation*int) (content: ComputerContent) =
         let nav, itemNr = currentNav
+        let canGoNext n itemsNr =
+            if itemsNr - (n * 9) > 9 then true else false
         match nav with
         | MainMenu ->
             let items =
@@ -96,8 +114,12 @@ let operateComputer (electronicMachine: ElectronicMachine) (state: State) =
             match keyInfo with
             | Keys ['b'] -> (MainMenu,0)
             | Keys ['1';'2';'3';'4';'5';'6';'7';'8';'9'] ->
-                let number = (Int32.Parse (keyInfo.KeyChar.ToString())) - 1
+                let number = (Int32.Parse (keyInfo.KeyChar.ToString())) - 1 + (9 * itemNr)
                 if number < content.Notes.Length then (Note,number) else (nav, itemNr)
+            | Keys ['n'] ->
+                if canGoNext itemNr content.Notes.Length then (Notes,itemNr + 1) else (nav, itemNr)
+            | Keys ['p'] ->
+                if itemNr > 0 then (Notes,itemNr - 1) else (nav, itemNr)
             | _ -> (nav, itemNr)
             , None)
         | Note ->
@@ -107,13 +129,17 @@ let operateComputer (electronicMachine: ElectronicMachine) (state: State) =
             | _ -> (nav, itemNr)
             , None)
         | Doors ->
+            let doorPlaces = getElectronicDoorPlaces state
             (
             match keyInfo with
             | Keys ['b'] -> (MainMenu,0)
             | Keys ['1';'2';'3';'4';'5';'6';'7';'8';'9'] ->
-                let doorPlaces = getElectronicDoorPlaces state
-                let number = (Int32.Parse (keyInfo.KeyChar.ToString())) - 1
+                let number = (Int32.Parse (keyInfo.KeyChar.ToString())) - 1 + (9 * itemNr)
                 if number < doorPlaces.Length then (Door,number) else (nav, itemNr)
+            | Keys ['n'] ->
+                if canGoNext itemNr doorPlaces.Length then (Doors,itemNr + 1) else (nav, itemNr)
+            | Keys ['p'] ->
+                if itemNr > 0 then (Doors,itemNr - 1) else (nav, itemNr)
             | _ -> (nav, itemNr)
             , None)
         | Door ->
@@ -124,13 +150,17 @@ let operateComputer (electronicMachine: ElectronicMachine) (state: State) =
                 if (doorPlace.Tile = Tile.ClosedDoor) then ((nav, itemNr), OpenDoor) else ((nav, itemNr), CloseDoor)
             | _ -> ((nav, itemNr), None)
         | Cameras ->
+            let cameraPlaces = getCameraPlaces state
             (
             match keyInfo with
             | Keys ['b'] -> (MainMenu,0)
             | Keys ['1';'2';'3';'4';'5';'6';'7';'8';'9'] ->
-                let cameraPlaces = getCameraPlaces state
-                let number = (Int32.Parse (keyInfo.KeyChar.ToString())) - 1
+                let number = (Int32.Parse (keyInfo.KeyChar.ToString())) - 1 + (9 * itemNr)
                 if number < cameraPlaces.Length then (Camera,number) else (nav, itemNr)
+            | Keys ['n'] ->
+                if canGoNext itemNr cameraPlaces.Length then (Cameras,itemNr + 1) else (nav, itemNr)
+            | Keys ['p'] ->
+                if itemNr > 0 then (Cameras,itemNr - 1) else (nav, itemNr)
             | _ -> (nav, itemNr)
             , None)
         | Camera ->

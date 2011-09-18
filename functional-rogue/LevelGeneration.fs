@@ -619,7 +619,9 @@ let generateStartLocationWithInitialPlayerPositon (cameFrom:Point) : (Board*Poin
     let getStartShipComputer =
         let note1 = { Topic = "Test note 1"; Content = "This is my test note number one." }
         let note2 = { Topic = "Test note 2"; Content = "This is my test note number two. This one is longer." }
-        { ComputerContent = { ComputerName = "TestComp"; Notes = [note1; note2]; CanOperateDoors = true; HasCamera = false } }
+        let sn = { Topic = "Some test note"; Content = "Nothing interesting here" }
+        let lastNote = { Topic = "Last note"; Content = "This is the last note" }
+        { ComputerContent = { ComputerName = "TestComp"; Notes = [note1; note2; sn; sn; sn; sn; sn; sn; sn; sn; lastNote]; CanOperateDoors = true; HasCamera = false } }
     let result, startpoint = generateForest cameFrom
     let ship = generateStartingLevelShip Tile.Grass
     Array2D.blit ship 0 0 result.Places 30 10 (Array2D.length1 ship) (Array2D.length2 ship)
