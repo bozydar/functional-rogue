@@ -92,6 +92,12 @@ type Place = {
             {Tile = Tile.Empty; Items = []; Character = Option.None; IsSeen = false; WasSeen = Settings.EntireLevelSeen; Ore = NoneOre; TransportTarget = None; ElectronicMachine = None}
     static member Wall = 
             {Tile = Tile.Wall; Items = []; Character = Option.None; IsSeen = false; WasSeen = Settings.EntireLevelSeen; Ore = NoneOre; TransportTarget = None; ElectronicMachine = None }
+    static member Floor = 
+            {Tile = Tile.Floor; Items = []; Character = Option.None; IsSeen = false; WasSeen = Settings.EntireLevelSeen; Ore = NoneOre; TransportTarget = None; ElectronicMachine = None }
+    static member ClosedDoor =
+            {Tile = Tile.ClosedDoor; Items = []; Character = Option.None; IsSeen = false; WasSeen = Settings.EntireLevelSeen; Ore = NoneOre; TransportTarget = None; ElectronicMachine = None }
+    static member Computer =
+            {Tile = Tile.Computer; Items = []; Character = Option.None; IsSeen = false; WasSeen = Settings.EntireLevelSeen; Ore = NoneOre; TransportTarget = None; ElectronicMachine = None }
     static member GetDescription (place: Place) =
         let tileDescription = 
             match place.Tile with
@@ -141,10 +147,25 @@ let boardContains (point: Point) =
 let get (board: Board) (point: Point) = if boardContains point then Array2D.get board.Places point.X point.Y else Place.Wall
 
 let isMovementObstacle (board: Board) (point: Point) =
-    ((get board point).Tile = Tile.Wall || (get board point).Tile = Tile.ClosedDoor || (get board point).Tile = Tile.Tree || (get board point).Tile = Tile.Glass || (get board point).Tile = Tile.MainMapWater || (get board point).Tile = Tile.MainMapMountains || (get board point).Character.IsSome)
+    let place = get board point
+    place.Tile = Tile.Wall 
+    || place.Tile = Tile.ClosedDoor 
+    || place.Tile = Tile.Tree 
+    || place.Tile = Tile.Glass 
+    || place.Tile = Tile.MainMapWater 
+    || place.Tile = Tile.MainMapMountains 
+    || place.Character.IsSome
+
+let canAttack (board: Board) (point: Point) =
+    let place = get board point    
+    place.Character.IsSome
 
 let isOpticalObstacle (board: Board) (point: Point) =
-    ((get board point).Tile = Tile.Wall || (get board point).Tile = Tile.ClosedDoor || (get board point).Tile = Tile.Tree || (get board point).Tile = Tile.Bush)
+    let place = get board point
+    place.Tile = Tile.Wall 
+    || place.Tile = Tile.ClosedDoor 
+    || place.Tile = Tile.Tree 
+    || place.Tile = Tile.Bush
 
 let set (point: Point) (value: Place) (board: Board) : Board =
     let result = Array2D.copy board.Places 
@@ -164,14 +185,13 @@ let places (board: Board) =
     }
 
 let monsterPlaces (board: Board) = 
-    let tempSeq = seq {
-        for x = 0 to boardWidth - 1 do
-            for y = 0 to boardHeight - 1 do
-                let item = Array2D.get board.Places x y
-                if (item.Character.IsSome && item.Character.Value.Type = CharacterType.Monster) then
-                    yield (new Point(x, y), item)
-    }
-    Seq.toList tempSeq
+    board
+    |> places
+    |> Seq.choose (fun item -> 
+        match (snd item).Character with 
+        | Some(character) when (character :? Monster) -> Some(item) 
+        | _ -> None)
+    |> Seq.toList
 
 let getFilteredPlaces (filterFunc: Place -> bool) (board: Board) =
     let tempSeq = seq {
@@ -214,18 +234,6 @@ let moveCharacter (character: Character) (newPosition: Point) (board: Board) =
         board
         |> modify newPosition (fun place -> {place with Character = Some character })
 
-let updateCharacter (character: Character) (newCharacter: Character) (board: Board) =
-    let allBoardPlaces = places board
-    match Seq.tryFind (fun (_, place) -> 
-        match place.Character with 
-        | Some(character1) -> character1 = character
-        | _ -> false) allBoardPlaces with        
-    | Some((oldPosition, oldPlace)) ->           
-        board
-        |> modify oldPosition (fun place -> { place with Character = Some newCharacter }) 
-    | _ ->
-        board
-
 let countObstaclesAroundPoint (point: Point) (board: Board) : int =
     let mutable count = 0
     for tmpx in (max 0 (point.X - 1))..(min (point.X + 1) (boardWidth - 1)) do
@@ -234,44 +242,6 @@ let countObstaclesAroundPoint (point: Point) (board: Board) : int =
                 count <- count + (if(isMovementObstacle board (Point(tmpx,tmpy))) then 1 else 0)
     count
 
-let killCharacter (victim: Character) (board: Board) =
-    let allBoardPlaces = places board
-    let victimPlace = Seq.find (fun x -> (snd x).Character.IsSome && (snd x).Character.Value = victim) allBoardPlaces
-    let corpseItem = {
-        Id = Guid.NewGuid();
-        Name = victim.Name + " corpse";
-        Wearing = {
-                    OnHead = false;
-                    InHand = false;
-                    OnTorso = false;
-                    OnLegs = false
-        };
-        Offence = Value(0M);
-        Defence = Value(0M);
-        Type = Corpse;
-        MiscProperties = Items.defaultMiscProperties
-        }
-    board 
-        |> modify (fst victimPlace) (fun place -> { place with Character = option.None })
-        |> modify (fst victimPlace) (fun place -> { place with Items = corpseItem :: place.Items} )
-
-let meleeAttack (attacker: Character) (defender: Character) (board: Board) =
-    let allBoardPlaces = places board
-    let attackerPlace = Seq.find (fun x -> (snd x).Character.IsSome && (snd x).Character.Value = attacker) allBoardPlaces
-    let defenderPlace = Seq.find (fun x -> (snd x).Character.IsSome && (snd x).Character.Value = defender) allBoardPlaces
-    //check if distance = 1
-    if max (abs ((fst attackerPlace).X - (fst defenderPlace).X)) (abs ((fst attackerPlace).Y - (fst defenderPlace).Y)) = 1 then
-        let defenderResult = defender
-        defender.HitWithDamage attacker.GetMeleeDamage
-        if  (defender.IsAlive) then
-            updateCharacter defender defenderResult board
-        else
-            if(defender.Type <> Avatar) then
-                killCharacter defender board
-            else
-                board
-    else
-        board
 
 //let emptyBoard : Board = { Places = Array2D.create boardWidth boardHeight Place.EmptyPlace }
 

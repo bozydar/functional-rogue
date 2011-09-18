@@ -165,16 +165,16 @@ let aiLurkerPredatorMonster (monsterPlace: (Point*Place)) (state:State) : State 
     | CharacterAiState.Default ->
         monster.State <- CharacterAiState.Lurking
         monster.HungerFactor <- rnd2 30 60
-        state |> State.updateCharacter (snd monsterPlace).Character.Value monster
+        state
     | CharacterAiState.Lurking ->
         let newHungerFactor = monster.HungerFactor - 1
         monster.HungerFactor <- newHungerFactor
         if (newHungerFactor < 0) then
             monster.State <- CharacterAiState.Hunting
-            state |> State.updateCharacter (snd monsterPlace).Character.Value monster
+            state
         else
             let positions = getGoodLurkingPositionsInSightSortedFromBest monsterPlace state
-            let newState = state |> State.updateCharacter (snd monsterPlace).Character.Value monster
+            let newState = state
             if(positions.Length > 0) then
                 if ((fst positions.Head) <> monsterPoint) then
                     newState |> goTowards monsterPlace (fst (positions.Head))
@@ -189,14 +189,13 @@ let aiLurkerPredatorMonster (monsterPlace: (Point*Place)) (state:State) : State 
             //state //|> goTowards monsterPlace (fst (sortedDiffSpeciesByDist.Head))    //go to eat it
         //else
         let victims = getDifferentSpeciesTheMonsterCanAttackInMelee monsterPlace state
-        if (victims.Length > 0) then
-                { state with Board = state.Board |> Board.meleeAttack monster state.Board.Places.[victims.Head.X,victims.Head.Y].Character.Value }
-        elif (sortedDiffSpeciesByDist.Length > 0) then
-            state
-            |> State.updateCharacter (snd monsterPlace).Character.Value monster
-            |> goTowards monsterPlace (fst (sortedDiffSpeciesByDist.Head))
-        else
-            state
+        state
+        |>  if (victims.Length > 0) then
+                Mechanics.meleeAttack monster state.Board.Places.[victims.Head.X,victims.Head.Y].Character.Value
+            elif (sortedDiffSpeciesByDist.Length > 0) then
+                goTowards monsterPlace (fst (sortedDiffSpeciesByDist.Head))
+            else
+                self
 
 // some top level functions
 

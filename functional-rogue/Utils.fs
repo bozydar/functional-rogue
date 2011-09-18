@@ -38,8 +38,18 @@ type Factor with
         | Percent(v) when v = 0M -> true
         | _ -> false
 
-let inBoundary (v: int) max min = Math.Max(Math.Min(v, min), max)
+let inBoundary v min max = 
+    if min > max then failwith "Min should be le max"
+    elif v < min then min
+    elif v > max then max
+    else v    
 
+let intByIndex tuple index = 
+    FSharpValue.GetTupleField(tuple, index)  :?> int
+
+let self x = x
+
+(*
 type FloatingPoint = {
     X: float;
     Y: float
@@ -52,6 +62,7 @@ type FloatingPoint = {
         {X = left.X + right.X; Y = left.Y + right.Y}
     static member (+) (left, right: Point) =
         {X = left.X + Convert.ToDouble(right.X); Y = left.Y + Convert.ToDouble(right.Y)}
+*)
 
 let swap (a: _[]) x y =
     let tmp = a.[x]

@@ -17,15 +17,6 @@ open Turn
 open Characters
 open System.IO
 
-let evaluateBoardFramePosition state = 
-    let playerPosition = getPlayerPosition state.Board
-    let frameView = new Rectangle(state.BoardFramePosition, boardFrameSize)
-    let preResult =
-        let x = inBoundary (playerPosition.X - (boardFrameSize.Width / 2)) 0 (boardWidth - boardFrameSize.Width)
-        let y = inBoundary (playerPosition.Y - (boardFrameSize.Height / 2)) 0 (boardHeight - boardFrameSize.Height)
-        point x y                
-    { state with BoardFramePosition = preResult }
-
 let showEquipment () =
     let refreshScreen = 
         let items = (State.get ()).Player.Items
@@ -174,7 +165,7 @@ let mainLoop () =
 
     let mainMenuReply = showMainMenu ()
 
-    let thePlayer = new Player(mainMenuReply.Name, 10)
+    let thePlayer = new Player(mainMenuReply.Name, 20, 10, 10)
 
     //initial maps setup
     let mainMapBoard, mainMapPoint = generateMainMap
@@ -192,7 +183,7 @@ let mainLoop () =
 
     let entryState =
         try
-            loadState ()
+            if Config.Settings.LoadSave then loadState () else raise (new FileNotFoundException())
         with
             | :? FileNotFoundException ->
                     {         
