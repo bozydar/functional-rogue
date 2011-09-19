@@ -4,6 +4,7 @@ open State
 open Monsters
 open Board
 open Characters
+open Turn
 open System.Drawing
 open System.Collections.Generic
 
@@ -217,3 +218,5 @@ let handleMonsters (state: State) : State =
     let allMonsterPlaces = monsterPlaces state.Board
     //TO DO: here sort them by initiative
     state |> recursivelyHandleMonstersSequence allMonsterPlaces
+
+subscribe handleMonsters
