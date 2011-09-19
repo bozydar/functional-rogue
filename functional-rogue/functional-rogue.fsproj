@@ -47,6 +47,7 @@
     <Compile Include="Board.fs" />
     <Compile Include="Player.fs" />
     <Compile Include="State.fs" />
+    <Compile Include="Turn.fs" />
     <Compile Include="Mechanics.fs" />
     <Compile Include="Sight.fs" />
     <Compile Include="Predefined.Parser.fs" />
@@ -55,7 +56,6 @@
     <Compile Include="Screen.fs" />
     <Compile Include="Actions.fs" />
     <Compile Include="AI.fs" />
-    <Compile Include="Turn.fs" />
     <Compile Include="Game.fs" />
     <None Include="app.config" />
     <None Include="packages.config" />
