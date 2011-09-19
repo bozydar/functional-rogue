@@ -292,6 +292,16 @@ let private screenWritter () =
         loop <| Array2D.create screenSize.Width screenSize.Height empty
     )
 
+let private evaluateBoardFramePosition state = 
+    let playerPosition = getPlayerPosition state.Board
+    let frameView = new Rectangle(state.BoardFramePosition, boardFrameSize)
+    let preResult =
+        let x = inBoundary (playerPosition.X - (boardFrameSize.Width / 2)) 0 (boardWidth - boardFrameSize.Width) 
+        let y = inBoundary (playerPosition.Y - (boardFrameSize.Height / 2)) 0 (boardHeight - boardFrameSize.Height)
+        point x y                
+    { state with BoardFramePosition = preResult }
+
+
 
 let private agent = screenWritter ()
 let showBoard () = agent.Post (ShowBoard(State.get ()))
@@ -301,3 +311,5 @@ let showEquipmentItemDialog items = agent.Post(ShowEquipmentDialog(items))
 let setCursorPositionOnBoard point state = agent.Post(SetCursorPositionOnBoard(point, state))
 let showMessages () = agent.Post (ShowMessages(State.get ()))
 let showOptions options  = agent.Post(ShowOptions(options))
+
+Turn.subscribe evaluateBoardFramePosition
