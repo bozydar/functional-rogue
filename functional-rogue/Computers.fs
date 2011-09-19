@@ -241,7 +241,9 @@ let operateComputer (computerPoint: Point option) (electronicMachine: Electronic
                         | Tile.OpenDoor -> {place with Tile = Tile.ClosedDoor}  
                         | Tile.ClosedDoor -> {place with Tile = Tile.OpenDoor}
                         | _ -> place)
-            { state with Board = newBoard }
+            let result = { state with Board = newBoard }
+            result |> Turn.next
+            result
         | Replicate ->
             let recipe = (getAvailableReplicationRecipes state).[itemNr]
             state.Player.Iron <- state.Player.Iron - recipe.RequiredResources.Iron
@@ -251,6 +253,7 @@ let operateComputer (computerPoint: Point option) (electronicMachine: Electronic
             let compPlace = state.Board.Places.[computerPoint.Value.X,computerPoint.Value.Y]
             let updatedPlace = { compPlace with Items = compPlace.Items @ [item] }
             state.Board.Places.[computerPoint.Value.X,computerPoint.Value.Y] <- updatedPlace
+            state |> Turn.next
             state
         | _ ->
             state

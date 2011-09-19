@@ -8,7 +8,7 @@ open State
 open Items
 
 let roll () =
-    rnd2 1 20
+    rnd2 1 21
 
 let percentToLevel (percent : int) : int =     
     let result = 
