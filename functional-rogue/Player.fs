@@ -20,7 +20,7 @@ type Player (name : string, hp : int, dexterity : int, sightRadius : int) =
 
     let maxHp = hp
 
-    let mutable iron : int = 0
+    let mutable iron : int = 5
 
     let mutable gold : int = 0
 

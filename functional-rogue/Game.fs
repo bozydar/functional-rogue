@@ -181,6 +181,11 @@ let mainLoop () =
     initialBoards.Add(mainMapBoard.Guid, mainMapBoard)
     //end maps setup
 
+    let getInitialReplicationRecipes = 
+        let result = new System.Collections.Generic.HashSet<string>()
+        ignore (result.Add("Combat Knife"))
+        result
+
     let entryState =
         try
             if Config.Settings.LoadSave then loadState () else raise (new FileNotFoundException())
@@ -193,7 +198,8 @@ let mainLoop () =
                         TurnNumber = 0;
                         UserMessages = [];
                         AllBoards = initialBoards;
-                        MainMapGuid = mainMapBoard.Guid
+                        MainMapGuid = mainMapBoard.Guid;
+                        AvailableReplicationRecipes = getInitialReplicationRecipes
                     }
     State.set entryState
     loop true      
