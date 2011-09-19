@@ -218,5 +218,3 @@ let handleMonsters (state: State) : State =
     let allMonsterPlaces = monsterPlaces state.Board
     //TO DO: here sort them by initiative
     state |> recursivelyHandleMonstersSequence allMonsterPlaces
-
-subscribe handleMonsters

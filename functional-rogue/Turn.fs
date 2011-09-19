@@ -45,4 +45,3 @@ let next state = agent.PostAndReply(fun reply -> Elapse(1M, state, reply))
 
 let subscribe stateChange = agent.Post(SubscribeStateChange(stateChange))
 
-subscribe (fun state -> {state with TurnNumber = state.TurnNumber + 1})
