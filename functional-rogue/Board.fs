@@ -25,6 +25,7 @@ type Tile =
     | StairsDown
     | StairsUp
     | Computer
+    | Replicator
     | MainMapForest
     | MainMapGrassland
     | MainMapWater
@@ -54,29 +55,14 @@ and ComputerContent = {
     ComputerName : string;
     Notes : ComputerNote list;
     CanOperateDoors : bool;
+    CanOperateCameras : bool;
+    CanReplicate : bool;
     HasCamera : bool;
 }
 and ComputerNote = {
     Topic : string;
     Content : string;
 }
-
-type Ore = 
-    | NoneOre
-    | Iron of Quantity
-    | Gold of Quantity
-    | Uranium of Quantity
-    | CleanWater of Quantity
-    | ContaminatedWater of Quantity 
-    member this.Quantity 
-        with get() = 
-            match this with
-            | Iron(value) -> value
-            | Gold(value) -> value
-            | Uranium(value) -> value
-            | CleanWater(value) -> value
-            | ContaminatedWater(value) -> value
-            | _ -> QuantityValue(0)
 
 type Place = {
     Tile : Tile; 
@@ -98,6 +84,8 @@ type Place = {
             {Tile = Tile.ClosedDoor; Items = []; Character = Option.None; IsSeen = false; WasSeen = Settings.EntireLevelSeen; Ore = NoneOre; TransportTarget = None; ElectronicMachine = None }
     static member Computer =
             {Tile = Tile.Computer; Items = []; Character = Option.None; IsSeen = false; WasSeen = Settings.EntireLevelSeen; Ore = NoneOre; TransportTarget = None; ElectronicMachine = None }
+    static member Create tile =
+        {Tile = tile; Items = []; Character = Option.None; IsSeen = false; WasSeen = Settings.EntireLevelSeen; Ore = NoneOre; TransportTarget = None; ElectronicMachine = None }
     static member GetDescription (place: Place) =
         let tileDescription = 
             match place.Tile with
@@ -115,6 +103,7 @@ type Place = {
             | Tile.StairsDown -> "Stairs leading down."
             | Tile.StairsUp -> "Stairs leading up."
             | Tile.Computer -> "Computer."
+            | Tile.Replicator -> "Replicator."
             | _ -> ""
         let characterDescription =
             if place.Character.IsSome then

@@ -42,6 +42,7 @@
     <Compile Include="Config.fs" />
     <Compile Include="Log.fs" />
     <Compile Include="Items.fs" />
+    <Compile Include="Replication.fs" />
     <Compile Include="Characters.fs" />
     <Compile Include="Monsters.fs" />
     <Compile Include="Board.fs" />

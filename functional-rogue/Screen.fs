@@ -74,7 +74,7 @@ let private screenWritter () =
                                 match h.Type with 
                                 | Stick -> {Char = '|'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
                                 | Rock  -> {Char = '*'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
-                                | Sword -> {Char = '/'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
+                                | Sword | Knife -> {Char = '/'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
                                 | Hat -> {Char = ']'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
                                 | Corpse -> {Char = '%'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
                                 | Tool -> {Char = '['; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
@@ -101,6 +101,7 @@ let private screenWritter () =
                                 | StairsDown -> {Char = '>'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
                                 | StairsUp -> {Char = '<'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
                                 | Computer -> {Char = '#'; FGColor = ConsoleColor.Red; BGColor = ConsoleColor.Black}
+                                | Replicator -> {Char = '_'; FGColor = ConsoleColor.Red; BGColor = ConsoleColor.Black}
                                 | MainMapForest -> {Char = '&'; FGColor = ConsoleColor.DarkGreen; BGColor = ConsoleColor.Black}
                                 | MainMapGrassland -> {Char = '"'; FGColor = ConsoleColor.Green; BGColor = ConsoleColor.Black}
                                 | MainMapMountains -> {Char = '^'; FGColor = ConsoleColor.Gray; BGColor = ConsoleColor.Black}

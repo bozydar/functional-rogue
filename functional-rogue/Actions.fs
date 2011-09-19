@@ -171,8 +171,8 @@ let performUseObjectAction command state =
     if selected.IsSome then 
         let selectedPlace = board.Places.[selected.Value.X,selected.Value.Y]
         match selectedPlace.Tile with
-        | Tile.Computer ->
-            state |> operateComputer selectedPlace.ElectronicMachine.Value
+        | Tile.Computer | Tile.Replicator ->
+            state |> operateComputer selected selectedPlace.ElectronicMachine.Value
         | _ ->
             state |> addMessage (sprintf "There is nothing to use here.")
     else
