@@ -204,9 +204,16 @@ let mainLoop () =
     State.set entryState
     loop true      
 
+let subscribeHandlers () =
+    Turn.subscribe handleMonsters
+    Turn.subscribe setVisibilityStates
+    Turn.subscribe evaluateBoardFramePosition
+    Turn.subscribe (fun state -> {state with TurnNumber = state.TurnNumber + 1})
+
 [<EntryPoint>]
 let main args =    
-    mainLoop()
+    subscribeHandlers ()
+    mainLoop ()
     //printf "%s" <| Seq.fold (fun acc x -> acc + " " + x.ToString()) "" (circles.[2])
     System.Console.ReadKey(true) |> ignore
     0
