@@ -231,3 +231,5 @@ let setVisibilityStates state  =
         let p = point x y
         if Seq.exists ((=) p) positions then {place with IsSeen = true; WasSeen = true} else {place with IsSeen = false}) state.Board.Places
     {state with Board = { state.Board with Places = preResult}}
+
+Turn.subscribe setVisibilityStates
