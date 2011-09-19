@@ -16,6 +16,7 @@ open AI
 
 type private TurnAgentMessage = 
     | Elapse of decimal * State * AsyncReplyChannel<unit>
+    | SubscribeStateChange of (State -> State)
 
 
 let private evaluateBoardFramePosition state = 
@@ -29,9 +30,11 @@ let private evaluateBoardFramePosition state =
 
 let private turnAgent () =
     MailboxProcessor<TurnAgentMessage>.Start (fun inbox ->
-    let rec loop time = async {
+    let rec loop time funcs = async {
         let! msg = inbox.Receive()            
         match msg with
+        | SubscribeStateChange(func) ->                
+             return! loop time (func :: funcs)
         | Elapse(elapsedTime, state, reply) -> 
             let elapsed = time + elapsedTime
             let iElapsed = Convert.ToInt32(Math.Floor(elapsed))
@@ -39,17 +42,12 @@ let private turnAgent () =
             let turnsToGo = iElapsed - iState
             if turnsToGo > 0 then 
                 for i = 1 to turnsToGo do
-                    let state1 = 
-                        state
-                        |> handleMonsters
-                        |> setVisibilityStates
-                        |> evaluateBoardFramePosition                                    
-                    State.set {state1 with TurnNumber = state.TurnNumber + 1}
+                    State.set (state |>> funcs)
             reply.Reply ()
 
-            return! loop elapsed
+            return! loop elapsed funcs
     }
-    loop 0M
+    loop 0M []
 )
 
 let private agent = turnAgent () 
@@ -60,3 +58,8 @@ let elapse turns (state : option<State>) =
 
 let next state = agent.PostAndReply(fun reply -> Elapse(1M, state, reply))
 
+let subscribe stateChange = agent.Post(SubscribeStateChange(stateChange))
+subscribe (fun state -> {state with TurnNumber = state.TurnNumber + 1})
+subscribe handleMonsters
+subscribe setVisibilityStates
+subscribe evaluateBoardFramePosition
