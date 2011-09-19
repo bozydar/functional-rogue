@@ -17,15 +17,6 @@ open Turn
 open Characters
 open System.IO
 
-let evaluateBoardFramePosition state = 
-    let playerPosition = getPlayerPosition state.Board
-    let frameView = new Rectangle(state.BoardFramePosition, boardFrameSize)
-    let preResult =
-        let x = inBoundary 0 (playerPosition.X - (boardFrameSize.Width / 2)) (boardWidth - boardFrameSize.Width)
-        let y = inBoundary 0 (playerPosition.Y - (boardFrameSize.Height / 2)) (boardHeight - boardFrameSize.Height)
-        point x y                
-    { state with BoardFramePosition = preResult }
-
 let showEquipment () =
     let refreshScreen = 
         let items = (State.get ()).Player.Items
