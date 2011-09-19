@@ -7,7 +7,7 @@ open System
 
 
 let startLocationShip board =  
-    let def = def @ [('1', { Place.Wall with Items = [Items.createPredefinedItem Items.OreExtractor]})]
+    let def = def @ [('1', { Place.EmptyPlace with Tile = Tile.Floor; Items = [Items.createPredefinedItem Items.OreExtractor]})]
     let where = Point(30, 10)
     board
     |> putPredefinedOnBoard def where
