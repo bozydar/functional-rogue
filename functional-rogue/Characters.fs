@@ -1,5 +1,7 @@
 ﻿module Characters
 
+open System
+
 type damage = (int * int * int)
 
 let scratchWound = 1
@@ -14,12 +16,26 @@ type CharacterType =
     | NPC
 
 [<AbstractClass>]
-type Character (characterType: CharacterType, startingHP: int, startingDexterity : int, startingSightRadius : int) =
+type Character (characterType: CharacterType, startingHP: int, startingDexterity : int, startingStrength : int, startingSightRadius : int) =
     let id = System.Guid.NewGuid ()
     let mutable hp = startingHP
     let mutable maxHP = startingHP
     let mutable sightRadius = startingSightRadius
     let mutable dexterity = startingDexterity
+    let mutable strength = startingStrength
+
+    let mutable items : list<Item> = []
+
+    let mutable wornItems : WornItems = { Head = Option.None; Hand = Option.None; Torso = Option.None; Legs = Option.None }
+
+    member this.Items
+        with get() = items
+        and set(value) = items <- value
+
+    member this.WornItems
+        with get() = wornItems
+        and set(value) = wornItems <- value
+
 
     member this.Type
         with get() = characterType
@@ -27,6 +43,10 @@ type Character (characterType: CharacterType, startingHP: int, startingDexterity
     member this.Dexterity 
         with get() = dexterity
         and set(value) = dexterity <- value
+
+    member this.Strength
+        with get() = strength
+        and set(value) = strength <- value
     
     member this.CurrentHP 
         with get() = hp
@@ -36,8 +56,23 @@ type Character (characterType: CharacterType, startingHP: int, startingDexterity
         with get() = maxHP
         and set(value) = maxHP <- value
 
-    abstract GetMeleeDamage : damage with get
+    abstract member MeleeDamage : damage with get
+    default this.MeleeDamage
+        with get() =
+            if this.WornItems.Hand.IsSome && this.WornItems.Hand.Value.Attack.IsSome 
+            then this.WornItems.Hand.Value.Attack.Value this this
+            else this.DefaultMeleeDamage
     
+    abstract member DefaultMeleeDamage : damage with get
+    default this.DefaultMeleeDamage 
+        with get() = 
+            if this.Strength < 10 then scratchWound, scratchWound, scratchWound
+            elif this.Strength < 12 then scratchWound, scratchWound, lightWound
+            elif this.Strength < 14 then scratchWound, lightWound, lightWound
+            elif this.Strength < 16 then scratchWound, lightWound, heavyWound
+            elif this.Strength < 18 then lightWound, lightWound, heavyWound
+            else lightWound, heavyWound, heavyWound 
+
     member this.SightRadius  
         with get() = sightRadius
         and set(value) = sightRadius <- value
@@ -51,3 +86,67 @@ type Character (characterType: CharacterType, startingHP: int, startingDexterity
 
     member this.HitWithDamage (value : int)  =
         this.CurrentHP <- this.CurrentHP - value
+
+and WornItems = {
+    Head : option<Item>;
+    Hand : option<Item>;    
+    Torso : option<Item>;
+    Legs : option<Item>
+} 
+and [<CustomEquality; CustomComparison>] Item = {    
+    Id : Guid;
+    Name : string;
+    Wearing : Wearing
+    Offence : Factor;
+    Defence : Factor;
+    Type : Type;
+    MiscProperties : MiscProperties;
+    Attack : (Character -> Character -> damage) option
+} 
+with 
+    override this.Equals(other) =
+        match other with
+        | :? Item as other -> other.Id = this.Id
+        | _ -> false
+    
+    override this.GetHashCode() = 
+        hash this.Id
+
+    interface IComparable with
+        member this.CompareTo(other) =
+            match other with
+            | :? Item as other -> compare this other
+            | _ -> invalidArg "other" "cannot compare values of different types"        
+and Wearing = {
+    OnHead : bool;
+    InHand : bool;
+    OnTorso : bool;
+    OnLegs : bool;
+} 
+with
+    static member NotWearable = { OnHead = false; InHand = false; OnTorso = false; OnLegs = false }
+    static member HeadOnly = { Wearing.NotWearable with OnHead = true }
+    static member HandOnly = { Wearing.NotWearable with InHand = true }
+    static member TorsoOnly = { Wearing.NotWearable with OnTorso = true }
+    static member LegsOnly = { Wearing.NotWearable with OnLegs = true }
+and Type = 
+    | Stick
+    | Rock
+    | Sword
+    | Hat
+    | Corpse
+    | Tool
+and MiscProperties = {
+    OreExtractionRate : int
+}
+
+let defaultMiscProperties = {
+    OreExtractionRate = 0
+}
+
+let itemShortDescription item =
+    let rest = 
+        item.Name + " - "
+        + if not item.Offence.IsZero then sprintf "Offence: %s " (item.Offence.ToString()) else ""  
+        + if not item.Defence.IsZero  then sprintf "Defence: %s " (item.Defence.ToString()) else ""
+    rest

@@ -1,7 +1,6 @@
 ﻿module State
 
 open Board
-open Items
 open Player
 open System.Drawing
 open Monsters

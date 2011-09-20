@@ -2,11 +2,12 @@
 
 open System.Drawing
 open Board
-open Items
 open Monsters
 open Characters
 open Config
 open Quantity
+open Predefined
+
 
 let noise (x: float) (y: float) =
     let n= (float)((x + y * 57.0) * (2.0*13.0))
@@ -350,28 +351,14 @@ let rec generateRooms rooms =
     }
 
 let addItems board =
-    // returns sequence of board modification functions
-    let stickOfDoom = {
-        Id = System.Guid.NewGuid();
-        Name = "Stick of doom";
-        Wearing = {
-                    OnHead = false;
-                    InHand = true;
-                    OnTorso = false;
-                    OnLegs = true
-        };
-        Offence = Value(3M);
-        Defence = Value(0M);
-        Type = Stick;
-        MiscProperties = Items.defaultMiscProperties
-    }
+    // returns sequence of board modification functions    
     let modifiers = seq {
         for i in 1..20 do
             let posX = rnd boardWidth
             let posY = rnd boardHeight
             yield (fun board -> 
                 Board.modify (point posX posY) (fun place -> 
-                    {place with Items = stickOfDoom :: place.Items} ) board)
+                    {place with Items = Items.stickOfDoom :: place.Items} ) board)
     }
     // apply all modification functions on board
     board |>> modifiers

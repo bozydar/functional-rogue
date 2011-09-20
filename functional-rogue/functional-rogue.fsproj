@@ -41,7 +41,6 @@
     <Compile Include="Quantity.fs" />
     <Compile Include="Config.fs" />
     <Compile Include="Log.fs" />
-    <Compile Include="Items.fs" />
     <Compile Include="Characters.fs" />
     <Compile Include="Monsters.fs" />
     <Compile Include="Board.fs" />
@@ -51,6 +50,7 @@
     <Compile Include="Mechanics.fs" />
     <Compile Include="Sight.fs" />
     <Compile Include="Predefined.Parser.fs" />
+    <Compile Include="Predefined.Items.fs" />
     <Compile Include="Predefined.Resources.fs" />
     <Compile Include="LevelGeneration.fs" />
     <Compile Include="Screen.fs" />

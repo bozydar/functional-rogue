@@ -5,7 +5,6 @@ open System.Drawing
 open Board
 open State
 open Sight
-open Items
 open Player
 open Characters
 
