@@ -1,7 +1,8 @@
 ﻿module Predefined.Items
 
-open Items
 open System
+open Mechanics
+open Characters
 
 type PredefinedItems =
     | RandomStick
@@ -18,8 +19,8 @@ let createPredefinedItem predefinedItem =
         Offence = Value((decimal)(rnd2 1 3));
         Defence = Value(0M);
         Type = Stick;
-        MiscProperties = defaultMiscProperties;
-        Attack = Some(fun attacker _ -> (1, 1, 1));
+        MiscProperties = defaultMiscProperties;        
+        Attack = Some(fun attacker _ -> (10, 10, 10));
         }
     | RandomRock ->
         {
@@ -55,7 +56,7 @@ let stickOfDoom = {
         Offence = Value(3M);
         Defence = Value(0M);
         Type = Stick;
-        MiscProperties = Items.defaultMiscProperties;
+        MiscProperties = Characters.defaultMiscProperties;
         Attack = Some(fun attacker _ -> (1, 1, 1));
     }
 

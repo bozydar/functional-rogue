@@ -2,7 +2,6 @@
 
 open System.Drawing
 open Board
-open Items
 open Monsters
 open Characters
 open Config

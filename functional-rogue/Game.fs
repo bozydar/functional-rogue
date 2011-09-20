@@ -8,7 +8,6 @@ open Board
 open LevelGeneration
 open Screen
 open Sight
-open Items
 open Actions
 open Player
 open Monsters
@@ -158,7 +157,7 @@ let mainLoop () =
 
     let mainMenuReply = showMainMenu ()
 
-    let thePlayer = new Player(mainMenuReply.Name, 20, 10, 10)
+    let thePlayer = new Player(mainMenuReply.Name, 20, 10, 16, 10)
 
     //initial maps setup
     let mainMapBoard, mainMapPoint = generateMainMap

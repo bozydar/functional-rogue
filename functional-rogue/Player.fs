@@ -2,19 +2,11 @@
 
 open System
 open System.Collections.Generic
-open Items
 open Characters
 open Quantity
 
-type WornItems = {
-    Head : option<Item>;
-    Hand : option<Item>;    
-    Torso : option<Item>;
-    Legs : option<Item>
-} 
-
-type Player (name : string, hp : int, dexterity : int, sightRadius : int) = 
-    inherit Character (CharacterType.Avatar, hp, dexterity, sightRadius)
+type Player (name : string, hp : int, dexterity : int, strength : int, sightRadius : int) = 
+    inherit Character (CharacterType.Avatar, hp, dexterity, strength, sightRadius)
 
     let mutable hP = hp
 
@@ -30,11 +22,7 @@ type Player (name : string, hp : int, dexterity : int, sightRadius : int) =
 
     let mutable contaminatedWater : int = 0
 
-    let mutable items : list<Item> = []
-
-    let mutable shortCuts : Map<char, Item> =  Map [] // keys (chars) to access items
-
-    let mutable wornItems : WornItems = { Head = Option.None; Hand = Option.None; Torso = Option.None; Legs = Option.None }
+    let mutable shortCuts : Map<char, Item> =  Map [] // keys (chars) to access items    
 
     override this.Name 
         with get() = name
@@ -66,19 +54,8 @@ type Player (name : string, hp : int, dexterity : int, sightRadius : int) =
         with get() = contaminatedWater
         and set(value) = contaminatedWater <- value
 
-    member this.Items
-        with get() = items
-        and set(value) = items <- value
-
-    member this.WornItems
-        with get() = wornItems
-        and set(value) = wornItems <- value
-
     override this.Appearance
         with get() = '@'
-
-    override this.GetMeleeDamage
-        with get() = scratchWound, scratchWound, scratchWound
  
 
 let createShortCuts currentShortCuts items =
