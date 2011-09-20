@@ -88,8 +88,6 @@ let killCharacter (victim: Character) (state: State) =
                     OnTorso = false;
                     OnLegs = false
         };
-        Offence = Value(0M);
-        Defence = Value(0M);
         Type = Corpse;
         MiscProperties = Characters.defaultMiscProperties
         Attack = Option.None

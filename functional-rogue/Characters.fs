@@ -60,7 +60,7 @@ type Character (characterType: CharacterType, startingHP: int, startingDexterity
     default this.MeleeDamage
         with get() =
             if this.WornItems.Hand.IsSome && this.WornItems.Hand.Value.Attack.IsSome 
-            then this.WornItems.Hand.Value.Attack.Value this this
+            then this.WornItems.Hand.Value.Attack.Value this this 1
             else this.DefaultMeleeDamage
     
     abstract member DefaultMeleeDamage : damage with get
@@ -97,11 +97,9 @@ and [<CustomEquality; CustomComparison>] Item = {
     Id : Guid;
     Name : string;
     Wearing : Wearing
-    Offence : Factor;
-    Defence : Factor;
     Type : Type;
     MiscProperties : MiscProperties;
-    Attack : (Character -> Character -> damage) option
+    Attack : (Character -> Character -> int -> damage) option
 } 
 with 
     override this.Equals(other) =
@@ -146,7 +144,5 @@ let defaultMiscProperties = {
 
 let itemShortDescription item =
     let rest = 
-        item.Name + " - "
-        + if not item.Offence.IsZero then sprintf "Offence: %s " (item.Offence.ToString()) else ""  
-        + if not item.Defence.IsZero  then sprintf "Defence: %s " (item.Defence.ToString()) else ""
+        item.Name 
     rest
