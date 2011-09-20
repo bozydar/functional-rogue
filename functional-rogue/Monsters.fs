@@ -11,8 +11,8 @@ type CharacterAiState =
     | Hunting
     | Default   //this is used for stateless monsters and for state monsters indicates that the monster has just been created and needs a setup
 
-type Monster (monsterType : MonsterType, hp : int,  dexterity : int, sightRadius : int) =
-    inherit Character (CharacterType.Monster, hp, dexterity, sightRadius)
+type Monster (monsterType : MonsterType, hp : int,  dexterity : int, strength : int, sightRadius : int) =
+    inherit Character (CharacterType.Monster, hp, dexterity, strength, sightRadius)
 
     let mutable state = CharacterAiState.Default
 
@@ -36,7 +36,7 @@ type Monster (monsterType : MonsterType, hp : int,  dexterity : int, sightRadius
             | Rat -> "Rat"
             | Lurker -> "Lurker"
 
-    override this.GetMeleeDamage 
+    override this.MeleeDamage 
         with get() : damage = scratchWound, scratchWound, scratchWound
     
     member this.State
@@ -49,5 +49,5 @@ type Monster (monsterType : MonsterType, hp : int,  dexterity : int, sightRadius
 
 let createNewMonster (monsterType: MonsterType) : Monster =
     match monsterType with
-    | Rat -> new Monster(Rat, 5, 10, 2)
-    | Lurker -> new Monster(Lurker, 20, 5, 4)
+    | Rat -> new Monster(Rat, 5, 10, 8, 2)
+    | Lurker -> new Monster(Lurker, 20, 5, 12, 4)

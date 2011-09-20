@@ -4,7 +4,6 @@ open System
 open System.Drawing
 open Utils
 open Config
-open Items
 open Monsters
 open Characters
 open Quantity

@@ -5,7 +5,6 @@ open Characters
 open Board
 open Log
 open State
-open Items
 
 let roll () =
     rnd2 1 21
@@ -71,7 +70,7 @@ let private evalMeleeDamage (attacker : Character) (defender : Character) =
     let delta = forAttacker - forDefender
         
     if delta > 0 then 
-        let damage = intByIndex (attacker.GetMeleeDamage) (delta - 1)
+        let damage = intByIndex (attacker.MeleeDamage) (delta - 1)
         damage
         //defender.HitWithDamage(damage, attacker)
     else 
@@ -92,7 +91,7 @@ let killCharacter (victim: Character) (state: State) =
         Offence = Value(0M);
         Defence = Value(0M);
         Type = Corpse;
-        MiscProperties = Items.defaultMiscProperties
+        MiscProperties = Characters.defaultMiscProperties
         Attack = Option.None
         }
     { state with 
