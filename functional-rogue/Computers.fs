@@ -46,7 +46,7 @@ let operateComputer (computerPoint: Point option) (electronicMachine: Electronic
             && recipe.RequiredResources.Uranium <= state.Player.Uranium
         then true else false
             
-    let createDisplayContent (content: ComputerContent) (currentNav: ComputerNavigation*int) =
+    let createDisplayContent (content: ComputerContent) (currentNav: ComputerNavigation*int) (state: State) =
         let getListSlice n (list: 'a list) =
             if list.Length > 9 then
                 let skipped = list |> Seq.ofList |> Seq.skip (n*9) |> Seq.toList
@@ -243,7 +243,6 @@ let operateComputer (computerPoint: Point option) (electronicMachine: Electronic
                         | _ -> place)
             let result = { state with Board = newBoard }
             result |> Turn.next
-            result
         | Replicate ->
             let recipe = (getAvailableReplicationRecipes state).[itemNr]
             state.Player.Iron <- state.Player.Iron - recipe.RequiredResources.Iron
@@ -254,19 +253,18 @@ let operateComputer (computerPoint: Point option) (electronicMachine: Electronic
             let updatedPlace = { compPlace with Items = compPlace.Items @ [item] }
             state.Board.Places.[computerPoint.Value.X,computerPoint.Value.Y] <- updatedPlace
             state |> Turn.next
-            state
         | _ ->
-            state
+            ()
 
     let rec loop (computerPoint: Point option) (content: ComputerContent) (nav: ComputerNavigation*int) (state : State) =
-        displayComputerScreen (createDisplayContent content nav)
+        displayComputerScreen (createDisplayContent content nav state)
         let keyInfo = System.Console.ReadKey(true)
         match keyInfo with 
         | Key ConsoleKey.Escape -> state
         | _ ->
             let newNav, command = keyToComputerNavAndCommand keyInfo nav content
-            let newState = state |> (performComputerCommand computerPoint newNav command)
-            State.set newState
+            state |> (performComputerCommand computerPoint newNav command)
+            let newState = State.get()
             loop computerPoint content newNav newState
     let comp = electronicMachine.ComputerContent
     loop computerPoint comp (MainMenu,0) state 

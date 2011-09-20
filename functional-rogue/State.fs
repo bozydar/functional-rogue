@@ -22,7 +22,7 @@ type State = {
 } 
 
 type private StateAgentMessage = 
-    | Set of Option<State>
+    | Set of AsyncReplyChannel<unit> * Option<State>
     | Get of AsyncReplyChannel<Option<State>>
 
 let private stateAgent () = 
@@ -31,17 +31,20 @@ let private stateAgent () =
         let rec loop state = async {
             let! msg = inbox.Receive()            
             match msg with
-            | Set(value) -> return! loop value
+            | Set(replyChannel, value) -> 
+                replyChannel.Reply ()   
+                return! loop value
             | Get(replyChannel) -> 
-                    replyChannel.Reply(state)   
-                    return! loop (state)
+                replyChannel.Reply(state)   
+                return! loop (state)
         }
         loop Option.None 
     )
 
 let private agent = stateAgent () 
 
-let set (state: State) = agent.Post(Set(Some(state)))
+let set (state: State) = 
+    agent.PostAndReply(fun replyChannel -> Set(replyChannel, Some(state)))
 
 let get () = 
     match agent.PostAndReply(fun replyChannel -> Get(replyChannel)) with
