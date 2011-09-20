@@ -7,6 +7,7 @@ open Monsters
 open Characters
 open Config
 open Quantity
+open Predefined
 
 let noise (x: float) (y: float) =
     let n= (float)((x + y * 57.0) * (2.0*13.0))
