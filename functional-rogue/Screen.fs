@@ -72,6 +72,7 @@ let private screenWritter () =
                         | h::_ when not <| Set.contains item.Tile obstacles -> 
                                 match h.Type with 
                                 | Stick -> {Char = '|'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
+                                | Rock  -> {Char = '*'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
                                 | Sword -> {Char = '/'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
                                 | Hat -> {Char = ']'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
                                 | Corpse -> {Char = '%'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
@@ -290,6 +291,16 @@ let private screenWritter () =
         }
         loop <| Array2D.create screenSize.Width screenSize.Height empty
     )
+
+let evaluateBoardFramePosition state = 
+    let playerPosition = getPlayerPosition state.Board
+    let frameView = new Rectangle(state.BoardFramePosition, boardFrameSize)
+    let preResult =
+        let x = inBoundary (playerPosition.X - (boardFrameSize.Width / 2)) 0 (boardWidth - boardFrameSize.Width) 
+        let y = inBoundary (playerPosition.Y - (boardFrameSize.Height / 2)) 0 (boardHeight - boardFrameSize.Height)
+        point x y                
+    { state with BoardFramePosition = preResult }
+
 
 
 let private agent = screenWritter ()
