@@ -14,12 +14,7 @@ let createPredefinedItem predefinedItem =
         {
         Id = Guid.NewGuid();
         Name = "Stick";
-        Wearing = {
-                    OnHead = false;
-                    InHand = true;
-                    OnTorso = false;
-                    OnLegs = false
-        };
+        Wearing = Wearing.HandOnly;
         Offence = Value((decimal)(rnd2 1 3));
         Defence = Value(0M);
         Type = Stick;
@@ -29,12 +24,7 @@ let createPredefinedItem predefinedItem =
         {
         Id = System.Guid.NewGuid();
         Name = "Rock";
-        Wearing = {
-                    OnHead = false;
-                    InHand = true;
-                    OnTorso = false;
-                    OnLegs = false
-        };
+        Wearing = Wearing.HandOnly;
         Offence = Value((decimal)(rnd2 1 3));
         Defence = Value(0M);
         Type = Rock;
@@ -43,11 +33,7 @@ let createPredefinedItem predefinedItem =
     | OreExtractor ->
         { Id = Guid.NewGuid();
             Name = "Ore Extractor";
-            Wearing = { OnHead = false;
-                        InHand = true;
-                        OnTorso = false;
-                        OnLegs = false
-            };
+            Wearing = Wearing.HandOnly;
             Offence = Value(0M);
             Defence = Value(0M);
             Type = Tool;
