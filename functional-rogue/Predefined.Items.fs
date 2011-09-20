@@ -18,7 +18,8 @@ let createPredefinedItem predefinedItem =
         Offence = Value((decimal)(rnd2 1 3));
         Defence = Value(0M);
         Type = Stick;
-        MiscProperties = defaultMiscProperties
+        MiscProperties = defaultMiscProperties;
+        Attack = Some(fun attacker _ -> (1, 1, 1));
         }
     | RandomRock ->
         {
@@ -29,6 +30,7 @@ let createPredefinedItem predefinedItem =
         Defence = Value(0M);
         Type = Rock;
         MiscProperties = defaultMiscProperties
+        Attack = Some(fun attacker _ -> (1, 1, 1));
         }
     | OreExtractor ->
         { Id = Guid.NewGuid();
@@ -37,8 +39,25 @@ let createPredefinedItem predefinedItem =
             Offence = Value(0M);
             Defence = Value(0M);
             Type = Tool;
-            MiscProperties = { defaultMiscProperties with OreExtractionRate = 1 }
+            MiscProperties = { defaultMiscProperties with OreExtractionRate = 1 };
+            Attack = Some(fun attacker _ -> (1, 1, 1));
         }   
+
+let stickOfDoom = {
+        Id = System.Guid.NewGuid();
+        Name = "Stick of doom";
+        Wearing = {
+                    OnHead = false;
+                    InHand = true;
+                    OnTorso = false;
+                    OnLegs = true
+        };
+        Offence = Value(3M);
+        Defence = Value(0M);
+        Type = Stick;
+        MiscProperties = Items.defaultMiscProperties;
+        Attack = Some(fun attacker _ -> (1, 1, 1));
+    }
 
 let createRandomNaturalItem (playerLevel: int) =
     //later player level will be used to determine probability of some more powerful/valuable items

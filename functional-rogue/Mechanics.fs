@@ -93,6 +93,7 @@ let killCharacter (victim: Character) (state: State) =
         Defence = Value(0M);
         Type = Corpse;
         MiscProperties = Items.defaultMiscProperties
+        Attack = Option.None
         }
     { state with 
         Board = state.Board
