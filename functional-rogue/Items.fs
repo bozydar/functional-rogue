@@ -1,7 +1,9 @@
 ﻿module Items
 
 open System
+open Characters
 
+[<CustomEquality; CustomComparison>]
 type Item = {    
     Id : Guid;
     Name : string;
@@ -10,7 +12,22 @@ type Item = {
     Defence : Factor;
     Type : Type;
     MiscProperties : MiscProperties;
+    Attack : (Character -> Character -> damage) option
 } 
+with 
+    override this.Equals(other) =
+        match other with
+        | :? Item as other -> other.Id = this.Id
+        | _ -> false
+    
+    override this.GetHashCode() = 
+        hash this.Id
+
+    interface IComparable with
+        member this.CompareTo(other) =
+            match other with
+            | :? Item as other -> compare this other
+            | _ -> invalidArg "other" "cannot compare values of different types"        
 and Wearing = {
     OnHead : bool;
     InHand : bool;

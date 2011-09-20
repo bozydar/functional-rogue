@@ -27,6 +27,10 @@ type Character (characterType: CharacterType, startingHP: int, startingDexterity
     member this.Dexterity 
         with get() = dexterity
         and set(value) = dexterity <- value
+
+    member this.Build
+        with get() = 3
+        and set(value) = ()
     
     member this.CurrentHP 
         with get() = hp
