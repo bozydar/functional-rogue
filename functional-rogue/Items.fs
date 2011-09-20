@@ -17,6 +17,12 @@ and Wearing = {
     OnTorso : bool;
     OnLegs : bool;
 } 
+with
+    static member NotWearable = { OnHead = false; InHand = false; OnTorso = false; OnLegs = false }
+    static member HeadOnly = { Wearing.NotWearable with OnHead = true }
+    static member HandOnly = { Wearing.NotWearable with InHand = true }
+    static member TorsoOnly = { Wearing.NotWearable with OnTorso = true }
+    static member LegsOnly = { Wearing.NotWearable with OnLegs = true }
 and Type = 
     | Stick
     | Rock
