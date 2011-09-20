@@ -8,7 +8,6 @@ open Board
 open LevelGeneration
 open Screen
 open Sight
-open Items
 open Player
 open Characters
 
