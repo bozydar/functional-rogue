@@ -4,6 +4,12 @@ open System
 
 type damage = (int * int * int)
 
+type AttackResult = {
+    Damage : damage;
+    AttackBonus : int;
+    DefenceBonus : int
+}
+
 let scratchWound = 1
 let lightWound = 3
 let heavyWound = 9
@@ -56,22 +62,23 @@ type Character (characterType: CharacterType, startingHP: int, startingDexterity
         with get() = maxHP
         and set(value) = maxHP <- value
 
-    abstract member MeleeDamage : damage with get
-    default this.MeleeDamage
+    abstract member MeleeAttack : AttackResult with get
+    default this.MeleeAttack
         with get() =
             if this.WornItems.Hand.IsSome && this.WornItems.Hand.Value.Attack.IsSome 
             then this.WornItems.Hand.Value.Attack.Value this this 1
-            else this.DefaultMeleeDamage
+            else this.DefaultMeleeAttack
     
-    abstract member DefaultMeleeDamage : damage with get
-    default this.DefaultMeleeDamage 
+    abstract member DefaultMeleeAttack : AttackResult with get
+    default this.DefaultMeleeAttack 
         with get() = 
-            if this.Strength < 10 then scratchWound, scratchWound, scratchWound
-            elif this.Strength < 12 then scratchWound, scratchWound, lightWound
-            elif this.Strength < 14 then scratchWound, lightWound, lightWound
-            elif this.Strength < 16 then scratchWound, lightWound, heavyWound
-            elif this.Strength < 18 then lightWound, lightWound, heavyWound
-            else lightWound, heavyWound, heavyWound 
+            let result = { Damage = (0, 0, 0); AttackBonus = 0; DefenceBonus = 0 }
+            if this.Strength < 10 then { result with Damage = scratchWound, scratchWound, scratchWound }
+            elif this.Strength < 12 then { result with Damage = scratchWound, scratchWound, lightWound }
+            elif this.Strength < 14 then { result with Damage = scratchWound, lightWound, lightWound }
+            elif this.Strength < 16 then { result with Damage = scratchWound, lightWound, heavyWound }
+            elif this.Strength < 18 then { result with Damage = lightWound, lightWound, heavyWound }
+            else { result with Damage = lightWound, heavyWound, heavyWound }
 
     member this.SightRadius  
         with get() = sightRadius
@@ -99,7 +106,8 @@ and [<CustomEquality; CustomComparison>] Item = {
     Wearing : Wearing
     Type : Type;
     MiscProperties : MiscProperties;
-    Attack : (Character -> Character -> int -> damage) option
+    // attacker -> defener -> distance -> (damage * attackBonus * defenceBonus)
+    Attack : (Character -> Character -> int -> AttackResult) option  
 } 
 with 
     override this.Equals(other) =
