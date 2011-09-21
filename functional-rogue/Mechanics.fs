@@ -65,14 +65,14 @@ let rec oposedTest parameter1 bonus1 parameter2 bonus2 =
     else oposedTest parameter1 bonus1 parameter2 bonus2
 
 let private evalMeleeDamage (attacker : Character) (defender : Character) = 
-    let forAttacker = countableTest (attacker.Dexterity) 0 1
-    let forDefender = countableTest (defender.Dexterity) 0 1
+    let forAttacker = countableTest (attacker.Dexterity) attacker.MeleeAttack.AttackBonus 1
+    let forDefender = countableTest (defender.Dexterity) defender.MeleeAttack.DefenceBonus 1
     let delta = forAttacker - forDefender
         
     if delta > 0 then 
-        let damage = intByIndex (attacker.MeleeDamage) (delta - 1)
+        let damages = attacker.MeleeAttack.Damage
+        let damage = intByIndex damages (delta - 1)
         damage
-        //defender.HitWithDamage(damage, attacker)
     else 
         0
 
@@ -88,8 +88,6 @@ let killCharacter (victim: Character) (state: State) =
                     OnTorso = false;
                     OnLegs = false
         };
-        Offence = Value(0M);
-        Defence = Value(0M);
         Type = Corpse;
         MiscProperties = Characters.defaultMiscProperties
         Attack = Option.None
