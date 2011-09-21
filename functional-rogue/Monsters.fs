@@ -36,8 +36,8 @@ type Monster (monsterType : MonsterType, hp : int,  dexterity : int, strength : 
             | Rat -> "Rat"
             | Lurker -> "Lurker"
 
-    override this.MeleeDamage 
-        with get() : damage = scratchWound, scratchWound, scratchWound
+    override this.MeleeAttack 
+        with get() : AttackResult = { Damage = scratchWound, scratchWound, scratchWound; AttackBonus = 0; DefenceBonus = 0 }
     
     member this.State
         with get() = state
