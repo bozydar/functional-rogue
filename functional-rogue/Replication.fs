@@ -1,6 +1,8 @@
 ﻿module Replication
 
-open Items
+open Characters
+open Predefined.Items
+open Board
 
 type ReplicationRecipe = {
     Name : string
@@ -18,4 +20,4 @@ let defaultRequiredResources = {
 }
 
 let allRecipes =
-    [{ Name = "Combat Knife"; ResultItem = CombatKnife; RequiredResources = { defaultRequiredResources with Iron = 2 } }]
+    [{ Name = "Knife"; ResultItem = Knife; RequiredResources = { defaultRequiredResources with Iron = 2 } }]

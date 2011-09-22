@@ -6,6 +6,7 @@ open Screen
 open Board
 open Replication
 open System.Drawing
+open Predefined.Items
 
 type ComputerNavigation =
     | MainMenu
@@ -248,7 +249,7 @@ let operateComputer (computerPoint: Point option) (electronicMachine: Electronic
             state.Player.Iron <- state.Player.Iron - recipe.RequiredResources.Iron
             state.Player.Gold <- state.Player.Gold - recipe.RequiredResources.Gold
             state.Player.Uranium <- state.Player.Uranium - recipe.RequiredResources.Uranium
-            let item = Items.createPredefinedItem recipe.ResultItem
+            let item = createPredefinedItem recipe.ResultItem
             let compPlace = state.Board.Places.[computerPoint.Value.X,computerPoint.Value.Y]
             let updatedPlace = { compPlace with Items = compPlace.Items @ [item] }
             state.Board.Places.[computerPoint.Value.X,computerPoint.Value.Y] <- updatedPlace

@@ -4,7 +4,6 @@ open System
 open System.Drawing
 open Utils
 open Config
-open Items
 open Monsters
 open Characters
 open Quantity
@@ -47,6 +46,23 @@ type TransportTarget = {
     BoardId : Guid;
     TargetCoordinates : Point
 }   
+
+type Ore = 
+    | NoneOre
+    | Iron of Quantity
+    | Gold of Quantity
+    | Uranium of Quantity
+    | CleanWater of Quantity
+    | ContaminatedWater of Quantity 
+    member this.Quantity 
+        with get() = 
+            match this with
+            | Iron(value) -> value
+            | Gold(value) -> value
+            | Uranium(value) -> value
+            | CleanWater(value) -> value
+            | ContaminatedWater(value) -> value
+            | _ -> QuantityValue(0)
 
 type ElectronicMachine = {
     ComputerContent : ComputerContent
