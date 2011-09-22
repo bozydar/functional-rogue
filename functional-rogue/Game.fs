@@ -79,6 +79,7 @@ let mainLoop () =
                 | Key '>' -> GoDownEnter
                 | Key '<' -> GoUp
                 | Key 'l' -> Look
+                | Key 'U' -> UseObject
                 | _ -> Unknown                        
         
             match command with
@@ -123,6 +124,12 @@ let mainLoop () =
                 loop false
             | Look ->
                 Actions.performLookAction command (State.get ())
+                Screen.showBoard ()
+                loop false
+            | UseObject ->
+                State.get ()
+                |> performUseObjectAction command
+                |> Turn.next
                 Screen.showBoard ()
                 loop false
             | Harvest -> 
@@ -173,6 +180,11 @@ let mainLoop () =
     initialBoards.Add(mainMapBoard.Guid, mainMapBoard)
     //end maps setup
 
+    let getInitialReplicationRecipes = 
+        let result = new System.Collections.Generic.HashSet<string>()
+        ignore (result.Add("Knife"))
+        result
+
     let entryState =
         try
             if Config.Settings.LoadSave then loadState () else raise (new FileNotFoundException())
@@ -185,7 +197,8 @@ let mainLoop () =
                         TurnNumber = 0;
                         UserMessages = [];
                         AllBoards = initialBoards;
-                        MainMapGuid = mainMapBoard.Guid
+                        MainMapGuid = mainMapBoard.Guid;
+                        AvailableReplicationRecipes = getInitialReplicationRecipes
                     }
     State.set entryState
     loop true      

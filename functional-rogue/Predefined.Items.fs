@@ -41,7 +41,7 @@ let createPredefinedItem predefinedItem =
         Id = Guid.NewGuid();
         Name = "Knife";
         Wearing = Wearing.HandOnly;
-        Type = Stick;
+        Type = Type.Knife;
         MiscProperties = defaultMiscProperties;
         Attack = Some(fun attacker _ _ -> 
             let result = { Damage = 0, 0, 0; AttackBonus = 1; DefenceBonus = 1 }

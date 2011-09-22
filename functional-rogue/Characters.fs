@@ -139,6 +139,7 @@ and Type =
     | Stick
     | Rock
     | Sword
+    | Knife
     | Hat
     | Corpse
     | Tool

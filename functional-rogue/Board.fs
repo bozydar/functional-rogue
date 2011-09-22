@@ -23,6 +23,8 @@ type Tile =
     | Water
     | StairsDown
     | StairsUp
+    | Computer
+    | Replicator
     | MainMapForest
     | MainMapGrassland
     | MainMapWater
@@ -62,6 +64,22 @@ type Ore =
             | ContaminatedWater(value) -> value
             | _ -> QuantityValue(0)
 
+type ElectronicMachine = {
+    ComputerContent : ComputerContent
+}
+and ComputerContent = {
+    ComputerName : string;
+    Notes : ComputerNote list;
+    CanOperateDoors : bool;
+    CanOperateCameras : bool;
+    CanReplicate : bool;
+    HasCamera : bool;
+}
+and ComputerNote = {
+    Topic : string;
+    Content : string;
+}
+
 type Place = {
     Tile : Tile; 
     Items : Item list;
@@ -69,12 +87,21 @@ type Place = {
     Character : Character option;    
     IsSeen : bool;
     WasSeen : bool;
-    TransportTarget : TransportTarget option
+    TransportTarget : TransportTarget option;
+    ElectronicMachine : ElectronicMachine option
 } with
     static member EmptyPlace = 
-            {Tile = Tile.Empty; Items = []; Character = Option.None; IsSeen = false; WasSeen = Settings.EntireLevelSeen; Ore = NoneOre; TransportTarget = Option.None}
+            {Tile = Tile.Empty; Items = []; Character = Option.None; IsSeen = false; WasSeen = Settings.EntireLevelSeen; Ore = NoneOre; TransportTarget = None; ElectronicMachine = None}
     static member Wall = 
-            {Tile = Tile.Wall; Items = []; Character = Option.None; IsSeen = false; WasSeen = Settings.EntireLevelSeen; Ore = NoneOre; TransportTarget = Option.None }
+            {Tile = Tile.Wall; Items = []; Character = Option.None; IsSeen = false; WasSeen = Settings.EntireLevelSeen; Ore = NoneOre; TransportTarget = None; ElectronicMachine = None }
+    static member Floor = 
+            {Tile = Tile.Floor; Items = []; Character = Option.None; IsSeen = false; WasSeen = Settings.EntireLevelSeen; Ore = NoneOre; TransportTarget = None; ElectronicMachine = None }
+    static member ClosedDoor =
+            {Tile = Tile.ClosedDoor; Items = []; Character = Option.None; IsSeen = false; WasSeen = Settings.EntireLevelSeen; Ore = NoneOre; TransportTarget = None; ElectronicMachine = None }
+    static member Computer =
+            {Tile = Tile.Computer; Items = []; Character = Option.None; IsSeen = false; WasSeen = Settings.EntireLevelSeen; Ore = NoneOre; TransportTarget = None; ElectronicMachine = None }
+    static member Create tile =
+        {Tile = tile; Items = []; Character = Option.None; IsSeen = false; WasSeen = Settings.EntireLevelSeen; Ore = NoneOre; TransportTarget = None; ElectronicMachine = None }
     static member GetDescription (place: Place) =
         let tileDescription = 
             match place.Tile with
@@ -91,6 +118,8 @@ type Place = {
             | Tile.OpenDoor -> "Open door."
             | Tile.StairsDown -> "Stairs leading down."
             | Tile.StairsUp -> "Stairs leading up."
+            | Tile.Computer -> "Computer."
+            | Tile.Replicator -> "Replicator."
             | _ -> ""
         let characterDescription =
             if place.Character.IsSome then
@@ -168,6 +197,16 @@ let monsterPlaces (board: Board) =
         | Some(character) when (character :? Monster) -> Some(item) 
         | _ -> None)
     |> Seq.toList
+
+let getFilteredPlaces (filterFunc: Place -> bool) (board: Board) =
+    let tempSeq = seq {
+        for x = 0 to boardWidth - 1 do
+            for y = 0 to boardHeight - 1 do
+                let item = Array2D.get board.Places x y
+                if (filterFunc item) then
+                    yield (new Point(x, y), item)
+    }
+    Seq.toList tempSeq
 
 let getPlayerPosition (board: Board) = 
     let preResult = Seq.tryFind (fun (point, place) -> 

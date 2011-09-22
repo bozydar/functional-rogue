@@ -2,12 +2,46 @@
 
 open System.Drawing
 open Board
+
 open Monsters
 open Characters
 open Config
 open Quantity
+open State
 open Predefined
 
+// predefined parts
+
+let simplifiedObjectToMapPart (input: char[,]) (background: Tile) =
+    let backgroundTile = { Tile = background; Items = []; Ore = Ore.NoneOre; Character = Option.None; IsSeen = false; WasSeen = Settings.EntireLevelSeen; TransportTarget = None; ElectronicMachine = None }
+    let wall = { Tile = Tile.Wall; Items = []; Ore = Ore.NoneOre; Character = Option.None; IsSeen = false; WasSeen = Settings.EntireLevelSeen; TransportTarget = None; ElectronicMachine = None }
+    let glass = { Tile = Tile.Glass; Items = []; Ore = Ore.NoneOre; Character = Option.None; IsSeen = false; WasSeen = Settings.EntireLevelSeen; TransportTarget = None; ElectronicMachine = None }
+    let closedDoor = { Tile = Tile.ClosedDoor; Items = []; Ore = Ore.NoneOre; Character = Option.None; IsSeen = false; WasSeen = Settings.EntireLevelSeen; TransportTarget = None; ElectronicMachine = None }
+    let floor = { Tile = Tile.Floor; Items = []; Ore = Ore.NoneOre; Character = Option.None; IsSeen = false; WasSeen = Settings.EntireLevelSeen; TransportTarget = None; ElectronicMachine = None }
+    let stairsDown = { Tile = Tile.StairsDown; Items = []; Ore = Ore.NoneOre; Character = Option.None; IsSeen = false; WasSeen = Settings.EntireLevelSeen; TransportTarget = None; ElectronicMachine = None }
+    let stairsUp = { Tile = Tile.StairsUp; Items = []; Ore = Ore.NoneOre; Character = Option.None; IsSeen = false; WasSeen = Settings.EntireLevelSeen; TransportTarget = None; ElectronicMachine = None }
+    input |> Array2D.map (fun i ->
+        match i with
+        | '0' -> backgroundTile
+        | '#' -> wall
+        | 'g' -> glass
+        | '+' -> closedDoor
+        | '.' -> floor
+        | '>' -> stairsDown
+        | '<' -> stairsUp
+        | _ -> backgroundTile
+    )
+
+//let generateStartingLevelShip (background: Tile) =
+//    let simplifiedShip = ResourceManager.Instance.SimplifiedMapObjects.["StartLocationShip"]
+//    let mapFragment = simplifiedObjectToMapPart simplifiedShip background
+//    mapFragment.[3,1] <- { mapFragment.[3,1] with Items = [Items.createPredefinedItem OreExtractor] }
+//    let getStartShipDoor =
+//        { ComputerContent = { ComputerName = "Ship door"; Notes = []; CanOperateDoors = false; HasCamera = true } }
+//    mapFragment.[5,2] <- { mapFragment.[5,2] with ElectronicMachine = Some(getStartShipDoor) }
+//    mapFragment
+
+// level generation utilities
 
 let noise (x: float) (y: float) =
     let n= (float)((x + y * 57.0) * (2.0*13.0))
@@ -351,7 +385,21 @@ let rec generateRooms rooms =
     }
 
 let addItems board =
-    // returns sequence of board modification functions    
+    // returns sequence of board modification functions
+    //let stickOfDoom = {
+    //    Id = System.Guid.NewGuid();
+    //    Name = "Stick of doom";
+    //    Wearing = {
+    //                OnHead = false;
+    //                InHand = true;
+    //                OnTorso = false;
+    //                OnLegs = true
+    //    };
+    //    Offence = Value(3M);
+    //    Defence = Value(0M);
+    //    Type = Stick;
+    //    MiscProperties = Items.defaultMiscProperties
+    //}
     let modifiers = seq {
         for i in 1..20 do
             let posX = rnd boardWidth
@@ -569,10 +617,10 @@ let generateCoast (cameFrom:Point) : (Board*Point option) =
 
 let generateStartLocationWithInitialPlayerPositon (cameFrom:Point) : (Board*Point) =
     let board, startpoint = generateForest cameFrom
-    let board =
+    let result =
         board
         |> Predefined.Resources.startLocationShip
-    (board, Point(33,12))
+    (result,(Point(32,12)))
 
 let generateMainMap: (Board*Point) =
     let noiseValueToMap (value: float) =

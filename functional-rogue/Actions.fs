@@ -10,6 +10,7 @@ open Screen
 open Sight
 open Player
 open Characters
+open Computers
 
 type Command = 
     | Up
@@ -34,6 +35,7 @@ type Command =
     | GoDownEnter
     | GoUp
     | Look
+    | UseObject
 
 let private commandToSize command = 
     match command with
@@ -119,11 +121,11 @@ let selectPlace (positions : Point list) state : Point option =
             | Keys [ConsoleKey.LeftArrow; '4'] -> loop (left current) //Left            
             | Keys [ConsoleKey.RightArrow; '6'] -> loop (right current) //Right
             | Key ConsoleKey.Enter -> Some(current)
-            | Key ConsoleKey.Escape -> None
+            | Key ConsoleKey.Escape -> Option.None
             | _ -> loop current
         loop start                
     else
-        None
+        Option.None
 
 let private operateDoor command state =
     let board = state.Board
@@ -154,6 +156,26 @@ let performLookAction command state =
     let playerPosition = getPlayerPosition board
     let points = visiblePositions playerPosition state.Player.SightRadius board    
     ignore (selectPlace points state)
+
+let performUseObjectAction command state =
+    let board = state.Board
+    let playerPosition = getPlayerPosition board
+    let points = 
+        playerPosition 
+        :: [for x in (max 0 (playerPosition.X - 1))..(min boardWidth (playerPosition.X + 1)) do
+                for y in (max 0 (playerPosition.Y - 1))..(min boardHeight (playerPosition.Y + 1)) do
+                    let p = Point(x, y)
+                    if p <> playerPosition then yield p]        
+    let selected = selectPlace points state
+    if selected.IsSome then 
+        let selectedPlace = board.Places.[selected.Value.X,selected.Value.Y]
+        match selectedPlace.Tile with
+        | Tile.Computer | Tile.Replicator ->
+            state |> operateComputer selected selectedPlace.ElectronicMachine.Value
+        | _ ->
+            state |> addMessage (sprintf "There is nothing to use here.")
+    else
+        state
 
 let switchBoards (oldBoard: Board) (playerPoint: Point) (state: State) =
     let playerPlace = oldBoard.Places.[playerPoint.X,playerPoint.Y]
@@ -345,10 +367,10 @@ let takeOff (state : State) =
         else
             ' '                    
     match chosenOption with
-    | 'g' -> state.Player.WornItems <- {state.Player.WornItems with Hand = None }
-    | 'h' -> state.Player.WornItems <- {state.Player.WornItems with Head = None }
-    | 'l' -> state.Player.WornItems <- {state.Player.WornItems with Legs = None }
-    | 't' -> state.Player.WornItems <- {state.Player.WornItems with Torso = None }                      
+    | 'g' -> state.Player.WornItems <- {state.Player.WornItems with Hand = Option.None }
+    | 'h' -> state.Player.WornItems <- {state.Player.WornItems with Head = Option.None }
+    | 'l' -> state.Player.WornItems <- {state.Player.WornItems with Legs = Option.None }
+    | 't' -> state.Player.WornItems <- {state.Player.WornItems with Torso = Option.None }                      
     | _ -> ()
     state
 
