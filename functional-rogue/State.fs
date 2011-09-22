@@ -16,7 +16,8 @@ type State = {
     TurnNumber: int;
     UserMessages: (int*string) list;
     AllBoards : System.Collections.Generic.Dictionary<System.Guid,Board>;
-    MainMapGuid : System.Guid
+    MainMapGuid : System.Guid;
+    AvailableReplicationRecipes : System.Collections.Generic.HashSet<string>
 } 
 
 type private StateAgentMessage = 

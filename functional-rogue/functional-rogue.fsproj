@@ -51,9 +51,11 @@
     <Compile Include="Sight.fs" />
     <Compile Include="Predefined.Parser.fs" />
     <Compile Include="Predefined.Items.fs" />
+    <Compile Include="Replication.fs" />
     <Compile Include="Predefined.Resources.fs" />
     <Compile Include="LevelGeneration.fs" />
     <Compile Include="Screen.fs" />
+    <Compile Include="Computers.fs" />
     <Compile Include="Actions.fs" />
     <Compile Include="AI.fs" />
     <Compile Include="Game.fs" />
