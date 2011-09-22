@@ -5,7 +5,6 @@ open System.Drawing
 open State
 open Log
 open Board
-open Items
 open Player
 open Monsters
 
