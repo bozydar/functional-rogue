@@ -127,7 +127,18 @@ let private screenWritter () =
             screen.[x + i, y] <- {empty with Char = char})
         screen
 
+    let breakStringIfTooLong (maxWidth: int) (text: string) =
+        let joinWordsIfNotTooLong (words: string list) =
+            let result = words |> List.fold (fun (acc: string list) word -> if (acc.Head.Length + word.Length + 1) > maxWidth then [word] @ acc else [acc.Head + " " + word] @ acc.Tail) [""]
+            result |> List.rev
+        if text.Length > maxWidth then
+            let words = text.Split([|" "|], StringSplitOptions.None)
+            joinWordsIfNotTooLong (List.ofArray words)
+        else
+            [text]
+
     let writeStrings (position: Point) (lines: String list) (fgcolor: ConsoleColor) (screen: screen) =
+        let brokenLines = lines |> List.fold (fun (acc: string list) line -> acc @ (line |> breakStringIfTooLong boardFrameSize.Width)) []
         let x = position.X
         let y = position.Y
         let rec writeAllLines x y (lines: String list) (screen: screen) =
@@ -139,7 +150,7 @@ let private screenWritter () =
                     screen.[x + i, y] <- {empty with Char = char; FGColor = fgcolor})
                 writeAllLines x (y+1) tail screen
             |[] -> screen
-        writeAllLines x y lines screen
+        writeAllLines x y brokenLines screen
     
     let cleanPartOfScreen (point: Point) (size: Size) (screen: screen) =
         for x in (point.X)..(point.X + size.Width - 1)do
