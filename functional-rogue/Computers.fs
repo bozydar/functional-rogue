@@ -34,10 +34,14 @@ let getCameraPlaces (state: State) =
 let getAvailableReplicationRecipes (state: State) =
     Replication.allRecipes |> List.filter (fun item -> state.AvailableReplicationRecipes.Contains item.Name)
 
-//let getCameraView (point: Point) (viewRadius: int) (state: State) =
-//    //state.Board.p
-//    let viewArray = Array2D.create (viewRadius * 2 + 1) (viewRadius * 2 + 1) Place.EmptyPlace
-//    let places = viewArray |> Seq.cast<Place>
+let getCameraView (point: Point) (viewRadius: int) (state: State) =
+    let viewArray = Array2D.create (viewRadius * 2 + 1) (viewRadius * 2 + 1) Place.EmptyPlace
+    let xModifier = if (point.X - viewRadius) < 0 then abs (point.X - viewRadius) else 0
+    let yModifier = if (point.Y - viewRadius) < 0 then abs (point.Y - viewRadius) else 0
+    let width = if xModifier > 0 then (viewRadius * 2 + 1) - xModifier else min (viewRadius * 2 + 1) (boardWidth - point.X)
+    let height = if yModifier > 0 then (viewRadius * 2 + 1) - yModifier else  min (viewRadius * 2 + 1) (boardHeight - point.Y)
+    Array2D.blit state.Board.Places ((point.X - viewRadius) + xModifier) ((point.Y - viewRadius) + yModifier) viewArray (0 + xModifier) (0 + yModifier) width height
+    viewArray
 
 let operateComputer (computerPoint: Point option) (electronicMachine: ElectronicMachine) (state: State) =
     
@@ -59,7 +63,11 @@ let operateComputer (computerPoint: Point option) (electronicMachine: Electronic
                 list
 
         let nav, itemNr = currentNav
-        let compName = content.ComputerName
+
+        let builder = ScreenContentBuilder(Screen.boardFrameSize.Width)
+
+        builder.AddString(content.ComputerName)
+        builder.AddString("")
         let back = [""] @ ["b. back"] @ [""]
         let next = ["n. next"]
         let prev = ["p. previous"]
@@ -83,40 +91,45 @@ let operateComputer (computerPoint: Point option) (electronicMachine: Electronic
                     if content.CanOperateCameras && (getCameraPlaces state).Length > 0 then ["Cameras"] else []
                     @
                     if content.CanReplicate then ["Replicate"] else []
-                result |> List.mapi (fun i item -> (i+1).ToString() + ". " + item)
+                result |> List.mapi (fun i item -> (i+1).ToString() + ". " + item) |> List.iter (fun item -> builder.AddString(item))
             | Notes ->
                 (content.Notes |> getListSlice itemNr |> List.mapi (fun x item -> (x + 1).ToString() + ". " + item.Topic))
                 @ prevNext itemNr content.Notes.Length
                 @ back
+                |> List.iter (fun item -> builder.AddString(item))
             | Note ->
                 [content.Notes.[itemNr].Topic] @ [""] @
                 [content.Notes.[itemNr].Content]
                 @ back
+                |> List.iter (fun item -> builder.AddString(item))
             | Doors ->
                 let doorPlaces = getElectronicDoorPlaces state
                 (doorPlaces |> List.mapi (fun x item ->
                     (x + 1).ToString() + ". (" + (fst item).X.ToString() + "," + (fst item).Y.ToString() + ") " + (snd item).ElectronicMachine.Value.ComputerContent.ComputerName + " - " + (if (snd item).Tile = ClosedDoor then "closed" else "open")))
                 @ back
+                |> List.iter (fun item -> builder.AddString(item))
             | Door ->
                 let doorPoint, doorPlace = (getElectronicDoorPlaces state).[itemNr]
                 [doorPoint.ToString() + " " + doorPlace.ElectronicMachine.Value.ComputerContent.ComputerName + " - " + (if doorPlace.Tile = ClosedDoor then "closed" else "open")]
                 @ [""] @ ["1. " + (if doorPlace.Tile = ClosedDoor then "Open" else "Close")] @ [""]
                 @ back
+                |> List.iter (fun item -> builder.AddString(item))
             | Cameras ->
                 let cameraPlaces = getCameraPlaces state
                 (cameraPlaces |> getListSlice itemNr |> List.mapi (fun x item ->
                     (x + 1).ToString() + ". " + (fst item).ToString() + " " + (snd item).ElectronicMachine.Value.ComputerContent.ComputerName + " camera"))
                 @ back
+                |> List.iter (fun item -> builder.AddString(item))
             | Camera ->
                 let cameraPoint, cameraPlace = (getCameraPlaces state).[itemNr]
-                [cameraPoint.ToString() + " " + cameraPlace.ElectronicMachine.Value.ComputerContent.ComputerName + " camera"]
-                @ [""] @ [" TODO: CAMERA VIEW HERE! "] @ [""]
-                @ back
+                builder.AddString(cameraPoint.ToString() + " " + cameraPlace.ElectronicMachine.Value.ComputerContent.ComputerName + " camera")
+                builder.AddPlacesArray(getCameraView cameraPoint 4 state)
             | Replication ->
                 let recipes = getAvailableReplicationRecipes state
                 (recipes |> getListSlice itemNr |> List.mapi (fun x item ->
                     (x + 1).ToString() + ". " + item.Name ))
                 @ back
+                |> List.iter (fun item -> builder.AddString(item))
             | ReplicationItem ->
                 let recipe = (getAvailableReplicationRecipes state).[itemNr]
                 [recipe.Name]
@@ -126,9 +139,10 @@ let operateComputer (computerPoint: Point option) (electronicMachine: Electronic
                 @ if recipe.RequiredResources.Uranium > 0 then ["Uranium: " + recipe.RequiredResources.Uranium.ToString()] else []
                 @ [""] @ (replicate recipe state)
                 @ back
-            | _ -> []
+                |> List.iter (fun item -> builder.AddString(item))
         let esc = "Hit Esc to exit"
-        [compName] @ [""] @ mainContent @ [""] @ [esc]
+        builder.AddString(esc)
+        builder
 
     let keyToComputerNavAndCommand (keyInfo: ConsoleKeyInfo) (currentNav: ComputerNavigation*int) (content: ComputerContent) =
         let nav, itemNr = currentNav
@@ -226,7 +240,6 @@ let operateComputer (computerPoint: Point option) (electronicMachine: Electronic
             | Keys ['b'] -> ((Replication,0), None)
             | Keys ['r'] -> if canReplicate recipe state then ((Replication,0),Replicate) else ((nav, itemNr), None)
             | _ -> ((nav, itemNr), None)
-        | _ -> ((MainMenu, 0),None)
     
     let performComputerCommand (computerPoint: Point option) (currentNav: ComputerNavigation*int) (command: ComputerCommand) (state : State) =
         let nav, itemNr = currentNav

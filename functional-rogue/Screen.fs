@@ -8,6 +8,123 @@ open Sight
 open Player
 open Characters
 
+type textel = {
+    Char: char;
+    BGColor: ConsoleColor;
+    FGColor: ConsoleColor
+} 
+    
+let private empty = {Char = ' '; FGColor = ConsoleColor.Gray; BGColor = ConsoleColor.Black}
+
+type private screen = textel[,]
+
+let breakStringIfTooLong (maxWidth: int) (text: string) =
+        let joinWordsIfNotTooLong (words: string list) =
+            let result = words |> List.fold (fun (acc: string list) word -> if (acc.Head.Length + word.Length + 1) > maxWidth then [word] @ acc else [acc.Head + (if acc.Head.Length > 0 then " " else "") + word] @ acc.Tail) [""]
+            result |> List.rev
+        if text.Length > maxWidth then
+            let words = text.Split([|" "|], StringSplitOptions.None)
+            joinWordsIfNotTooLong (List.ofArray words)
+        else
+            [text]
+
+let toTextel item =  
+    if item.WasSeen then
+        let result = 
+            let character = 
+                if item.IsSeen && item.Character.IsSome then
+                    match item.Character.Value.Type with
+                    | Avatar -> {Char = '@'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
+                    | Monster -> {Char = item.Character.Value.Appearance; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Red}
+                    | NPC -> {Char = 'P'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.White}
+                    else
+                    empty
+            if character <> empty then
+                character
+            else
+                match item.Items with
+                | h::_ when not <| Set.contains item.Tile obstacles -> 
+                        match h.Type with 
+                        | Stick -> {Char = '|'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
+                        | Rock  -> {Char = '*'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
+                        | Sword | Knife -> {Char = '/'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
+                        | Hat -> {Char = ']'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
+                        | Corpse -> {Char = '%'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
+                        | Tool -> {Char = '['; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
+                | _ -> 
+                    match item.Ore with
+                    | Iron(_) -> {Char = '$'; FGColor = ConsoleColor.Black; BGColor = ConsoleColor.Gray}
+                    | Gold(_) -> {Char = '$'; FGColor = ConsoleColor.Black; BGColor = ConsoleColor.Yellow}
+                    | Uranium(_) -> {Char = '$'; FGColor = ConsoleColor.Black; BGColor = ConsoleColor.Green}
+                    | CleanWater(_) -> {Char = '~'; FGColor = ConsoleColor.Blue; BGColor = ConsoleColor.Black}
+                    | ContaminatedWater(_) -> {Char = '~'; FGColor = ConsoleColor.Blue; BGColor = ConsoleColor.Black}
+                    | _ ->
+                        match item.Tile with
+                        | Wall ->  {Char = '#'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
+                        | Floor -> {Char = '.'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
+                        | OpenDoor -> {Char = '/'; FGColor = ConsoleColor.DarkGray; BGColor = ConsoleColor.Black}
+                        | ClosedDoor -> {Char = '+'; FGColor = ConsoleColor.DarkGray; BGColor = ConsoleColor.Black}
+                        | Grass -> {Char = '.'; FGColor = ConsoleColor.DarkGreen; BGColor = ConsoleColor.Black}
+                        | Tree -> {Char = 'T'; FGColor = ConsoleColor.DarkGreen; BGColor = ConsoleColor.Black}
+                        | SmallPlants -> {Char = '*'; FGColor = ConsoleColor.DarkGreen; BGColor = ConsoleColor.Black}
+                        | Bush -> {Char = '&'; FGColor = ConsoleColor.DarkGreen; BGColor = ConsoleColor.Black}
+                        | Glass -> {Char = '#'; FGColor = ConsoleColor.Blue; BGColor = ConsoleColor.Black}
+                        | Sand -> {Char = '.'; FGColor = ConsoleColor.Yellow; BGColor = ConsoleColor.Black}
+                        | Water -> {Char = '~'; FGColor = ConsoleColor.Blue; BGColor = ConsoleColor.Black}
+                        | StairsDown -> {Char = '>'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
+                        | StairsUp -> {Char = '<'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
+                        | Computer -> {Char = '#'; FGColor = ConsoleColor.Red; BGColor = ConsoleColor.Black}
+                        | Replicator -> {Char = '_'; FGColor = ConsoleColor.Red; BGColor = ConsoleColor.Black}
+                        | MainMapForest -> {Char = '&'; FGColor = ConsoleColor.DarkGreen; BGColor = ConsoleColor.Black}
+                        | MainMapGrassland -> {Char = '"'; FGColor = ConsoleColor.Green; BGColor = ConsoleColor.Black}
+                        | MainMapMountains -> {Char = '^'; FGColor = ConsoleColor.Gray; BGColor = ConsoleColor.Black}
+                        | MainMapWater -> {Char = '~'; FGColor = ConsoleColor.Blue; BGColor = ConsoleColor.Black}
+                        | MainMapCoast -> {Char = '.'; FGColor = ConsoleColor.Yellow; BGColor = ConsoleColor.Black}
+                        | _ -> empty
+        if not item.IsSeen then {result with FGColor = ConsoleColor.DarkGray } else result
+    else empty
+        
+
+type ScreenContentBuilder (maxWidth: int) =
+    let mutable textelArraysList = List.empty<textel[]>
+
+    let stringToTextelArray (text: string) (fgColor: ConsoleColor) (bgColor: ConsoleColor) =
+            text.ToCharArray() |> Array.map (fun item -> {Char = item; FGColor = fgColor; BGColor = bgColor})
+
+    member this.AddString (text: string) =
+        let stringToTextelArray (test: string) =
+            text.ToCharArray() |> Array.map (fun item -> {Char = item; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black})
+
+        let brokenText = breakStringIfTooLong maxWidth text
+        textelArraysList <- brokenText |> List.fold (fun (acc: textel[] list) line -> acc @ [(stringToTextelArray line)]) textelArraysList
+
+    member this.AddPlacesArray (places: Place[,]) =
+        let width = places |> Array2D.length1
+        let reverseTextelsList =
+            places
+            |> Seq.cast<Place>
+            |> Seq.toList
+            |> List.permute (fun i -> (i % width) * width + (i / width))    //changes 'by columns' to 'by rows'
+            |> Seq.ofList
+            |> Seq.fold (fun (acc: textel[] list) place -> if not(acc.IsEmpty) && acc.Head.Length < Array2D.length1 places then [Array.append acc.Head [|toTextel place|]] @ acc.Tail else [[|toTextel place|]] @ acc) List.empty<textel[]> 
+        textelArraysList <- textelArraysList @ List.rev reverseTextelsList
+        ()
+
+    member this.AddSelectables (selectables: (string * string) list) =
+        let asTextels = selectables |> List.map (fun item -> (stringToTextelArray (fst item) ConsoleColor.White ConsoleColor.Black) )
+        textelArraysList <- textelArraysList @ asTextels
+        ()
+
+    member this.ToTextels () =
+        textelArraysList
+
+
+let boardFrameSize = new Size(60, 23)
+let private screenSize = new Size(79, 24)
+let private leftPanelPos = new Rectangle(61, 0, 19, 24)
+let private letterByInt (int: int) = Convert.ToChar(Convert.ToInt32('a') + int - 1)
+
+
 type ScreenAgentMessage =
     | ShowBoard of State
     | ShowMainMenu of AsyncReplyChannel<MainMenuReply>
@@ -16,7 +133,7 @@ type ScreenAgentMessage =
     | ShowMessages of State
     | ShowOptions of seq<char * string>
     | SetCursorPositionOnBoard of Point * State
-    | DisplayComputerScreen of (string list) * State
+    | DisplayComputerScreen of ScreenContentBuilder * State
 and MainMenuReply = {
     Name: String
 } 
@@ -36,79 +153,8 @@ and ShowChooseItemDialogRequest = {
     Filter: Item -> bool
 }
 
-
-type textel = {
-    Char: char;
-    BGColor: ConsoleColor;
-    FGColor: ConsoleColor
-} 
-    
-let private empty = {Char = ' '; FGColor = ConsoleColor.Gray; BGColor = ConsoleColor.Black}
-
-type private screen = textel[,]
-
-let boardFrameSize = new Size(60, 23)
-let private screenSize = new Size(79, 24)
-let private leftPanelPos = new Rectangle(61, 0, 19, 24)
-let private letterByInt (int: int) = Convert.ToChar(Convert.ToInt32('a') + int - 1)
-
 let private screenWritter () =    
     let writeBoard (board: Board) (boardFramePosition: Point) sightRadius (screen: screen) = 
-        let toTextel item =  
-            if item.WasSeen then
-                let result = 
-                    let character = 
-                        if item.IsSeen && item.Character.IsSome then
-                            match item.Character.Value.Type with
-                            | Avatar -> {Char = '@'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
-                            | Monster -> {Char = item.Character.Value.Appearance; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Red}
-                            | NPC -> {Char = 'P'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.White}
-                         else
-                            empty
-                    if character <> empty then
-                        character
-                    else
-                        match item.Items with
-                        | h::_ when not <| Set.contains item.Tile obstacles -> 
-                                match h.Type with 
-                                | Stick -> {Char = '|'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
-                                | Rock  -> {Char = '*'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
-                                | Sword | Knife -> {Char = '/'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
-                                | Hat -> {Char = ']'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
-                                | Corpse -> {Char = '%'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
-                                | Tool -> {Char = '['; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
-                        | _ -> 
-                            match item.Ore with
-                            | Iron(_) -> {Char = '$'; FGColor = ConsoleColor.Black; BGColor = ConsoleColor.Gray}
-                            | Gold(_) -> {Char = '$'; FGColor = ConsoleColor.Black; BGColor = ConsoleColor.Yellow}
-                            | Uranium(_) -> {Char = '$'; FGColor = ConsoleColor.Black; BGColor = ConsoleColor.Green}
-                            | CleanWater(_) -> {Char = '~'; FGColor = ConsoleColor.Blue; BGColor = ConsoleColor.Black}
-                            | ContaminatedWater(_) -> {Char = '~'; FGColor = ConsoleColor.Blue; BGColor = ConsoleColor.Black}
-                            | _ ->
-                                match item.Tile with
-                                | Wall ->  {Char = '#'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
-                                | Floor -> {Char = '.'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
-                                | OpenDoor -> {Char = '/'; FGColor = ConsoleColor.DarkGray; BGColor = ConsoleColor.Black}
-                                | ClosedDoor -> {Char = '+'; FGColor = ConsoleColor.DarkGray; BGColor = ConsoleColor.Black}
-                                | Grass -> {Char = '.'; FGColor = ConsoleColor.DarkGreen; BGColor = ConsoleColor.Black}
-                                | Tree -> {Char = 'T'; FGColor = ConsoleColor.DarkGreen; BGColor = ConsoleColor.Black}
-                                | SmallPlants -> {Char = '*'; FGColor = ConsoleColor.DarkGreen; BGColor = ConsoleColor.Black}
-                                | Bush -> {Char = '&'; FGColor = ConsoleColor.DarkGreen; BGColor = ConsoleColor.Black}
-                                | Glass -> {Char = '#'; FGColor = ConsoleColor.Blue; BGColor = ConsoleColor.Black}
-                                | Sand -> {Char = '.'; FGColor = ConsoleColor.Yellow; BGColor = ConsoleColor.Black}
-                                | Water -> {Char = '~'; FGColor = ConsoleColor.Blue; BGColor = ConsoleColor.Black}
-                                | StairsDown -> {Char = '>'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
-                                | StairsUp -> {Char = '<'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
-                                | Computer -> {Char = '#'; FGColor = ConsoleColor.Red; BGColor = ConsoleColor.Black}
-                                | Replicator -> {Char = '_'; FGColor = ConsoleColor.Red; BGColor = ConsoleColor.Black}
-                                | MainMapForest -> {Char = '&'; FGColor = ConsoleColor.DarkGreen; BGColor = ConsoleColor.Black}
-                                | MainMapGrassland -> {Char = '"'; FGColor = ConsoleColor.Green; BGColor = ConsoleColor.Black}
-                                | MainMapMountains -> {Char = '^'; FGColor = ConsoleColor.Gray; BGColor = ConsoleColor.Black}
-                                | MainMapWater -> {Char = '~'; FGColor = ConsoleColor.Blue; BGColor = ConsoleColor.Black}
-                                | MainMapCoast -> {Char = '.'; FGColor = ConsoleColor.Yellow; BGColor = ConsoleColor.Black}
-                                | _ -> empty
-                if not item.IsSeen then {result with FGColor = ConsoleColor.DarkGray } else result
-            else empty
         
         for x in 0..boardFrameSize.Width - 1 do
             for y in 0..boardFrameSize.Height - 1 do
@@ -127,16 +173,6 @@ let private screenWritter () =
             screen.[x + i, y] <- {empty with Char = char})
         screen
 
-    let breakStringIfTooLong (maxWidth: int) (text: string) =
-        let joinWordsIfNotTooLong (words: string list) =
-            let result = words |> List.fold (fun (acc: string list) word -> if (acc.Head.Length + word.Length + 1) > maxWidth then [word] @ acc else [acc.Head + " " + word] @ acc.Tail) [""]
-            result |> List.rev
-        if text.Length > maxWidth then
-            let words = text.Split([|" "|], StringSplitOptions.None)
-            joinWordsIfNotTooLong (List.ofArray words)
-        else
-            [text]
-
     let writeStrings (position: Point) (lines: String list) (fgcolor: ConsoleColor) (screen: screen) =
         let brokenLines = lines |> List.fold (fun (acc: string list) line -> acc @ (line |> breakStringIfTooLong boardFrameSize.Width)) []
         let x = position.X
@@ -152,6 +188,18 @@ let private screenWritter () =
             |[] -> screen
         writeAllLines x y brokenLines screen
     
+    let writeFromScreenContentBuilder (position: Point) (builder: ScreenContentBuilder) (fgcolor: ConsoleColor) (screen: screen) =
+        let x = position.X
+        let y = position.Y
+        let rec writeAllLines x y (textels: textel[] list) (screen: screen) =
+            match textels with
+            | head :: tail ->
+                head
+                |> Array.iteri (fun i item -> screen.[x + i, y] <- item)
+                writeAllLines x (y+1) tail screen
+            |[] -> screen
+        writeAllLines x y (builder.ToTextels()) screen
+
     let cleanPartOfScreen (point: Point) (size: Size) (screen: screen) =
         for x in (point.X)..(point.X + size.Width - 1)do
             for y in (point.Y)..(point.Y + size.Height - 1) do
@@ -319,7 +367,7 @@ let private screenWritter () =
                     screen
                     |> Array2D.copy
                     |> cleanPartOfScreen (Point(0,0)) boardFrameSize
-                    |> writeStrings (Point(0,0)) content ConsoleColor.DarkGreen
+                    |> writeFromScreenContentBuilder (Point(0,0)) content ConsoleColor.DarkGreen
                     |> writeStats state
                 refreshScreen screen newScreen
                 return! loop newScreen
