@@ -133,7 +133,9 @@ let operateComputer (computerPoint: Point option) (electronicMachine: Electronic
             | Camera ->
                 let cameraPoint, cameraPlace = (getCameraPlaces state).[itemNr]
                 builder.AddString(cameraPoint.ToString() + " " + cameraPlace.ElectronicMachine.Value.ComputerContent.ComputerName + " camera")
+                builder.AddEmptyLine()
                 builder.AddPlacesArray(getCameraView cameraPoint 4 state)
+                builder.AddEmptyLine()
                 builder.AddSelectables false [selectBack]
             | Replication ->
                 getAvailableReplicationRecipes state
