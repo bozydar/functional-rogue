@@ -18,6 +18,9 @@ let private empty = {Char = ' '; FGColor = ConsoleColor.Gray; BGColor = ConsoleC
 
 type private screen = textel[,]
 
+type ColorTheme =
+    | ComputerTheme
+
 let breakStringIfTooLong (maxWidth: int) (text: string) =
         let joinWordsIfNotTooLong (words: string list) =
             let result = words |> List.fold (fun (acc: string list) word -> if (acc.Head.Length + word.Length + 1) > maxWidth then [word] @ acc else [acc.Head + (if acc.Head.Length > 0 then " " else "") + word] @ acc.Tail) [""]
@@ -85,18 +88,37 @@ let toTextel item =
     else empty
         
 
-type ScreenContentBuilder (maxWidth: int) =
+type ScreenContentBuilder (maxWidth: int, theme: ColorTheme) =
     let mutable textelArraysList = List.empty<textel[]>
+
+    let textfg =
+        match theme with
+        | ComputerTheme -> ConsoleColor.DarkGreen
+
+    let textbg =
+        match theme with
+        | ComputerTheme -> ConsoleColor.Black
+
+    let selectablefg =
+        match theme with
+        | ComputerTheme -> ConsoleColor.DarkGreen
+
+    let selectablebg =
+        match theme with
+        | ComputerTheme -> ConsoleColor.Yellow
+
+    let separatorTextel =
+        match theme with
+        | ComputerTheme -> {Char = '='; FGColor = textfg; BGColor = textbg}
+
+    let oneLineOptionsSeparator = Array.create 2 {Char = ' '; FGColor = textfg; BGColor = textbg}
 
     let stringToTextelArray (text: string) (fgColor: ConsoleColor) (bgColor: ConsoleColor) =
             text.ToCharArray() |> Array.map (fun item -> {Char = item; FGColor = fgColor; BGColor = bgColor})
 
     member this.AddString (text: string) =
-        let stringToTextelArray (test: string) =
-            text.ToCharArray() |> Array.map (fun item -> {Char = item; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black})
-
         let brokenText = breakStringIfTooLong maxWidth text
-        textelArraysList <- brokenText |> List.fold (fun (acc: textel[] list) line -> acc @ [(stringToTextelArray line)]) textelArraysList
+        textelArraysList <- brokenText |> List.fold (fun (acc: textel[] list) line -> acc @ [(stringToTextelArray line textfg textbg)]) textelArraysList
 
     member this.AddPlacesArray (places: Place[,]) =
         let width = places |> Array2D.length1
@@ -110,10 +132,27 @@ type ScreenContentBuilder (maxWidth: int) =
         textelArraysList <- textelArraysList @ List.rev reverseTextelsList
         ()
 
-    member this.AddSelectables (selectables: (string * string) list) =
-        let asTextels = selectables |> List.map (fun item -> (stringToTextelArray (fst item) ConsoleColor.White ConsoleColor.Black) )
-        textelArraysList <- textelArraysList @ asTextels
+    member this.AddSelectables (putInOneLine: bool) (selectables: (string * string) list) =
+        let asTextels = selectables |> List.map (fun item -> Array.append (stringToTextelArray (fst item) selectablefg selectablebg) (stringToTextelArray (snd item) textfg textbg))
+        if putInOneLine then
+            let inOneLine = asTextels |> List.fold (fun acc item -> if (acc |> Array.length = 0) then item else  [acc;oneLineOptionsSeparator;item] |> Array.concat) Array.empty<textel>
+            textelArraysList <- textelArraysList @ [inOneLine]
+        else
+            textelArraysList <- textelArraysList @ asTextels
         ()
+
+    member this.AddEmptyLine () =
+        textelArraysList <- textelArraysList @ [[||]]
+
+    member this.AddEmptyLineIfPreviousNotEmpty () =
+        if textelArraysList.Length > 0 && textelArraysList.[textelArraysList.Length - 1].Length > 0 then
+            textelArraysList <- textelArraysList @ [[||]]
+
+    member this.AddSeparator () =
+        if textelArraysList.Length > 0 then
+            let length = textelArraysList.[textelArraysList.Length - 1].Length
+            textelArraysList <- textelArraysList @ [Array.create length separatorTextel]
+            ()
 
     member this.ToTextels () =
         textelArraysList

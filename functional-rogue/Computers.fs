@@ -45,6 +45,8 @@ let getCameraView (point: Point) (viewRadius: int) (state: State) =
 
 let operateComputer (computerPoint: Point option) (electronicMachine: ElectronicMachine) (state: State) =
     
+    let maxSelectableNumericItems = 9 //digits from 1 to 9
+
     let canReplicate (recipe: ReplicationRecipe) (state: State) =
         if recipe.RequiredResources.Iron <= state.Player.Iron
             && recipe.RequiredResources.Gold <= state.Player.Gold
@@ -53,10 +55,10 @@ let operateComputer (computerPoint: Point option) (electronicMachine: Electronic
             
     let createDisplayContent (content: ComputerContent) (currentNav: ComputerNavigation*int) (state: State) =
         let getListSlice n (list: 'a list) =
-            if list.Length > 9 then
-                let skipped = list |> Seq.ofList |> Seq.skip (n*9) |> Seq.toList
-                if skipped.Length > 9 then
-                    skipped |> Seq.ofList |> Seq.take 9 |> Seq.toList
+            if list.Length > maxSelectableNumericItems then
+                let skipped = list |> Seq.ofList |> Seq.skip (n*maxSelectableNumericItems) |> Seq.toList
+                if skipped.Length > maxSelectableNumericItems then
+                    skipped |> Seq.ofList |> Seq.take maxSelectableNumericItems |> Seq.toList
                 else
                     skipped
             else
@@ -64,22 +66,27 @@ let operateComputer (computerPoint: Point option) (electronicMachine: Electronic
 
         let nav, itemNr = currentNav
 
-        let builder = ScreenContentBuilder(Screen.boardFrameSize.Width)
+        let builder = ScreenContentBuilder(Screen.boardFrameSize.Width, ColorTheme.ComputerTheme)
 
         builder.AddString(content.ComputerName)
         builder.AddString("")
         let back = [""] @ ["b. back"] @ [""]
+        let selectBack = ("b",". back")
         let next = ["n. next"]
         let prev = ["p. previous"]
         let prevNext (n: int) (itemsNum: int) =
-            let result = (if n > 0 then "p. previous     " else "") + (if itemsNum - (n * 9) > 9 then "n. next" else "")
+            let result = (if n > 0 then "p. previous     " else "") + (if itemsNum - (n * maxSelectableNumericItems) > maxSelectableNumericItems then "n. next" else "")
             if result.Length > 0 then [""] @ [result] else []
-        let replicate (recipe: ReplicationRecipe) (state: State) =
+        let selectPrevNext (n: int) (itemsNum: int) =
+            let result = (if n > 0 then [("p",". previous")] else []) @ (if itemsNum - (n * maxSelectableNumericItems) > maxSelectableNumericItems then [("n",". next")] else [])
+            result
+            
+        let replicate (recipe: ReplicationRecipe) (state: State) (builder: ScreenContentBuilder) =
              if canReplicate recipe state
                 then
-                    ["r. replicate"]
+                    builder.AddSelectables false [("r",". replicate")]
                 else
-                    ["You don't have enough resources to replicate this item."]
+                    builder.AddString "You don't have enough resources to replicate this item."
         let mainContent =
             match nav with
             | MainMenu ->
@@ -91,35 +98,42 @@ let operateComputer (computerPoint: Point option) (electronicMachine: Electronic
                     if content.CanOperateCameras && (getCameraPlaces state).Length > 0 then ["Cameras"] else []
                     @
                     if content.CanReplicate then ["Replicate"] else []
-                result |> List.mapi (fun i item -> (i+1).ToString() + ". " + item) |> List.iter (fun item -> builder.AddString(item))
+                result |> List.mapi (fun i item -> ((i+1).ToString(),(". " + item))) |> builder.AddSelectables false
             | Notes ->
-                (content.Notes |> getListSlice itemNr |> List.mapi (fun x item -> (x + 1).ToString() + ". " + item.Topic))
-                @ prevNext itemNr content.Notes.Length
-                @ back
-                |> List.iter (fun item -> builder.AddString(item))
+                (content.Notes |> getListSlice itemNr |> List.mapi (fun x item -> ( (x + 1).ToString(),". " + item.Topic) )) |> builder.AddSelectables false
+                builder.AddEmptyLine()
+                (selectPrevNext itemNr content.Notes.Length) |> builder.AddSelectables true
+                builder.AddEmptyLineIfPreviousNotEmpty()
+                builder.AddSelectables false [selectBack]
             | Note ->
-                [content.Notes.[itemNr].Topic] @ [""] @
-                [content.Notes.[itemNr].Content]
-                @ back
-                |> List.iter (fun item -> builder.AddString(item))
+                builder.AddString content.Notes.[itemNr].Topic
+                builder.AddSeparator()
+                builder.AddString content.Notes.[itemNr].Content
+                builder.AddEmptyLine()
+                builder.AddSelectables false [selectBack]
             | Doors ->
                 let doorPlaces = getElectronicDoorPlaces state
-                (doorPlaces |> List.mapi (fun x item ->
-                    (x + 1).ToString() + ". (" + (fst item).X.ToString() + "," + (fst item).Y.ToString() + ") " + (snd item).ElectronicMachine.Value.ComputerContent.ComputerName + " - " + (if (snd item).Tile = ClosedDoor then "closed" else "open")))
-                @ back
-                |> List.iter (fun item -> builder.AddString(item))
+                (doorPlaces |> getListSlice itemNr |> List.mapi (fun x item ->
+                    ((x + 1).ToString(),". " + (fst item).ToString() + " " + (snd item).ElectronicMachine.Value.ComputerContent.ComputerName + " - " + (if (snd item).Tile = ClosedDoor then "closed" else "open")))) |> builder.AddSelectables false
+                builder.AddEmptyLine()
+                (selectPrevNext itemNr doorPlaces.Length) |> builder.AddSelectables true
+                builder.AddEmptyLineIfPreviousNotEmpty()
+                builder.AddSelectables false [selectBack]
             | Door ->
                 let doorPoint, doorPlace = (getElectronicDoorPlaces state).[itemNr]
-                [doorPoint.ToString() + " " + doorPlace.ElectronicMachine.Value.ComputerContent.ComputerName + " - " + (if doorPlace.Tile = ClosedDoor then "closed" else "open")]
-                @ [""] @ ["1. " + (if doorPlace.Tile = ClosedDoor then "Open" else "Close")] @ [""]
-                @ back
-                |> List.iter (fun item -> builder.AddString(item))
+                builder.AddString(doorPoint.ToString() + " " + doorPlace.ElectronicMachine.Value.ComputerContent.ComputerName + " - " + (if doorPlace.Tile = ClosedDoor then "closed" else "open"))
+                builder.AddEmptyLine()
+                builder.AddSelectables false [("1",". " + (if doorPlace.Tile = ClosedDoor then "Open" else "Close"))]
+                builder.AddEmptyLine()
+                builder.AddSelectables false [selectBack]
             | Cameras ->
                 let cameraPlaces = getCameraPlaces state
                 (cameraPlaces |> getListSlice itemNr |> List.mapi (fun x item ->
-                    (x + 1).ToString() + ". " + (fst item).ToString() + " " + (snd item).ElectronicMachine.Value.ComputerContent.ComputerName + " camera"))
-                @ back
-                |> List.iter (fun item -> builder.AddString(item))
+                    ((x + 1).ToString(),". " + (fst item).ToString() + " " + (snd item).ElectronicMachine.Value.ComputerContent.ComputerName + " camera"))) |> builder.AddSelectables false
+                builder.AddEmptyLine()
+                (selectPrevNext itemNr cameraPlaces.Length) |> builder.AddSelectables true
+                builder.AddEmptyLineIfPreviousNotEmpty()
+                builder.AddSelectables false [selectBack]
             | Camera ->
                 let cameraPoint, cameraPlace = (getCameraPlaces state).[itemNr]
                 builder.AddString(cameraPoint.ToString() + " " + cameraPlace.ElectronicMachine.Value.ComputerContent.ComputerName + " camera")
@@ -127,27 +141,30 @@ let operateComputer (computerPoint: Point option) (electronicMachine: Electronic
             | Replication ->
                 let recipes = getAvailableReplicationRecipes state
                 (recipes |> getListSlice itemNr |> List.mapi (fun x item ->
-                    (x + 1).ToString() + ". " + item.Name ))
-                @ back
-                |> List.iter (fun item -> builder.AddString(item))
+                    ((x + 1).ToString(),". " + item.Name ))) |> builder.AddSelectables false
+                builder.AddEmptyLine()
+                (selectPrevNext itemNr recipes.Length) |> builder.AddSelectables true
+                builder.AddEmptyLineIfPreviousNotEmpty()
+                builder.AddSelectables false [selectBack]
             | ReplicationItem ->
                 let recipe = (getAvailableReplicationRecipes state).[itemNr]
-                [recipe.Name]
-                @ [""] @ ["Required resources:"]
-                @ if recipe.RequiredResources.Iron > 0 then ["Iron: " + recipe.RequiredResources.Iron.ToString()] else []
-                @ if recipe.RequiredResources.Gold > 0 then ["Gold: " + recipe.RequiredResources.Gold.ToString()] else []
-                @ if recipe.RequiredResources.Uranium > 0 then ["Uranium: " + recipe.RequiredResources.Uranium.ToString()] else []
-                @ [""] @ (replicate recipe state)
-                @ back
-                |> List.iter (fun item -> builder.AddString(item))
-        let esc = "Hit Esc to exit"
-        builder.AddString(esc)
+                builder.AddString recipe.Name
+                builder.AddSeparator ()
+                builder.AddString "Required resources:"
+                if recipe.RequiredResources.Iron > 0 then builder.AddString ("Iron: " + recipe.RequiredResources.Iron.ToString())
+                if recipe.RequiredResources.Gold > 0 then builder.AddString ("Gold: " + recipe.RequiredResources.Gold.ToString())
+                if recipe.RequiredResources.Uranium > 0 then builder.AddString ("Uranium: " + recipe.RequiredResources.Uranium.ToString())
+                builder.AddEmptyLine ()
+                replicate recipe state builder
+                builder.AddSelectables false [selectBack]
+        builder.AddEmptyLineIfPreviousNotEmpty ()
+        builder.AddSelectables false [("Esc"," - to exit the computer")]
         builder
 
     let keyToComputerNavAndCommand (keyInfo: ConsoleKeyInfo) (currentNav: ComputerNavigation*int) (content: ComputerContent) =
         let nav, itemNr = currentNav
         let canGoNext n itemsNr =
-            if itemsNr - (n * 9) > 9 then true else false
+            if itemsNr - (n * maxSelectableNumericItems) > maxSelectableNumericItems then true else false
         match nav with
         | MainMenu ->
             let items =
@@ -167,7 +184,7 @@ let operateComputer (computerPoint: Point option) (electronicMachine: Electronic
             match keyInfo with
             | Keys ['b'] -> (MainMenu,0)
             | Keys ['1';'2';'3';'4';'5';'6';'7';'8';'9'] ->
-                let number = (Int32.Parse (keyInfo.KeyChar.ToString())) - 1 + (9 * itemNr)
+                let number = (Int32.Parse (keyInfo.KeyChar.ToString())) - 1 + (maxSelectableNumericItems * itemNr)
                 if number < content.Notes.Length then (Note,number) else (nav, itemNr)
             | Keys ['n'] ->
                 if canGoNext itemNr content.Notes.Length then (Notes,itemNr + 1) else (nav, itemNr)
@@ -187,7 +204,7 @@ let operateComputer (computerPoint: Point option) (electronicMachine: Electronic
             match keyInfo with
             | Keys ['b'] -> (MainMenu,0)
             | Keys ['1';'2';'3';'4';'5';'6';'7';'8';'9'] ->
-                let number = (Int32.Parse (keyInfo.KeyChar.ToString())) - 1 + (9 * itemNr)
+                let number = (Int32.Parse (keyInfo.KeyChar.ToString())) - 1 + (maxSelectableNumericItems * itemNr)
                 if number < doorPlaces.Length then (Door,number) else (nav, itemNr)
             | Keys ['n'] ->
                 if canGoNext itemNr doorPlaces.Length then (Doors,itemNr + 1) else (nav, itemNr)
@@ -208,7 +225,7 @@ let operateComputer (computerPoint: Point option) (electronicMachine: Electronic
             match keyInfo with
             | Keys ['b'] -> (MainMenu,0)
             | Keys ['1';'2';'3';'4';'5';'6';'7';'8';'9'] ->
-                let number = (Int32.Parse (keyInfo.KeyChar.ToString())) - 1 + (9 * itemNr)
+                let number = (Int32.Parse (keyInfo.KeyChar.ToString())) - 1 + (maxSelectableNumericItems * itemNr)
                 if number < cameraPlaces.Length then (Camera,number) else (nav, itemNr)
             | Keys ['n'] ->
                 if canGoNext itemNr cameraPlaces.Length then (Cameras,itemNr + 1) else (nav, itemNr)
@@ -226,7 +243,7 @@ let operateComputer (computerPoint: Point option) (electronicMachine: Electronic
             match keyInfo with
             | Keys ['b'] -> (MainMenu,0)
             | Keys ['1';'2';'3';'4';'5';'6';'7';'8';'9'] ->
-                let number = (Int32.Parse (keyInfo.KeyChar.ToString())) - 1 + (9 * itemNr)
+                let number = (Int32.Parse (keyInfo.KeyChar.ToString())) - 1 + (maxSelectableNumericItems * itemNr)
                 if number < recipes.Length then (ReplicationItem,number) else (nav, itemNr)
             | Keys ['n'] ->
                 if canGoNext itemNr recipes.Length then (Replication,itemNr + 1) else (nav, itemNr)
