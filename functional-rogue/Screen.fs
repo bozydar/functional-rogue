@@ -111,24 +111,35 @@ type ScreenContentBuilder (maxWidth: int, theme: ColorTheme) =
         match theme with
         | ComputerTheme -> {Char = '='; FGColor = textfg; BGColor = textbg}
 
+    let padding =
+        match theme with
+        | ComputerTheme -> 1
+
     let oneLineOptionsSeparator = Array.create 2 {Char = ' '; FGColor = textfg; BGColor = textbg}
+
+    do if padding > 0 then
+        textelArraysList <- textelArraysList @ List.init padding (fun i -> [|{Char = ' '; FGColor = textfg; BGColor = textbg}|])
+
+    let leftPadding =
+        Array.create padding {Char = ' '; FGColor = textfg; BGColor = textbg}
 
     let stringToTextelArray (text: string) (fgColor: ConsoleColor) (bgColor: ConsoleColor) =
             text.ToCharArray() |> Array.map (fun item -> {Char = item; FGColor = fgColor; BGColor = bgColor})
 
     member this.AddString (text: string) =
-        let brokenText = breakStringIfTooLong maxWidth text
-        textelArraysList <- brokenText |> List.fold (fun (acc: textel[] list) line -> acc @ [(stringToTextelArray line textfg textbg)]) textelArraysList
+        let brokenText = breakStringIfTooLong (maxWidth - 2 * padding) text
+        textelArraysList <- brokenText |> List.fold (fun (acc: textel[] list) line -> acc @ [Array.append leftPadding (stringToTextelArray line textfg textbg)]) textelArraysList
 
     member this.AddPlacesArray (places: Place[,]) =
         let width = places |> Array2D.length1
+        let widthWithPadding = width + padding
         let reverseTextelsList =
             places
             |> Seq.cast<Place>
             |> Seq.toList
             |> List.permute (fun i -> (i % width) * width + (i / width))    //changes 'by columns' to 'by rows'
             |> Seq.ofList
-            |> Seq.fold (fun (acc: textel[] list) place -> if not(acc.IsEmpty) && acc.Head.Length < Array2D.length1 places then [Array.append acc.Head [|toTextel place|]] @ acc.Tail else [[|toTextel place|]] @ acc) List.empty<textel[]> 
+            |> Seq.fold (fun (acc: textel[] list) place -> if not(acc.IsEmpty) && acc.Head.Length < widthWithPadding then [Array.append acc.Head [|toTextel place|]] @ acc.Tail else [Array.append leftPadding [|toTextel place|]] @ acc) List.empty<textel[]> 
         textelArraysList <- textelArraysList @ List.rev reverseTextelsList
         ()
 
@@ -136,9 +147,9 @@ type ScreenContentBuilder (maxWidth: int, theme: ColorTheme) =
         let asTextels = selectables |> List.map (fun item -> Array.append (stringToTextelArray (fst item) selectablefg selectablebg) (stringToTextelArray (snd item) textfg textbg))
         if putInOneLine then
             let inOneLine = asTextels |> List.fold (fun acc item -> if (acc |> Array.length = 0) then item else  [acc;oneLineOptionsSeparator;item] |> Array.concat) Array.empty<textel>
-            textelArraysList <- textelArraysList @ [inOneLine]
+            textelArraysList <- textelArraysList @ [Array.append leftPadding inOneLine]
         else
-            textelArraysList <- textelArraysList @ asTextels
+            textelArraysList <- textelArraysList @ (asTextels |> List.map (fun item -> Array.append leftPadding item))
         ()
 
     member this.AddEmptyLine () =
@@ -151,7 +162,7 @@ type ScreenContentBuilder (maxWidth: int, theme: ColorTheme) =
     member this.AddSeparator () =
         if textelArraysList.Length > 0 then
             let length = textelArraysList.[textelArraysList.Length - 1].Length
-            textelArraysList <- textelArraysList @ [Array.create length separatorTextel]
+            textelArraysList <- textelArraysList @ [Array.append leftPadding (Array.create (length-padding) separatorTextel)]
             ()
 
     member this.ToTextels () =
