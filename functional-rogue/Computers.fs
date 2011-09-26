@@ -87,6 +87,14 @@ let operateComputer (computerPoint: Point option) (electronicMachine: Electronic
                     builder.AddSelectables false [("r",". replicate")]
                 else
                     builder.AddString "You don't have enough resources to replicate this item."
+
+        let addPageableSelectableItems (itemNr: int) (descriptionFunction: 'a -> string) (builder: ScreenContentBuilder) (items: 'a list) =
+            items |> getListSlice itemNr |> List.mapi (fun i item -> ( (i + 1).ToString(), ". " + (descriptionFunction item) )) |> builder.AddSelectables false
+            builder.AddEmptyLine()
+            (selectPrevNext itemNr items.Length) |> builder.AddSelectables true
+            builder.AddEmptyLineIfPreviousNotEmpty()
+            builder.AddSelectables false [selectBack]
+
         let mainContent =
             match nav with
             | MainMenu ->
@@ -100,11 +108,7 @@ let operateComputer (computerPoint: Point option) (electronicMachine: Electronic
                     if content.CanReplicate then ["Replicate"] else []
                 result |> List.mapi (fun i item -> ((i+1).ToString(),(". " + item))) |> builder.AddSelectables false
             | Notes ->
-                (content.Notes |> getListSlice itemNr |> List.mapi (fun x item -> ( (x + 1).ToString(),". " + item.Topic) )) |> builder.AddSelectables false
-                builder.AddEmptyLine()
-                (selectPrevNext itemNr content.Notes.Length) |> builder.AddSelectables true
-                builder.AddEmptyLineIfPreviousNotEmpty()
-                builder.AddSelectables false [selectBack]
+                content.Notes |> addPageableSelectableItems itemNr (fun note -> note.Topic) builder
             | Note ->
                 builder.AddString content.Notes.[itemNr].Topic
                 builder.AddSeparator()
@@ -112,13 +116,10 @@ let operateComputer (computerPoint: Point option) (electronicMachine: Electronic
                 builder.AddEmptyLine()
                 builder.AddSelectables false [selectBack]
             | Doors ->
-                let doorPlaces = getElectronicDoorPlaces state
-                (doorPlaces |> getListSlice itemNr |> List.mapi (fun x item ->
-                    ((x + 1).ToString(),". " + (fst item).ToString() + " " + (snd item).ElectronicMachine.Value.ComputerContent.ComputerName + " - " + (if (snd item).Tile = ClosedDoor then "closed" else "open")))) |> builder.AddSelectables false
-                builder.AddEmptyLine()
-                (selectPrevNext itemNr doorPlaces.Length) |> builder.AddSelectables true
-                builder.AddEmptyLineIfPreviousNotEmpty()
-                builder.AddSelectables false [selectBack]
+                getElectronicDoorPlaces state
+                |> addPageableSelectableItems itemNr (fun doorPlace ->
+                    (fst doorPlace).ToString() + " " + (snd doorPlace).ElectronicMachine.Value.ComputerContent.ComputerName
+                    + " - " + (if (snd doorPlace).Tile = ClosedDoor then "closed" else "open")) builder
             | Door ->
                 let doorPoint, doorPlace = (getElectronicDoorPlaces state).[itemNr]
                 builder.AddString(doorPoint.ToString() + " " + doorPlace.ElectronicMachine.Value.ComputerContent.ComputerName + " - " + (if doorPlace.Tile = ClosedDoor then "closed" else "open"))
@@ -127,25 +128,16 @@ let operateComputer (computerPoint: Point option) (electronicMachine: Electronic
                 builder.AddEmptyLine()
                 builder.AddSelectables false [selectBack]
             | Cameras ->
-                let cameraPlaces = getCameraPlaces state
-                (cameraPlaces |> getListSlice itemNr |> List.mapi (fun x item ->
-                    ((x + 1).ToString(),". " + (fst item).ToString() + " " + (snd item).ElectronicMachine.Value.ComputerContent.ComputerName + " camera"))) |> builder.AddSelectables false
-                builder.AddEmptyLine()
-                (selectPrevNext itemNr cameraPlaces.Length) |> builder.AddSelectables true
-                builder.AddEmptyLineIfPreviousNotEmpty()
-                builder.AddSelectables false [selectBack]
+                getCameraPlaces state
+                |> addPageableSelectableItems itemNr (fun cameraPlace -> (fst cameraPlace).ToString() + " " + (snd cameraPlace).ElectronicMachine.Value.ComputerContent.ComputerName + " camera") builder
             | Camera ->
                 let cameraPoint, cameraPlace = (getCameraPlaces state).[itemNr]
                 builder.AddString(cameraPoint.ToString() + " " + cameraPlace.ElectronicMachine.Value.ComputerContent.ComputerName + " camera")
                 builder.AddPlacesArray(getCameraView cameraPoint 4 state)
-            | Replication ->
-                let recipes = getAvailableReplicationRecipes state
-                (recipes |> getListSlice itemNr |> List.mapi (fun x item ->
-                    ((x + 1).ToString(),". " + item.Name ))) |> builder.AddSelectables false
-                builder.AddEmptyLine()
-                (selectPrevNext itemNr recipes.Length) |> builder.AddSelectables true
-                builder.AddEmptyLineIfPreviousNotEmpty()
                 builder.AddSelectables false [selectBack]
+            | Replication ->
+                getAvailableReplicationRecipes state
+                |> addPageableSelectableItems itemNr (fun recipe -> recipe.Name) builder
             | ReplicationItem ->
                 let recipe = (getAvailableReplicationRecipes state).[itemNr]
                 builder.AddString recipe.Name
