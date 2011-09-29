@@ -9,10 +9,10 @@ open System
 let startLocationShip board =
     let getStartShipComputer =
         let note1 = { Topic = "Test note 1"; Content = "This is my test note number one." }
-        let note2 = { Topic = "Test note 2"; Content = "This is my test note number two. This one is longer." }
+        let note2 = { Topic = "Test note 2"; Content = "This is my test note number two. This one is longer. Much, much longer than the one before." }
         let sn = { Topic = "Some test note"; Content = "Nothing interesting here" }
         let lastNote = { Topic = "Last note"; Content = "This is the last note" }
-        { ComputerContent = { ComputerName = "TestComp"; Notes = [note1; note2; sn; sn; sn; sn; sn; sn; sn; sn; lastNote]; CanOperateDoors = true; CanOperateCameras = true; CanReplicate = false; HasCamera = false } }
+        { ComputerContent = { ComputerName = "Landing Ship Computer"; Notes = [note1; note2; sn; sn; sn; sn; sn; sn; sn; sn; lastNote]; CanOperateDoors = true; CanOperateCameras = true; CanReplicate = false; HasCamera = false } }
 
     let getStartShipReplicator =
         { ComputerContent = { ComputerName = "Universal Replicator"; Notes = []; CanOperateDoors = false; CanOperateCameras = false; CanReplicate = true; HasCamera = false } }
