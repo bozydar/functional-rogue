@@ -118,6 +118,16 @@ let performRandomMovement (monsterPlace: (Point*Place)) (state:State) : State =
     let resultState = { state with Board = state.Board |> Board.moveCharacter (snd monsterPlace).Character.Value (possibleNewLocations.[rnd possibleNewLocations.Length]) }
     resultState
 
+let getPlacesTheMonsterCanSeeByDistance (monsterPlace: (Point*Place)) (filter: Place -> bool) (state:State) =
+    let distance = (snd monsterPlace).Character.Value.SightRadius
+    let monster = (snd monsterPlace).Character.Value :?> Monster
+    let mutable result = []
+    for x in (max 0 ((fst monsterPlace).X - distance))..(min (boardWidth - 1) ((fst monsterPlace).X + distance)) do
+        for y in (max 0 ((fst monsterPlace).Y - distance))..(min (boardHeight - 1) ((fst monsterPlace).Y + distance)) do
+            if( filter state.Board.Places.[x,y] ) then
+                result <- result @ [Point(x,y)]
+    result |> List.sortBy (fun elem -> (max (abs ((fst monsterPlace).X - elem.X)) (abs ((fst monsterPlace).Y - elem.Y))) )
+
 let getDifferentSpeciesTheMonsterCanSee (monsterPlace: (Point*Place)) (state:State) =
     let distance = (snd monsterPlace).Character.Value.SightRadius
     let monster = (snd monsterPlace).Character.Value :?> Monster
@@ -186,15 +196,23 @@ let aiLurkerPredatorMonster (monsterPlace: (Point*Place)) (state:State) : State 
     | CharacterAiState.Hunting ->
         let differentSpecies = getDifferentSpeciesTheMonsterCanSee monsterPlace state
         let sortedDiffSpeciesByDist = differentSpecies |> List.sortBy (fun elem -> (max (abs (monsterPoint.X - (fst elem).X)) (abs (monsterPoint.Y - (fst elem).Y))) )
-        //if (sortedDiffSpeciesByDist.Length > 0) then
-            //state //|> goTowards monsterPlace (fst (sortedDiffSpeciesByDist.Head))    //go to eat it
-        //else
+        let corpses = getPlacesTheMonsterCanSeeByDistance monsterPlace (fun place -> place.Items |> List.exists (fun item -> item.Type = Type.Corpse)) state
         let victims = getDifferentSpeciesTheMonsterCanAttackInMelee monsterPlace state
         state
         |>  if (victims.Length > 0) then
                 Mechanics.meleeAttack monster state.Board.Places.[victims.Head.X,victims.Head.Y].Character.Value
             elif (sortedDiffSpeciesByDist.Length > 0) then
                 goTowards monsterPlace (fst (sortedDiffSpeciesByDist.Head))
+            elif (corpses.Length > 0) then
+                if (max (abs(corpses.Head.X - monsterPoint.X)) (abs(corpses.Head.Y - monsterPoint.Y))) = 0 then
+                    monster.State <- CharacterAiState.Lurking
+                    monster.HungerFactor <- rnd2 30 60
+                    let thisPlace = state.Board.Places.[monsterPoint.X, monsterPoint.Y]
+                    let corpseIndex = thisPlace.Items |> List.findIndex (fun item -> item.Type = Type.Corpse)
+                    state.Board.Places.[monsterPoint.X, monsterPoint.Y] <- { thisPlace with Items = thisPlace.Items |> List.removeAt corpseIndex }
+                    self
+                else
+                    goTowards monsterPlace (corpses.Head)   //go to the nearest corpse to eat it
             else
                 self
 
