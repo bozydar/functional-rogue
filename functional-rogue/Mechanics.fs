@@ -109,8 +109,7 @@ let killCharacter (victim: Character) (state: State) =
     { state with 
         Board = state.Board
         |> modify (fst victimPlace) (fun place -> { place with Character = option.None })
-        |> modify (fst victimPlace) (fun place -> { place with Items = corpseItem :: place.Items} ) }
-    |> addMessage (victim.Name + " has died.")
+        |> modify (fst victimPlace) (fun place -> { place with Items = corpseItem :: place.Items} ) }    
 
 let meleeAttack (attacker: Character) (defender: Character) (state: State) =            
     // attacker cannot take part in more than one fight per turn
@@ -129,23 +128,28 @@ let meleeAttack (attacker: Character) (defender: Character) (state: State) =
                     evalMeleeDamage attacker defender                                         
             defender.HitWithDamage(attackDamage)
 
+            let addMessageCharacterAware message state =
+                if attacker :? Player.Player || defender :? Player.Player then
+                    State.addMessage message state
+                else
+                    State.addMessage "You've heard animal scream" state
+                
             let result = 
                 state
-                |> State.addMessage (defender.Name + " has got " + attackDamage.ToString() + " of damage.")
+                |> addMessageCharacterAware (defender.Name + " has got " + attackDamage.ToString() + " of damage.")
                 |>  if defender.IsAlive then
                         if not defender.InvolvedInFight then
                             let defendDamage = evalMeleeDamage defender attacker     
                             attacker.HitWithDamage defendDamage
-                            if attacker :? Player.Player || defender :? Player.Player then
-                                State.addMessage (attacker.Name + " has got " + defendDamage.ToString() + " of damage during contrattack")
-                            else
-                                self
+                            addMessageCharacterAware (attacker.Name + " has got " + defendDamage.ToString() + " of damage during contrattack")
                         else
                             self
                     else                    
                         killCharacter defender
+                        >> addMessageCharacterAware (defender.Name + " has died.")
                 |>  if not attacker.IsAlive then
                         killCharacter attacker
+                        >> addMessageCharacterAware (attacker.Name + " has died.")
                     else
                         self
             
