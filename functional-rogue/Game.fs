@@ -203,8 +203,16 @@ let mainLoop () =
     State.set entryState
     loop true      
 
+let clearCharacterStates state = 
+    let characters = 
+        Board.getFilteredPlaces (fun item -> item.Character.IsSome) state.Board
+        |> List.map (fun (_, item) -> item.Character.Value)
+    characters |> List.iter (fun item -> item.ResetVolatileStates())
+    state
+
 let subscribeHandlers () =
     Turn.subscribe handleMonsters
+    Turn.subscribe clearCharacterStates
     Turn.subscribe setVisibilityStates
     Turn.subscribe evaluateBoardFramePosition
     Turn.subscribe (fun state -> {state with TurnNumber = state.TurnNumber + 1})

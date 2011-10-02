@@ -25,18 +25,23 @@ let percentToLevel (percent : int) : int =
 let levelToModifier (level : int) = 
     [| 2; 0; -2; -5; -8; -11; -15; -20; -24 |].[inBoundary level 0 9]
     
-    
+let private countableTestWithDice parameter bonus level numberOfDice =
+    if numberOfDice < 1 then 
+        0
+    else
+        let dice = [for i in 1..numberOfDice -> roll ()] |> List.sort |> List.toSeq 
+        let modifier = levelToModifier level
+        let k = parameter + modifier
+        if k > 0 then
+            let results = dice |> Seq.scan (fun bonus item -> bonus - Math.Max(0, item - k)) bonus |> Seq.skip 1 
+            // count all non-negative items
+            results |> Seq.sumBy (fun item -> if item >= 0 then 1 else 0)
+        else
+            0
+
 /// Returns number of successes 
 let countableTest parameter bonus level =
-    let dice = [roll (); roll (); roll ()] |> List.sort |> List.toSeq 
-    let modifier = levelToModifier level
-    let k = parameter + modifier
-    if k > 0 then
-        let results = dice |> Seq.scan (fun bonus item -> bonus - Math.Max(0, item - k)) bonus |> Seq.skip 1 
-        // count all not negative items
-        results |> Seq.sumBy (fun item -> if item >= 0 then 1 else 0)
-    else
-        0
+    countableTestWithDice parameter bonus level 3
 
 /// Returns true for success for simple test
 let simpleTest parameter bonus level =
@@ -64,9 +69,7 @@ let rec oposedTest parameter1 bonus1 parameter2 bonus2 =
     elif left < right then -1
     else oposedTest parameter1 bonus1 parameter2 bonus2
 
-let private evalMeleeDamage (attacker : Character) (defender : Character) = 
-    let forAttacker = countableTest (attacker.Dexterity) attacker.MeleeAttack.AttackBonus 1
-    let forDefender = countableTest (defender.Dexterity) defender.MeleeAttack.DefenceBonus 1
+let private evalDamage (attacker : Character) (defender : Character) forAttacker forDefender =
     let delta = forAttacker - forDefender
         
     if delta > 0 then 
@@ -75,6 +78,17 @@ let private evalMeleeDamage (attacker : Character) (defender : Character) =
         damage
     else 
         0
+
+let private evalMeleeDamage (attacker : Character) (defender : Character) = 
+    let forAttacker = countableTest (attacker.Dexterity) attacker.MeleeAttack.AttackBonus 1
+    let forDefender = countableTest (defender.Dexterity) defender.MeleeAttack.DefenceBonus 1
+    evalDamage attacker defender forAttacker forDefender
+
+/// Gives defeneder chance to defend. It is used for fights with many foe simultanously.
+let private evalDefendMeleeDamage (attacker : Character) (defender : Character) = 
+    let forAttacker = countableTest (attacker.Dexterity) attacker.MeleeAttack.AttackBonus 1
+    let forDefender = countableTestWithDice (defender.Dexterity) defender.MeleeAttack.DefenceBonus 1 forAttacker
+    evalDamage attacker defender forAttacker forDefender
 
 let killCharacter (victim: Character) (state: State) =
     let allBoardPlaces = places (state.Board)
@@ -98,26 +112,45 @@ let killCharacter (victim: Character) (state: State) =
         |> modify (fst victimPlace) (fun place -> { place with Items = corpseItem :: place.Items} ) }
     |> addMessage (victim.Name + " has died.")
 
-let meleeAttack (attacker: Character) (defender: Character) (state: State) =        
-    let allBoardPlaces = places state.Board
-    let attackerPlace = Seq.find (fun x -> (snd x).Character = Some(attacker)) allBoardPlaces
-    let defenderPlace = Seq.find (fun x -> (snd x).Character = Some(defender)) allBoardPlaces
-    //check if distance = 1
-    if max (abs ((fst attackerPlace).X - (fst defenderPlace).X)) (abs ((fst attackerPlace).Y - (fst defenderPlace).Y)) = 1 then        
-        let attackDamage = evalMeleeDamage attacker defender                   
-        defender.HitWithDamage(attackDamage)
-
-        state
-        |> State.addMessage (defender.Name + " has got " + attackDamage.ToString() + " of damage.")
-        |>  if defender.IsAlive then
-                let defendDamage = evalMeleeDamage defender attacker     
-                attacker.HitWithDamage defendDamage                 
-                State.addMessage (attacker.Name + " has got " + defendDamage.ToString() + " of damage")
-            else                    
-                killCharacter defender
-        |>  if not attacker.IsAlive then
-                killCharacter attacker
-            else
-                self
+let meleeAttack (attacker: Character) (defender: Character) (state: State) =            
+    // attacker cannot take part in more than one fight per turn
+    if attacker.InvolvedInFight then 
+        state             
     else
-        state
+        let allBoardPlaces = places state.Board
+        let attackerPlace = Seq.find (fun x -> (snd x).Character = Some(attacker)) allBoardPlaces
+        let defenderPlace = Seq.find (fun x -> (snd x).Character = Some(defender)) allBoardPlaces
+        //check if distance = 1
+        if max (abs ((fst attackerPlace).X - (fst defenderPlace).X)) (abs ((fst attackerPlace).Y - (fst defenderPlace).Y)) = 1 then     
+            let attackDamage =
+                if defender.InvolvedInFight then
+                    evalDefendMeleeDamage attacker defender                   
+                else
+                    evalMeleeDamage attacker defender                                         
+            defender.HitWithDamage(attackDamage)
+
+            let result = 
+                state
+                |> State.addMessage (defender.Name + " has got " + attackDamage.ToString() + " of damage.")
+                |>  if defender.IsAlive then
+                        if not defender.InvolvedInFight then
+                            let defendDamage = evalMeleeDamage defender attacker     
+                            attacker.HitWithDamage defendDamage
+                            if attacker :? Player.Player || defender :? Player.Player then
+                                State.addMessage (attacker.Name + " has got " + defendDamage.ToString() + " of damage during contrattack")
+                            else
+                                self
+                        else
+                            self
+                    else                    
+                        killCharacter defender
+                |>  if not attacker.IsAlive then
+                        killCharacter attacker
+                    else
+                        self
+            
+            do defender.InvolvedInFight <- true
+            do attacker.InvolvedInFight <- true
+            result
+        else
+            state
