@@ -29,6 +29,7 @@ type Character (characterType: CharacterType, startingHP: int, startingDexterity
     let mutable sightRadius = startingSightRadius
     let mutable dexterity = startingDexterity
     let mutable strength = startingStrength
+    let mutable involvedInFight = false
 
     let mutable items : list<Item> = []
 
@@ -61,6 +62,13 @@ type Character (characterType: CharacterType, startingHP: int, startingDexterity
     member this.MaxHP 
         with get() = maxHP
         and set(value) = maxHP <- value
+
+    member this.InvolvedInFight
+        with get() = involvedInFight
+        and set(value) = involvedInFight <- value
+
+    member this.ResetVolatileStates () =
+        this.InvolvedInFight <- false
 
     abstract member MeleeAttack : AttackResult with get
     default this.MeleeAttack
