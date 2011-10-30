@@ -308,10 +308,10 @@ let private screenWritter () =
             if item.IsSome then itemShortDescription (item.Value) else ""
 
         let writeProperties (allItems : Item list) (wornItems : WornItems) = [
-            (writeString (new Point(1,0)) (sprintf "Head - %s"  (writeIfExisits wornItems.Head )));
-            (writeString (new Point(1,1)) (sprintf "In Hand - %s" (writeIfExisits wornItems.Hand )));
-            (writeString (new Point(1,2)) (sprintf "On Torso - %s" (writeIfExisits wornItems.Torso )));
-            (writeString (new Point(1,3)) (sprintf "On Legs - %s" (writeIfExisits wornItems.Legs )));
+            (writeString (new Point(1,0)) (sprintf "Head - %s     "  (writeIfExisits wornItems.Head )));
+            (writeString (new Point(1,1)) (sprintf "In Hand - %s  " (writeIfExisits wornItems.Hand )));
+            (writeString (new Point(1,2)) (sprintf "On Torso - %s " (writeIfExisits wornItems.Torso )));
+            (writeString (new Point(1,3)) (sprintf "On Legs - %s  " (writeIfExisits wornItems.Legs )));
         ]
 
         let currentState = State.get ()
