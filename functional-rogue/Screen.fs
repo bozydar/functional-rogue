@@ -184,6 +184,8 @@ type ScreenAgentMessage =
     | ShowOptions of seq<char * string>
     | SetCursorPositionOnBoard of Point * State
     | DisplayComputerScreen of ScreenContentBuilder * State
+    | ShowFinishScreen of State
+
 and MainMenuReply = {
     Name: String
 } 
@@ -251,7 +253,7 @@ let private screenWritter () =
         writeAllLines x y (builder.ToTextels()) screen
 
     let cleanPartOfScreen (point: Point) (size: Size) (screen: screen) =
-        for x in (point.X)..(point.X + size.Width - 1)do
+        for x in (point.X)..(point.X + size.Width - 1) do
             for y in (point.Y)..(point.Y + size.Height - 1) do
                 screen.[x, y] <- empty
         screen
@@ -262,15 +264,30 @@ let private screenWritter () =
     let writeStats state screen =
         screen 
         |> writeString leftPanelPos.Location (sprintf "HP: %d/%d" state.Player.CurrentHP state.Player.MaxHP)
-        |> writeString (point leftPanelPos.Location.X (leftPanelPos.Location.Y + 1)) (sprintf "%s the rogue" state.Player.Name)
-        |> writeString (point leftPanelPos.Location.X (leftPanelPos.Location.Y + 2)) (sprintf "Ma: %d/%d" state.Player.CurrentHP state.Player.MaxHP)
-        |> writeString (point leftPanelPos.Location.X (leftPanelPos.Location.Y + 3)) (sprintf "Iron: %s" <| state.Player.Iron.ToString())
-        |> writeString (point leftPanelPos.Location.X (leftPanelPos.Location.Y + 4)) (sprintf "Gold: %s" <| state.Player.Gold.ToString())
-        |> writeString (point leftPanelPos.Location.X (leftPanelPos.Location.Y + 5)) (sprintf "Uranium: %s" <| state.Player.Uranium.ToString())
-        |> writeString (point leftPanelPos.Location.X (leftPanelPos.Location.Y + 6)) (sprintf "Water: %s" <| state.Player.Water.ToString())
-        |> writeString (point leftPanelPos.Location.X (leftPanelPos.Location.Y + 7)) (sprintf "Cont. Water: %s" <| state.Player.ContaminatedWater.ToString())
-        |> writeString (point leftPanelPos.Location.X (leftPanelPos.Location.Y + 8)) (sprintf "Turn: %d" <| state.TurnNumber)
-        |> writeString (point leftPanelPos.Location.X (leftPanelPos.Location.Y + 9)) (sprintf "Map Level: %d" <| state.Board.Level)
+        |> writeString (point leftPanelPos.Location.X (leftPanelPos.Location.Y + 1)) (sprintf "%s the rogue    " state.Player.Name)
+        |> writeString (point leftPanelPos.Location.X (leftPanelPos.Location.Y + 2)) (sprintf "Ma: %d/%d       " state.Player.CurrentHP state.Player.MaxHP)
+        |> writeString (point leftPanelPos.Location.X (leftPanelPos.Location.Y + 3)) (sprintf "Iron: %s        " <| state.Player.Iron.ToString())
+        |> writeString (point leftPanelPos.Location.X (leftPanelPos.Location.Y + 4)) (sprintf "Gold: %s        " <| state.Player.Gold.ToString())
+        |> writeString (point leftPanelPos.Location.X (leftPanelPos.Location.Y + 5)) (sprintf "Uranium: %s     " <| state.Player.Uranium.ToString())
+        |> writeString (point leftPanelPos.Location.X (leftPanelPos.Location.Y + 6)) (sprintf "Water: %s       " <| state.Player.Water.ToString())
+        |> writeString (point leftPanelPos.Location.X (leftPanelPos.Location.Y + 7)) (sprintf "Cont. Water: %s " <| state.Player.ContaminatedWater.ToString())
+        |> writeString (point leftPanelPos.Location.X (leftPanelPos.Location.Y + 8)) (sprintf "Turn: %d        " <| state.TurnNumber)
+        |> writeString (point leftPanelPos.Location.X (leftPanelPos.Location.Y + 9)) (sprintf "Map Level: %d   " <| state.Board.Level)
+
+    let writeFinishScreen state screen =
+        let position = point 1 0
+        screen 
+        |> writeString position "You have been died. Nobody heard your scream."
+        |> writeString (position + (new Size(0, 1))) (sprintf "HP: %d/%d" state.Player.CurrentHP state.Player.MaxHP)
+        |> writeString (position + (new Size(0, 2))) (sprintf "%s the rogue" state.Player.Name)
+        |> writeString (position + (new Size(0, 3))) (sprintf "Ma: %d/%d" state.Player.CurrentHP state.Player.MaxHP)
+        |> writeString (position + (new Size(0, 4))) (sprintf "Iron: %s" <| state.Player.Iron.ToString())
+        |> writeString (position + (new Size(0, 5))) (sprintf "Gold: %s" <| state.Player.Gold.ToString())
+        |> writeString (position + (new Size(0, 6))) (sprintf "Uranium: %s" <| state.Player.Uranium.ToString())
+        |> writeString (position + (new Size(0, 7))) (sprintf "Water: %s" <| state.Player.Water.ToString())
+        |> writeString (position + (new Size(0, 8))) (sprintf "Cont. Water: %s" <| state.Player.ContaminatedWater.ToString())
+        |> writeString (position + (new Size(0, 9))) (sprintf "Turn: %d" <| state.TurnNumber)
+        |> writeString (position + (new Size(0, 10))) (sprintf "Map Level: %d" <| state.Board.Level)
 
     let writeLastTurnMessageIfAvailable state screen =
         if( state.UserMessages.Length > 0 && (fst (state.UserMessages.Head)) = state.TurnNumber - 1) then
@@ -421,6 +438,14 @@ let private screenWritter () =
                     |> writeStats state
                 refreshScreen screen newScreen
                 return! loop newScreen
+            | ShowFinishScreen(state) ->
+                let newScreen =
+                    screen
+                    |> Array2D.copy
+                    |> cleanScreen
+                    |> writeFinishScreen(state)                    
+                refreshScreen screen newScreen
+                return! loop newScreen
         }
         loop <| Array2D.create screenSize.Width screenSize.Height empty
     )
@@ -445,3 +470,4 @@ let setCursorPositionOnBoard point state = agent.Post(SetCursorPositionOnBoard(p
 let displayComputerScreen content = agent.Post(DisplayComputerScreen(content, State.get()))
 let showMessages () = agent.Post (ShowMessages(State.get ()))
 let showOptions options  = agent.Post(ShowOptions(options))
+let showFinishScreen state  = agent.Post(ShowFinishScreen(state))
