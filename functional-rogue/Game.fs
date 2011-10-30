@@ -52,6 +52,8 @@ let mainLoop () =
     let rec loop printAll =                
 
         if not(State.get().Player.IsAlive) then
+            State.get ()                  
+            |> Screen.showFinishScreen
             ()
         else
             let consoleKeyInfo = if printAll then new ConsoleKeyInfo('5', ConsoleKey.NumPad5, false, false, false) else System.Console.ReadKey(true)
@@ -84,7 +86,7 @@ let mainLoop () =
         
             match command with
             | Quit -> 
-                State.get ()  
+                State.get ()
                 |> writeState
                 ()
             | Unknown -> loop false
