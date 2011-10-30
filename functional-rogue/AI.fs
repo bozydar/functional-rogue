@@ -167,8 +167,10 @@ let aiCowardMonster (monsterPlace: (Point*Place)) (state:State) : State =
     let differentSpecies = getDifferentSpeciesTheMonsterCanSee monsterPlace state
     if (differentSpecies.Length > 0) then
         let sortedSpotsWithDistanceScore = List.sortBy (fun element -> (snd element)) (getSpotsWithDangerScore differentSpecies (fst monsterPlace) state)
-        let resultState = { state with Board = state.Board |> Board.moveCharacter (snd monsterPlace).Character.Value (fst (sortedSpotsWithDistanceScore.Head)) }
-        resultState
+        if sortedSpotsWithDistanceScore.Length > 0 then
+            { state with Board = state.Board |> Board.moveCharacter (snd monsterPlace).Character.Value (fst (sortedSpotsWithDistanceScore.Head)) }
+        else 
+            state
     else
         performRandomMovement monsterPlace state
 
