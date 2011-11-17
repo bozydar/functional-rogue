@@ -32,15 +32,6 @@ let simplifiedObjectToMapPart (input: char[,]) (background: Tile) =
         | _ -> backgroundTile
     )
 
-//let generateStartingLevelShip (background: Tile) =
-//    let simplifiedShip = ResourceManager.Instance.SimplifiedMapObjects.["StartLocationShip"]
-//    let mapFragment = simplifiedObjectToMapPart simplifiedShip background
-//    mapFragment.[3,1] <- { mapFragment.[3,1] with Items = [Items.createPredefinedItem OreExtractor] }
-//    let getStartShipDoor =
-//        { ComputerContent = { ComputerName = "Ship door"; Notes = []; CanOperateDoors = false; HasCamera = true } }
-//    mapFragment.[5,2] <- { mapFragment.[5,2] with ElectronicMachine = Some(getStartShipDoor) }
-//    mapFragment
-
 // level generation utilities
 
 let noise (x: float) (y: float) =
