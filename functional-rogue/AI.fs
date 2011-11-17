@@ -19,6 +19,12 @@ type GridPoint = {
 
 // tools
 
+let AddMessageIfPlayerCanSeePoint (targetPoint : Point) (message : string) (state : State) = 
+    if (Sight.canSee state.Board (getPlayerPosition state.Board) targetPoint) then
+                State.addMessage (message) state
+            else
+                state
+
 let getDifferentSpeciesTheMonsterCanAttackInMelee (monsterPlace: (Point*Place)) (state:State) =
     let distance = 1
     let monster = (snd monsterPlace).Character.Value :?> Monster
@@ -186,9 +192,12 @@ let aiLurkerPredatorMonster (monsterPlace: (Point*Place)) (state:State) : State 
         let differentSpeciesByDist = getPlacesTheMonsterCanSeeByDistance monsterPlace (fun monster place -> placeContainsDifferentSpeciesThanMonster monster place) state
         let newHungerFactor = monster.HungerFactor - 1
         monster.HungerFactor <- newHungerFactor
-        if (newHungerFactor < 0 || (differentSpeciesByDist.Length > 0 && (pointsDistance monsterPoint differentSpeciesByDist.Head) < 2) ) then
+        if (newHungerFactor < 0) then
             monster.State <- CharacterAiState.Hunting
-            state
+            state |> AddMessageIfPlayerCanSeePoint monsterPoint (monster.Name + " started looking for a prey")
+        elif (differentSpeciesByDist.Length > 0 && (pointsDistance monsterPoint differentSpeciesByDist.Head) < 2) then
+            monster.State <- CharacterAiState.Hunting
+            state |> AddMessageIfPlayerCanSeePoint monsterPoint (monster.Name + " got annoyed by an intruder and is getting ready to attack")
         else
             let positions = getGoodLurkingPositionsInSightSortedFromBest monsterPlace state
             let newState = state
@@ -214,8 +223,9 @@ let aiLurkerPredatorMonster (monsterPlace: (Point*Place)) (state:State) : State 
                     monster.HungerFactor <- rnd2 30 60
                     let thisPlace = state.Board.Places.[monsterPoint.X, monsterPoint.Y]
                     let corpseIndex = thisPlace.Items |> List.findIndex (fun item -> item.Type = Type.Corpse)
+                    let corpseName = thisPlace.Items.[corpseIndex].Name
                     state.Board.Places.[monsterPoint.X, monsterPoint.Y] <- { thisPlace with Items = thisPlace.Items |> List.removeAt corpseIndex }
-                    self
+                    AddMessageIfPlayerCanSeePoint monsterPoint (monster.Name + " has consumed the " + corpseName)
                 else
                     goTowards monsterPlace (corpses.Head)   //go to the nearest corpse to eat it
             else
