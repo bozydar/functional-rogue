@@ -75,13 +75,17 @@ let aStar (startPoint: Point) (endPoint: Point) (board: Board) : (Point list) =
             [currentNode.point] 
         else
             reconstructPath completeSet (List.find<GridPoint> (fun elem -> elem.point = currentNode.cameFrom ) completeSet) @ [currentNode.point]
-            
+    
+    let sortByFScoreAndRandomizeEquals (e1 : GridPoint) (e2 : GridPoint) =
+            if e1.fScore = e2.fScore then
+                (rnd 3) - 1
+            else e1.fScore - e2.fScore        
 
     let mutable resultList = []
     let mutable closedSet : GridPoint list = []
     let mutable openSet = [{ point = startPoint; cameFrom = startPoint; gScore = 0; hScore = (estimateCostToEnd startPoint endPoint); fScore = (estimateCostToEnd startPoint endPoint) }]
     while openSet.Length > 0 do
-        openSet <- List.sortBy (fun element -> element.fScore) openSet
+        openSet <- List.sortWith (fun e1 e2 -> sortByFScoreAndRandomizeEquals e1 e2) openSet
         let current = openSet.Head
         if (current.point = endPoint) then
             resultList <- reconstructPath closedSet current
