@@ -473,7 +473,7 @@ let addRandomDoors (board : Board) =
     let floor = {Place.EmptyPlace with Tile = Tile.Floor}
     { board with Places = Array2D.mapi (fun x y i -> if (i = floor && (isGoodPlaceForDoor board x y) && (rnd 100) < 30) then closedDoor else i) board.Places }
 
-let generateDungeon: (Board*Point option) = 
+let generateDungeon (cameFrom: TransportTarget option) : (Board*Point option) = 
     let board = Array2D.create boardWidth boardHeight {Place.EmptyPlace with Tile = Tile.Wall}
     let sectionsHorizontal = 4
     let sectionsVertical = 3
@@ -486,12 +486,12 @@ let generateDungeon: (Board*Point option) =
         | [] -> board
         | item::t -> addRooms t <| (item :> IModifier).Modify board 
     let resultBoard = addRooms (generateDungeonTunnels sections sectionWidth sectionHeight sectionsHorizontal sectionsVertical) { Guid = System.Guid.NewGuid(); Places = board; Level = 0; MainMapLocation = Option.None}
-    (addRandomDoors resultBoard
-    |> placeSomeRandomItems Tile.Floor LevelType.Dungeon
-    |> addItems, Option.None)
+    let finalBoard, startpoint = resultBoard |> addRandomDoors |> placeStairsUp Tile.Floor cameFrom.Value
+    (finalBoard
+        |> placeSomeRandomItems Tile.Floor LevelType.Dungeon
+     , Some(startpoint))
 
 // dungeon BSP generation method
-
 let createConnectionBetweenClosestRooms (roomsList1 : Tunnel list) (roomsList2 : Tunnel list) =
     let mutable shortestDistance = 1000000
     let mutable bestX1 = 0
@@ -668,11 +668,18 @@ let generateEmpty : (Board * Point option) =
         |> Board.modify (new Point(8, 9)) (fun _ -> {Place.EmptyPlace with Tile = Tile.Wall})
     (board, Option.Some(new Point(5,5)))
     //|> Board.modify (new Point(8, 9)) (fun _ -> {Place.EmptyPlace with Tile = Tile.Wall})
+
+let generateTestStartLocationWithInitialPlayerPositon (cameFrom:Point) : (Board*Point) =
+    let board, startpoint = generateEmpty
+    let result = board |> Predefined.Resources.ancientRuins
+    (result,(Point(32,12)))
+
+
 // main level generation switch
 let generateLevel levelType (cameFrom: TransportTarget option) (level: int option) : (Board*Point option) = 
     match levelType with
     | LevelType.Test -> generateTest
-    | LevelType.Dungeon -> generateDungeon// generateBSPDungeon //generateDungeon
+    | LevelType.Dungeon -> generateDungeon cameFrom // generateBSPDungeon //generateDungeon
     | LevelType.Cave -> generateCave cameFrom (defaultArg level 0)
     | LevelType.Forest -> generateForest cameFrom.Value.TargetCoordinates
     | LevelType.Grassland -> generateGrassland cameFrom.Value.TargetCoordinates

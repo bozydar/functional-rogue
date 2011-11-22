@@ -30,3 +30,19 @@ let startLocationShip board =
              gg.3.2,,,,>0
              0g#4.#,,,,,,
              00##g#,,,,,,"        
+
+let ancientRuins board =
+    let def = def @ [('1', { Place.StairsDown with TransportTarget = Some({ BoardId = Guid.Empty; TargetCoordinates = Point(0,0); TargetLevelType = LevelType.Dungeon })})]
+
+    let where = Point(50, 10)
+    board
+    |> putPredefinedOnBoard def where
+            "##########.##########
+             ###...............###
+             #...................#
+             #...................#
+             ..........1..........
+             #...................#
+             #...................#
+             ###...............###
+             ##########.##########"      
