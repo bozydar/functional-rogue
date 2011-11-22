@@ -45,6 +45,7 @@ type LevelType =
 type TransportTarget = {
     BoardId : Guid;
     TargetCoordinates : Point
+    TargetLevelType : LevelType
 }   
 
 type Ore = 
@@ -96,6 +97,8 @@ type Place = {
             {Tile = Tile.Wall; Items = []; Character = Option.None; IsSeen = false; WasSeen = Settings.EntireLevelSeen; Ore = NoneOre; TransportTarget = None; ElectronicMachine = None }
     static member Floor = 
             {Tile = Tile.Floor; Items = []; Character = Option.None; IsSeen = false; WasSeen = Settings.EntireLevelSeen; Ore = NoneOre; TransportTarget = None; ElectronicMachine = None }
+    static member StairsDown = 
+            {Tile = Tile.StairsDown; Items = []; Character = Option.None; IsSeen = false; WasSeen = Settings.EntireLevelSeen; Ore = NoneOre; TransportTarget = None; ElectronicMachine = None }
     static member ClosedDoor =
             {Tile = Tile.ClosedDoor; Items = []; Character = Option.None; IsSeen = false; WasSeen = Settings.EntireLevelSeen; Ore = NoneOre; TransportTarget = None; ElectronicMachine = None }
     static member Computer =

@@ -171,11 +171,11 @@ let mainLoop () =
     //initial maps setup
     let mainMapBoard, mainMapPoint = generateMainMap
 
-    let startLevel, startLevelPosition = generateStartLocationWithInitialPlayerPositon mainMapPoint
+    let startLevel, startLevelPosition = if Config.Settings.TestStartOnEmpty then generateTestStartLocationWithInitialPlayerPositon mainMapPoint else generateStartLocationWithInitialPlayerPositon mainMapPoint
     let board = startLevel |> Board.moveCharacter thePlayer (startLevelPosition)
 
     let mainBoardStartPlace = mainMapBoard.Places.[mainMapPoint.X,mainMapPoint.Y]
-    mainMapBoard.Places.[mainMapPoint.X,mainMapPoint.Y] <- { mainBoardStartPlace with TransportTarget = Some({ BoardId = board.Guid; TargetCoordinates = startLevelPosition })}
+    mainMapBoard.Places.[mainMapPoint.X,mainMapPoint.Y] <- { mainBoardStartPlace with TransportTarget = Some({ BoardId = board.Guid; TargetCoordinates = startLevelPosition; TargetLevelType = LevelType.Forest})}
     
     let initialBoards = new System.Collections.Generic.Dictionary<System.Guid,Board>()
     initialBoards.Add(board.Guid, board)
