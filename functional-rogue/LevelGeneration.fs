@@ -421,7 +421,7 @@ let generateTest: (Board*Point option) =
         match rooms with
         | [] -> board
         | item::t -> addRooms t <| (item :> IModifier).Modify board 
-    (((addRooms rooms { Guid = System.Guid.NewGuid(); Places = board; Level = 0; MainMapLocation = Option.None}) |> addOre |> addItems |> putRandomMonstersOnBoard),Option.None)
+    (((addRooms rooms { Guid = System.Guid.NewGuid(); Places = board; Level = 0; MainMapLocation = Option.None; Type = LevelType.Test}) |> addOre |> addItems |> putRandomMonstersOnBoard),Option.None)
 
 // dungeon generation section
 
@@ -485,7 +485,7 @@ let generateDungeon (cameFrom: TransportTarget option) : (Board*Point option) =
         match rooms with
         | [] -> board
         | item::t -> addRooms t <| (item :> IModifier).Modify board 
-    let resultBoard = addRooms (generateDungeonTunnels sections sectionWidth sectionHeight sectionsHorizontal sectionsVertical) { Guid = System.Guid.NewGuid(); Places = board; Level = 0; MainMapLocation = Option.None}
+    let resultBoard = addRooms (generateDungeonTunnels sections sectionWidth sectionHeight sectionsHorizontal sectionsVertical) { Guid = System.Guid.NewGuid(); Places = board; Level = 0; MainMapLocation = Option.None; Type = LevelType.Dungeon}
     let finalBoard, startpoint = resultBoard |> addRandomDoors |> placeStairsUp Tile.Floor cameFrom.Value
     (finalBoard
         |> placeSomeRandomItems Tile.Floor LevelType.Dungeon
@@ -543,7 +543,7 @@ let generateBSPDungeon =
         | [] -> board
         | item::t -> addRooms t <| (item :> IModifier).Modify board 
 
-    let mutable board = { Guid = System.Guid.NewGuid(); Places = Array2D.create boardWidth boardHeight {Place.EmptyPlace with Tile = Tile.Wall}; Level = 0; MainMapLocation = Option.None}
+    let mutable board = { Guid = System.Guid.NewGuid(); Places = Array2D.create boardWidth boardHeight {Place.EmptyPlace with Tile = Tile.Wall}; Level = 0; MainMapLocation = Option.None; Type = LevelType.Dungeon}
     let tunnelsList = createTwoConnectedSections 1 1 (boardWidth - 2) (boardHeight - 2)
     addRooms tunnelsList board
 
@@ -551,7 +551,7 @@ let generateBSPDungeon =
     
 let generateCave (cameFrom: TransportTarget option) (level: int) : (Board*Point option) =
     let board =
-        { Guid = System.Guid.NewGuid(); Places = Array2D.create boardWidth boardHeight {Place.EmptyPlace with Tile = Tile.Floor}; Level = level; MainMapLocation = Option.None}
+        { Guid = System.Guid.NewGuid(); Places = Array2D.create boardWidth boardHeight {Place.EmptyPlace with Tile = Tile.Floor}; Level = level; MainMapLocation = Option.None; Type = LevelType.Cave}
         |> scatterTilesRamdomlyOnBoard Tile.Wall Tile.Floor 0.5 true
         |> smoothOutTheLevel 2 Tile.Wall Tile.Floor (4,5)
     let sections = new DisjointLocationSet(board, Tile.Floor)
@@ -572,7 +572,7 @@ let generateCave (cameFrom: TransportTarget option) (level: int) : (Board*Point 
 
 let generateForest (cameFrom:Point) : (Board*Point option) =
     let board =
-        { Guid = System.Guid.NewGuid(); Places = Array2D.create boardWidth boardHeight {Place.EmptyPlace with Tile = Tile.Grass}; Level = 0; MainMapLocation = Some(cameFrom)}
+        { Guid = System.Guid.NewGuid(); Places = Array2D.create boardWidth boardHeight {Place.EmptyPlace with Tile = Tile.Grass}; Level = 0; MainMapLocation = Some(cameFrom); Type = LevelType.Forest}
         |> maybePlaceSomeWater Tile.Grass 0.15
         |> maybePlaceCaveEntrance Tile.Grass 0.10
         |> scatterTilesRamdomlyOnBoard Tile.Tree Tile.Grass 0.25 false
@@ -587,7 +587,7 @@ let generateForest (cameFrom:Point) : (Board*Point option) =
 
 let generateGrassland (cameFrom:Point) : (Board*Point option) =
     let board =
-        { Guid = System.Guid.NewGuid(); Places = Array2D.create boardWidth boardHeight {Place.EmptyPlace with Tile = Tile.Grass}; Level = 0; MainMapLocation = Some(cameFrom)}
+        { Guid = System.Guid.NewGuid(); Places = Array2D.create boardWidth boardHeight {Place.EmptyPlace with Tile = Tile.Grass}; Level = 0; MainMapLocation = Some(cameFrom); Type = LevelType.Grassland}
         |> maybePlaceSomeWater Tile.Grass 0.25
         |> maybePlaceCaveEntrance Tile.Grass 0.05
         |> scatterTilesRamdomlyOnBoard Tile.Tree Tile.Grass 0.01 false
@@ -598,7 +598,7 @@ let generateGrassland (cameFrom:Point) : (Board*Point option) =
 
 let generateCoast (cameFrom:Point) : (Board*Point option) =
     let board =
-        { Guid = System.Guid.NewGuid(); Places = Array2D.create boardWidth boardHeight {Place.EmptyPlace with Tile = Tile.Sand}; Level = 0; MainMapLocation = Some(cameFrom)}
+        { Guid = System.Guid.NewGuid(); Places = Array2D.create boardWidth boardHeight {Place.EmptyPlace with Tile = Tile.Sand}; Level = 0; MainMapLocation = Some(cameFrom); Type = LevelType.Coast}
         |> maybePlaceSomeWater Tile.Sand 0.35
         |> scatterTilesRamdomlyOnBoard Tile.Tree Tile.Sand 0.01 false
         |> placeSomeRandomItems Tile.Sand LevelType.Coast
@@ -627,7 +627,7 @@ let generateMainMap: (Board*Point) =
     let smoothNoise = smoothOutNoise (smoothOutNoise noise)
     let withMask = applyMaskModifier smoothNoise
 
-    let board = { Guid = System.Guid.NewGuid(); Places = Array2D.init boardWidth boardHeight (fun x y -> {Place.EmptyPlace with Tile = noiseValueToMap (withMask.[x,y])}); Level = 0; MainMapLocation = Option.None}
+    let board = { Guid = System.Guid.NewGuid(); Places = Array2D.init boardWidth boardHeight (fun x y -> {Place.EmptyPlace with Tile = noiseValueToMap (withMask.[x,y])}); Level = 0; MainMapLocation = Option.None; Type = LevelType.MainMap}
 
     //TODO: this to be deleted later... for this is map file generation for dev purposes
     let tileToStr (tile:Tile) =
@@ -663,7 +663,7 @@ let generateEmpty : (Board * Point option) =
     let places = 
         Array2D.create boardWidth boardHeight {Place.EmptyPlace with Tile = Tile.Floor}        
     let board = 
-        { Guid = System.Guid.NewGuid(); Places = places; Level = 0; MainMapLocation = Option.None }
+        { Guid = System.Guid.NewGuid(); Places = places; Level = 0; MainMapLocation = Option.None; Type = LevelType.Test}
         |> Board.modify (new Point(8, 8)) (fun _ -> {Place.EmptyPlace with Tile = Tile.Wall})
         |> Board.modify (new Point(8, 9)) (fun _ -> {Place.EmptyPlace with Tile = Tile.Wall})
     (board, Option.Some(new Point(5,5)))
@@ -685,4 +685,7 @@ let generateLevel levelType (cameFrom: TransportTarget option) (level: int optio
     | LevelType.Grassland -> generateGrassland cameFrom.Value.TargetCoordinates
     | LevelType.Coast -> generateCoast cameFrom.Value.TargetCoordinates
     | LevelType.Empty -> generateEmpty
+    | LevelType.MainMap ->
+        let map, point = generateMainMap
+        (map, Some(point))
 
