@@ -172,11 +172,15 @@ let getSpotsWithDangerScore (enemies: (Point*Character) list) (monsterPlace: Poi
     spots
 
 // specific monster AIs
+let sortByDangerAndRandomizeEquals (e1 : (Point*int)) (e2 : (Point*int)) =
+            if snd e1 = snd e2 then
+                (rnd 3) - 1
+            else snd e1 - snd e2
 
 let aiCowardMonster (monsterPlace: (Point*Place)) (state:State) : State =
     let differentSpecies = getDifferentSpeciesTheMonsterCanSee monsterPlace state
     if (differentSpecies.Length > 0) then
-        let sortedSpotsWithDistanceScore = List.sortBy (fun element -> (snd element)) (getSpotsWithDangerScore differentSpecies (fst monsterPlace) state)
+        let sortedSpotsWithDistanceScore = List.sortWith (fun e1 e2 -> sortByDangerAndRandomizeEquals e1 e2) (getSpotsWithDangerScore differentSpecies (fst monsterPlace) state)
         if sortedSpotsWithDistanceScore.Length > 0 then
             { state with Board = state.Board |> Board.moveCharacter (snd monsterPlace).Character.Value (fst (sortedSpotsWithDistanceScore.Head)) }
         else 
