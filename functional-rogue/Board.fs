@@ -41,6 +41,7 @@ type LevelType =
     | Empty
     | Grassland
     | Coast
+    | MainMap
 
 type TransportTarget = {
     BoardId : Guid;
@@ -146,7 +147,8 @@ type Board = {
     Places : Place[,];
     Level : int;
     /// Defines the main map location which the current map is connected to.
-    MainMapLocation: Point option
+    MainMapLocation: Point option;
+    Type : LevelType
 }
     
 let boardContains (point: Point) = 
@@ -364,7 +366,7 @@ let private createProcessor board =
         loop board)
         
 // WARNING!!! The crap below... what is it for? what guid to put in here?
-let private agent = createProcessor <| { Guid = Guid.NewGuid(); Places = Array2D.create boardWidth boardHeight Place.EmptyPlace; Level = 0; MainMapLocation = Option.None }
+let private agent = createProcessor <| { Guid = Guid.NewGuid(); Places = Array2D.create boardWidth boardHeight Place.EmptyPlace; Level = 0; MainMapLocation = Option.None; Type = LevelType.MainMap }
 
 // TODO: refact functions to use BoardMessage structure
 
