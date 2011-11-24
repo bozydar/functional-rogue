@@ -9,6 +9,14 @@ open System
 open System.IO
 open System.Runtime.Serialization.Formatters.Binary
 
+type MainMapTileDetails = {
+    PointOfInterest : string option
+}
+
+type Settings = {
+    HighlightPointsOfInterest : bool
+}
+
 type State = {
     Board: Board;
     BoardFramePosition: Point;
@@ -18,6 +26,8 @@ type State = {
     AllBoards : System.Collections.Generic.Dictionary<System.Guid,Board>;
     MainMapGuid : System.Guid;
     AvailableReplicationRecipes : System.Collections.Generic.HashSet<string>
+    MainMapDetails : MainMapTileDetails[,]
+    Settings : Settings
 } 
 
 type private StateAgentMessage = 
@@ -49,6 +59,10 @@ let get () =
     match agent.PostAndReply(fun replyChannel -> Get(replyChannel)) with
     | Some(value) -> value
     | Option.None -> failwith "Cannot return None"
+
+let getMainMapTileDetails x y =
+   let tileDetails = get().MainMapDetails.[x,y]
+   if tileDetails.PointOfInterest.IsSome then " " + tileDetails.PointOfInterest.Value else String.Empty
 
 let addMessages (messages : string list) (state : State) =
     let newMessages = List.map (fun m -> (state.TurnNumber, m)) messages
