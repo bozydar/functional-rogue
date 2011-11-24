@@ -135,8 +135,12 @@ let private operateDoor command state =
         :: [for x in (max 0 (playerPosition.X - 1))..(min boardWidth (playerPosition.X + 1)) do
                 for y in (max 0 (playerPosition.Y - 1))..(min boardHeight (playerPosition.Y + 1)) do
                     let p = Point(x, y)
-                    if p <> playerPosition then yield p]        
-    let selected = selectPlace points state
+                    let tmpPlace = Board.get board p
+                    if p <> playerPosition && (tmpPlace.Tile = Tile.ClosedDoor || tmpPlace.Tile = Tile.OpenDoor) then yield p]        
+    let selected = if points.Length = 2 then
+                    Some(points.[1])
+                   else
+                    selectPlace points state
 
     if selected.IsSome then 
         board |> Board.modify selected.Value (
