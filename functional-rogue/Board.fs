@@ -106,7 +106,7 @@ type Place = {
             {Tile = Tile.Computer; Items = []; Character = Option.None; IsSeen = false; WasSeen = Settings.EntireLevelSeen; Ore = NoneOre; TransportTarget = None; ElectronicMachine = None }
     static member Create tile =
         {Tile = tile; Items = []; Character = Option.None; IsSeen = false; WasSeen = Settings.EntireLevelSeen; Ore = NoneOre; TransportTarget = None; ElectronicMachine = None }
-    static member GetDescription (place: Place) =
+    static member GetDescription (place: Place) additionalDescription =
         let tileDescription = 
             match place.Tile with
             | Tile.Floor -> "Floor."
@@ -124,6 +124,11 @@ type Place = {
             | Tile.StairsUp -> "Stairs leading up."
             | Tile.Computer -> "Computer."
             | Tile.Replicator -> "Replicator."
+            | Tile.MainMapForest -> "Forest." + additionalDescription
+            | Tile.MainMapCoast -> "Coast." + additionalDescription
+            | Tile.MainMapGrassland -> "Grassland." + additionalDescription
+            | Tile.MainMapMountains -> "Mountains." + additionalDescription
+            | Tile.MainMapWater -> "Water." + additionalDescription
             | _ -> ""
         let characterDescription =
             if place.Character.IsSome then

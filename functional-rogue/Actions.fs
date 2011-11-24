@@ -36,6 +36,7 @@ type Command =
     | GoUp
     | Look
     | UseObject
+    | ToggleSettingsMainMapHighlightPointsOfInterest
 
 let private commandToSize command = 
     match command with
@@ -154,6 +155,10 @@ let private operateDoor command state =
 
 let performCloseOpenAction command state =
     { state with Board = operateDoor command state } 
+
+let performToggleSettingsMainMapHighlightPointsOfInterest command state =
+    let updatedSettings = {state.Settings with HighlightPointsOfInterest = not state.Settings.HighlightPointsOfInterest }
+    { state with Settings = updatedSettings}
 
 let performLookAction command state =
     let board = state.Board
