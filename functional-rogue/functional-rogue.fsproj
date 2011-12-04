@@ -54,6 +54,7 @@
     <Compile Include="Replication.fs" />
     <Compile Include="Predefined.Resources.fs" />
     <Compile Include="LevelGeneration.fs" />
+    <Compile Include="Dialog.fs" />
     <Compile Include="Screen.fs" />
     <Compile Include="Computers.fs" />
     <Compile Include="Actions.fs" />
