@@ -163,47 +163,61 @@ let mainLoop () =
                 |> Turn.next
                 Screen.showBoard ()
                 loop false
-
-    let mainMenuReply = showMainMenu ()
-
-    let thePlayer = new Player(mainMenuReply.Name, 20, 10, 16, 10)
-
-    //initial maps setup
-    let mainMapBoard, mainMapPoint = generateMainMap
-
-    let startLevel, startLevelPosition = generateStartLocationWithInitialPlayerPositon mainMapPoint
-    let board = startLevel |> Board.moveCharacter thePlayer (startLevelPosition)
-
-    let mainBoardStartPlace = mainMapBoard.Places.[mainMapPoint.X,mainMapPoint.Y]
-    mainMapBoard.Places.[mainMapPoint.X,mainMapPoint.Y] <- { mainBoardStartPlace with TransportTarget = Some({ BoardId = board.Guid; TargetCoordinates = startLevelPosition })}
     
-    let initialBoards = new System.Collections.Generic.Dictionary<System.Guid,Board>()
-    initialBoards.Add(board.Guid, board)
-    initialBoards.Add(mainMapBoard.Guid, mainMapBoard)
-    //end maps setup
 
-    let getInitialReplicationRecipes = 
-        let result = new System.Collections.Generic.HashSet<string>()
-        ignore (result.Add("Knife"))
-        result
+    let d1 : Dialog.Dialog = [
+        Dialog.Title("Welcome to functional rogue" ) ;
+        Dialog.Label("Do you want to play?");        
+        Dialog.Menu("ynResult",
+            [
+                Dialog.Item('y', "Yes", "1");
+                Dialog.Item('n', "No", "0");
+            ])        
+    ]
 
-    let entryState =
-        try
-            if Config.Settings.LoadSave then loadState () else raise (new FileNotFoundException())
-        with
-            | :? FileNotFoundException ->
-                    {         
-                        Board = board; 
-                        BoardFramePosition = point 0 0;
-                        Player = thePlayer
-                        TurnNumber = 0;
-                        UserMessages = [];
-                        AllBoards = initialBoards;
-                        MainMapGuid = mainMapBoard.Guid;
-                        AvailableReplicationRecipes = getInitialReplicationRecipes
-                    }
-    State.set entryState
-    loop true      
+    let test = showDialog d1
+    if test.Head = ("ynResult", "1") then
+
+        // TODO: Replace mainMenuReply with wigdet from dialog
+        let mainMenuReply = showMainMenu ()
+        let thePlayer = new Player(mainMenuReply.Name, 20, 10, 16, 10)
+
+        //initial maps setup
+        let mainMapBoard, mainMapPoint = generateMainMap
+
+        let startLevel, startLevelPosition = generateStartLocationWithInitialPlayerPositon mainMapPoint
+        let board = startLevel |> Board.moveCharacter thePlayer (startLevelPosition)
+
+        let mainBoardStartPlace = mainMapBoard.Places.[mainMapPoint.X,mainMapPoint.Y]
+        mainMapBoard.Places.[mainMapPoint.X,mainMapPoint.Y] <- { mainBoardStartPlace with TransportTarget = Some({ BoardId = board.Guid; TargetCoordinates = startLevelPosition })}
+    
+        let initialBoards = new System.Collections.Generic.Dictionary<System.Guid,Board>()
+        initialBoards.Add(board.Guid, board)
+        initialBoards.Add(mainMapBoard.Guid, mainMapBoard)
+        //end maps setup
+
+        let getInitialReplicationRecipes = 
+            let result = new System.Collections.Generic.HashSet<string>()
+            ignore (result.Add("Knife"))
+            result
+
+        let entryState =
+            try
+                if Config.Settings.LoadSave then loadState () else raise (new FileNotFoundException())
+            with
+                | :? FileNotFoundException ->
+                        {         
+                            Board = board; 
+                            BoardFramePosition = point 0 0;
+                            Player = thePlayer
+                            TurnNumber = 0;
+                            UserMessages = [];
+                            AllBoards = initialBoards;
+                            MainMapGuid = mainMapBoard.Guid;
+                            AvailableReplicationRecipes = getInitialReplicationRecipes
+                        }
+        State.set entryState
+        loop true      
 
 let clearCharacterStates state = 
     let characters = 
@@ -222,7 +236,5 @@ let subscribeHandlers () =
 [<EntryPoint>]
 let main args =    
     subscribeHandlers ()
-    mainLoop ()
-    //printf "%s" <| Seq.fold (fun acc x -> acc + " " + x.ToString()) "" (circles.[2])
-    System.Console.ReadKey(true) |> ignore
+    mainLoop ()    
     0
