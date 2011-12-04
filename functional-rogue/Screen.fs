@@ -31,7 +31,7 @@ let breakStringIfTooLong (maxWidth: int) (text: string) =
         else
             [text]
 
-let toTextel item =  
+let toTextel item (highlighOption : ConsoleColor option) =  
     if item.WasSeen then
         let result = 
             let character = 
@@ -62,6 +62,7 @@ let toTextel item =
                     | CleanWater(_) -> {Char = '~'; FGColor = ConsoleColor.Blue; BGColor = ConsoleColor.Black}
                     | ContaminatedWater(_) -> {Char = '~'; FGColor = ConsoleColor.Blue; BGColor = ConsoleColor.Black}
                     | _ ->
+                        let mainMapBackground = if highlighOption.IsSome then highlighOption.Value else ConsoleColor.Black
                         match item.Tile with
                         | Wall ->  {Char = '#'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
                         | Floor -> {Char = '.'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
@@ -78,11 +79,11 @@ let toTextel item =
                         | StairsUp -> {Char = '<'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
                         | Computer -> {Char = '#'; FGColor = ConsoleColor.Red; BGColor = ConsoleColor.Black}
                         | Replicator -> {Char = '_'; FGColor = ConsoleColor.Red; BGColor = ConsoleColor.Black}
-                        | MainMapForest -> {Char = '&'; FGColor = ConsoleColor.DarkGreen; BGColor = ConsoleColor.Black}
-                        | MainMapGrassland -> {Char = '"'; FGColor = ConsoleColor.Green; BGColor = ConsoleColor.Black}
-                        | MainMapMountains -> {Char = '^'; FGColor = ConsoleColor.Gray; BGColor = ConsoleColor.Black}
-                        | MainMapWater -> {Char = '~'; FGColor = ConsoleColor.Blue; BGColor = ConsoleColor.Black}
-                        | MainMapCoast -> {Char = '.'; FGColor = ConsoleColor.Yellow; BGColor = ConsoleColor.Black}
+                        | MainMapForest -> {Char = '&'; FGColor = ConsoleColor.DarkGreen; BGColor = mainMapBackground}
+                        | MainMapGrassland -> {Char = '"'; FGColor = ConsoleColor.Green; BGColor = mainMapBackground}
+                        | MainMapMountains -> {Char = '^'; FGColor = ConsoleColor.Gray; BGColor = mainMapBackground}
+                        | MainMapWater -> {Char = '~'; FGColor = ConsoleColor.Blue; BGColor = mainMapBackground}
+                        | MainMapCoast -> {Char = '.'; FGColor = ConsoleColor.Yellow; BGColor = mainMapBackground}
                         | _ -> empty
         if not item.IsSeen then {result with FGColor = ConsoleColor.DarkGray } else result
     else empty
@@ -139,7 +140,7 @@ type ScreenContentBuilder (maxWidth: int, theme: ColorTheme) =
             |> Seq.toList
             |> List.permute (fun i -> (i % width) * width + (i / width))    //changes 'by columns' to 'by rows'
             |> Seq.ofList
-            |> Seq.fold (fun (acc: textel[] list) place -> if not(acc.IsEmpty) && acc.Head.Length < widthWithPadding then [Array.append acc.Head [|toTextel place|]] @ acc.Tail else [Array.append leftPadding [|toTextel place|]] @ acc) List.empty<textel[]> 
+            |> Seq.fold (fun (acc: textel[] list) place -> if not(acc.IsEmpty) && acc.Head.Length < widthWithPadding then [Array.append acc.Head [|toTextel place Option.None|]] @ acc.Tail else [Array.append leftPadding [|toTextel place Option.None|]] @ acc) List.empty<textel[]> 
         textelArraysList <- textelArraysList @ List.rev reverseTextelsList
         ()
 
@@ -206,6 +207,17 @@ and ShowChooseItemDialogRequest = {
     Filter: Item -> bool
 }
 
+let getHighlightForTile (board : Board) x y =
+    if board.Type = LevelType.MainMap then
+        let tileDetails = (State.get()).MainMapDetails.[x,y]
+        let settings = (State.get()).Settings
+        if settings.HighlightPointsOfInterest && tileDetails.PointOfInterest.IsSome then
+            Some(ConsoleColor.Yellow)
+        else
+            Option.None
+    else
+        Option.None
+
 let private screenWritter () =    
     let writeBoard (board: Board) (boardFramePosition: Point) sightRadius (screen: screen) = 
         
@@ -214,7 +226,7 @@ let private screenWritter () =
                 // move board                                
                 let virtualX = x + boardFramePosition.X
                 let virtualY = y + boardFramePosition.Y
-                screen.[x, y] <- toTextel board.Places.[virtualX, virtualY]
+                screen.[x, y] <- toTextel board.Places.[virtualX, virtualY] (getHighlightForTile board virtualX virtualY)
         screen      
         
     let writeString (position: Point) (text: String) (screen: screen) = 
@@ -301,7 +313,7 @@ let private screenWritter () =
         |> writeString (position + (new Size(0, 10))) (sprintf "Map Level: %d" <| state.Board.Level)
 
     let writeLastTurnMessageIfAvailable state screen =
-        if( state.UserMessages.Length > 0 && (fst (state.UserMessages.Head)) = state.TurnNumber - 1) then
+        if( state.UserMessages.Length > 0 && (fst (state.UserMessages.Head)) = state.TurnNumber) then
             screen
             |> cleanPartOfScreen (Point(0,(screenSize.Height - 1))) (Size(screenSize.Width, 1))
             |> writeString (point 0 (screenSize.Height - 1)) (snd state.UserMessages.Head)
@@ -455,7 +467,7 @@ let private screenWritter () =
                 let realPosition = (Math.Min(boardFrameSize.Width, Math.Max(0, point.X - state.BoardFramePosition.X)),
                                     Math.Min(boardFrameSize.Height, Math.Max(0, point.Y - state.BoardFramePosition.Y)))
                 let place = state.Board.Places.[point.X,point.Y]
-                let description = Place.GetDescription place
+                let description = Place.GetDescription place (if state.Board.Type = LevelType.MainMap then getMainMapTileDetails point.X point.Y else String.Empty)
                 let newScreen =
                     screen
                     |> Array2D.copy

@@ -82,6 +82,7 @@ let mainLoop () =
                 | Key '<' -> GoUp
                 | Key 'l' -> Look
                 | Key 'U' -> UseObject
+                | Key 'O' -> ToggleSettingsMainMapHighlightPointsOfInterest
                 | _ -> Unknown                        
         
             match command with
@@ -122,6 +123,10 @@ let mainLoop () =
                 State.get () 
                 |> Actions.performCloseOpenAction command
                 |> Turn.next
+                Screen.showBoard ()
+                loop false
+            | ToggleSettingsMainMapHighlightPointsOfInterest ->
+                State.set (State.get() |> Actions.performToggleSettingsMainMapHighlightPointsOfInterest command)
                 Screen.showBoard ()
                 loop false
             | Look ->
@@ -185,11 +190,11 @@ let mainLoop () =
         //initial maps setup
         let mainMapBoard, mainMapPoint = generateMainMap
 
-        let startLevel, startLevelPosition = generateStartLocationWithInitialPlayerPositon mainMapPoint
+        let startLevel, startLevelPosition = if Config.Settings.TestStartOnEmpty then generateTestStartLocationWithInitialPlayerPositon mainMapPoint else generateStartLocationWithInitialPlayerPositon mainMapPoint
         let board = startLevel |> Board.moveCharacter thePlayer (startLevelPosition)
 
         let mainBoardStartPlace = mainMapBoard.Places.[mainMapPoint.X,mainMapPoint.Y]
-        mainMapBoard.Places.[mainMapPoint.X,mainMapPoint.Y] <- { mainBoardStartPlace with TransportTarget = Some({ BoardId = board.Guid; TargetCoordinates = startLevelPosition })}
+        mainMapBoard.Places.[mainMapPoint.X,mainMapPoint.Y] <- { mainBoardStartPlace with TransportTarget = Some({ BoardId = board.Guid; TargetCoordinates = startLevelPosition; TargetLevelType = LevelType.Forest})}
     
         let initialBoards = new System.Collections.Generic.Dictionary<System.Guid,Board>()
         initialBoards.Add(board.Guid, board)
@@ -214,7 +219,9 @@ let mainLoop () =
                             UserMessages = [];
                             AllBoards = initialBoards;
                             MainMapGuid = mainMapBoard.Guid;
-                            AvailableReplicationRecipes = getInitialReplicationRecipes
+                        AvailableReplicationRecipes = getInitialReplicationRecipes;
+                        MainMapDetails = Array2D.init boardWidth boardHeight (fun x y -> if mainMapPoint.X = x && mainMapPoint.Y = y then { PointOfInterest = Some("Your ship's crash site")} else { PointOfInterest = Option.None});
+                        Settings = { HighlightPointsOfInterest = false }
                         }
         State.set entryState
         loop true      

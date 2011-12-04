@@ -41,10 +41,12 @@ type LevelType =
     | Empty
     | Grassland
     | Coast
+    | MainMap
 
 type TransportTarget = {
     BoardId : Guid;
     TargetCoordinates : Point
+    TargetLevelType : LevelType
 }   
 
 type Ore = 
@@ -96,13 +98,15 @@ type Place = {
             {Tile = Tile.Wall; Items = []; Character = Option.None; IsSeen = false; WasSeen = Settings.EntireLevelSeen; Ore = NoneOre; TransportTarget = None; ElectronicMachine = None }
     static member Floor = 
             {Tile = Tile.Floor; Items = []; Character = Option.None; IsSeen = false; WasSeen = Settings.EntireLevelSeen; Ore = NoneOre; TransportTarget = None; ElectronicMachine = None }
+    static member StairsDown = 
+            {Tile = Tile.StairsDown; Items = []; Character = Option.None; IsSeen = false; WasSeen = Settings.EntireLevelSeen; Ore = NoneOre; TransportTarget = None; ElectronicMachine = None }
     static member ClosedDoor =
             {Tile = Tile.ClosedDoor; Items = []; Character = Option.None; IsSeen = false; WasSeen = Settings.EntireLevelSeen; Ore = NoneOre; TransportTarget = None; ElectronicMachine = None }
     static member Computer =
             {Tile = Tile.Computer; Items = []; Character = Option.None; IsSeen = false; WasSeen = Settings.EntireLevelSeen; Ore = NoneOre; TransportTarget = None; ElectronicMachine = None }
     static member Create tile =
         {Tile = tile; Items = []; Character = Option.None; IsSeen = false; WasSeen = Settings.EntireLevelSeen; Ore = NoneOre; TransportTarget = None; ElectronicMachine = None }
-    static member GetDescription (place: Place) =
+    static member GetDescription (place: Place) additionalDescription =
         let tileDescription = 
             match place.Tile with
             | Tile.Floor -> "Floor."
@@ -120,6 +124,11 @@ type Place = {
             | Tile.StairsUp -> "Stairs leading up."
             | Tile.Computer -> "Computer."
             | Tile.Replicator -> "Replicator."
+            | Tile.MainMapForest -> "Forest." + additionalDescription
+            | Tile.MainMapCoast -> "Coast." + additionalDescription
+            | Tile.MainMapGrassland -> "Grassland." + additionalDescription
+            | Tile.MainMapMountains -> "Mountains." + additionalDescription
+            | Tile.MainMapWater -> "Water." + additionalDescription
             | _ -> ""
         let characterDescription =
             if place.Character.IsSome then
@@ -143,7 +152,8 @@ type Board = {
     Places : Place[,];
     Level : int;
     /// Defines the main map location which the current map is connected to.
-    MainMapLocation: Point option
+    MainMapLocation: Point option;
+    Type : LevelType
 }
     
 let boardContains (point: Point) = 
@@ -361,7 +371,7 @@ let private createProcessor board =
         loop board)
         
 // WARNING!!! The crap below... what is it for? what guid to put in here?
-let private agent = createProcessor <| { Guid = Guid.NewGuid(); Places = Array2D.create boardWidth boardHeight Place.EmptyPlace; Level = 0; MainMapLocation = Option.None }
+let private agent = createProcessor <| { Guid = Guid.NewGuid(); Places = Array2D.create boardWidth boardHeight Place.EmptyPlace; Level = 0; MainMapLocation = Option.None; Type = LevelType.MainMap }
 
 // TODO: refact functions to use BoardMessage structure
 
