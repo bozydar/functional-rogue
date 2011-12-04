@@ -185,6 +185,7 @@ type ScreenAgentMessage =
     | SetCursorPositionOnBoard of Point * State
     | DisplayComputerScreen of ScreenContentBuilder * State
     | ShowFinishScreen of State
+    | ShowDialog of Dialog.Dialog * AsyncReplyChannel<unit>
 
 and MainMenuReply = {
     Name: String
@@ -223,6 +224,16 @@ let private screenWritter () =
         text.Substring(0, length)
         |> String.iteri (fun i char -> 
             screen.[x + i, y] <- {empty with Char = char})
+        screen
+
+    let writeDecoratedText (position: Point) (decoratedText: Dialog.DecoratedText) (screen: screen) = 
+        let x = position.X
+        let y = position.Y
+        let text = decoratedText.Text
+        let length = min (screenSize.Width - x) text.Length
+        text.Substring(0, length)
+        |> String.iteri (fun i char -> 
+            screen.[x + i, y] <- {BGColor = decoratedText.BGColor; FGColor = decoratedText.FGColor; Char = char})
         screen
 
     let writeStrings (position: Point) (lines: String list) (fgcolor: ConsoleColor) (screen: screen) =
@@ -355,6 +366,29 @@ let private screenWritter () =
         )
         Console.SetCursorPosition(screenSize.Width, screenSize.Height)
 
+    let showDialog dialog screen =        
+        let sequence = seq {            
+            for i, item in dialog |> Seq.mapi (fun i item -> i, item) do
+                match item with
+                | Dialog.Title(text) -> 
+                    yield writeDecoratedText (point 0 i) (Dialog.newDecoratedText text  ConsoleColor.White ConsoleColor.Black)
+                | Dialog.Label(text) ->
+                    yield writeDecoratedText (point 0 i) (Dialog.newDecoratedText text  ConsoleColor.Black ConsoleColor.Gray)
+                | Dialog.Raw(decoratedText) ->
+                    yield writeDecoratedText (point 0 i) decoratedText
+                | Dialog.Menu(_, items) ->
+                    for j, itemj in items |> List.mapi (fun i item -> i, item) do
+                        match itemj with
+                        | Dialog.Item(input, text, _) -> 
+                            let dt1 = Dialog.newDecoratedText (input.ToString() + " - " + text) ConsoleColor.Black ConsoleColor.White 
+                            let dt2 = Dialog.newDecoratedText text ConsoleColor.Black ConsoleColor.Gray
+                            yield writeDecoratedText (point 0 (i + j + 1)) dt1
+                            yield writeDecoratedText (point 4 (i + j + 1)) dt2
+                    
+                | _ -> yield self
+        }           
+        screen |>> sequence
+
     MailboxProcessor<ScreenAgentMessage>.Start(fun inbox ->
         let rec loop screen = async {
             let! msg = inbox.Receive()
@@ -446,6 +480,15 @@ let private screenWritter () =
                     |> writeFinishScreen(state)                    
                 refreshScreen screen newScreen
                 return! loop newScreen
+            | ShowDialog(dialog, reply) ->
+                let newScreen =
+                    screen
+                    |> Array2D.copy
+                    |> cleanScreen
+                    |> showDialog(dialog)                    
+                refreshScreen screen newScreen
+                reply.Reply ()
+                return! loop newScreen                
         }
         loop <| Array2D.create screenSize.Width screenSize.Height empty
     )
@@ -462,6 +505,7 @@ let evaluateBoardFramePosition state =
 
 
 let private agent = screenWritter ()
+
 let showBoard () = agent.Post (ShowBoard(State.get ()))
 let showMainMenu () = agent.PostAndReply(fun reply -> ShowMainMenu(reply))
 let showChooseItemDialog items = agent.Post(ShowChooseItemDialog(items))
@@ -471,3 +515,28 @@ let displayComputerScreen content = agent.Post(DisplayComputerScreen(content, St
 let showMessages () = agent.Post (ShowMessages(State.get ()))
 let showOptions options  = agent.Post(ShowOptions(options))
 let showFinishScreen state  = agent.Post(ShowFinishScreen(state))
+let showDialog dialog = 
+    agent.PostAndReply (fun reply -> ShowDialog(dialog, reply))
+    let findKeyInDialog key dialog = 
+        dialog    
+        |> List.tryPick (function 
+            | Dialog.Menu(varName, items) -> 
+                let preResult =
+                    items
+                    |> List.tryPick (function 
+                        | Dialog.Item(itemKey, _, value) when itemKey = key -> Some(value)
+                        | _ -> None)
+                if preResult.IsSome then Some (varName, preResult.Value) else None
+            | _ -> None)
+    if List.exists (function | Dialog.Menu(_, _) -> true | _ -> false) dialog then        
+        let rec loop () =
+            let variableValuePair = 
+                (Console.ReadKey(true).KeyChar, dialog)
+                ||> findKeyInDialog    
+            if variableValuePair.IsSome then 
+                [variableValuePair.Value]
+            else
+                loop ()
+        loop ()
+    else
+        List.empty
