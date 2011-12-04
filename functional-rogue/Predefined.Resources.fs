@@ -17,10 +17,10 @@ let startLocationShip board =
     let getStartShipReplicator =
         { ComputerContent = { ComputerName = "Universal Replicator"; Notes = []; CanOperateDoors = false; CanOperateCameras = false; CanReplicate = true; HasCamera = false } }
 
-    let def = def @ [('1', { Place.Floor with Items = [Items.createPredefinedItem Items.OreExtractor]})]
-                  @ [('2', { Place.ClosedDoor with ElectronicMachine = Some({ ComputerContent = { ComputerName = "Ship door"; Notes = []; CanOperateDoors = false; CanOperateCameras = false; CanReplicate = false; HasCamera = true } })})]
-                  @ [('3', { Place.Computer with ElectronicMachine = Some(getStartShipComputer)})]
-                  @ [('4', { Place.Create Tile.Replicator with ElectronicMachine = Some(getStartShipReplicator)})]
+    let def = def @ [('1', fun _ -> { Place.Floor with Items = [Items.createPredefinedItem Items.OreExtractor]})]
+                  @ [('2', fun _ -> { Place.ClosedDoor with ElectronicMachine = Some({ ComputerContent = { ComputerName = "Ship door"; Notes = []; CanOperateDoors = false; CanOperateCameras = false; CanReplicate = false; HasCamera = true } })})]
+                  @ [('3', fun _ -> { Place.Computer with ElectronicMachine = Some(getStartShipComputer)})]
+                  @ [('4', fun _ -> { Place.Create Tile.Replicator with ElectronicMachine = Some(getStartShipReplicator)})]
 
     let where = Point(30, 10)
     board
@@ -32,7 +32,7 @@ let startLocationShip board =
              00##g#,,,,,,"        
 
 let ancientRuins board =
-    let def = def @ [('1', { Place.StairsDown with TransportTarget = Some({ BoardId = Guid.Empty; TargetCoordinates = Point(0,0); TargetLevelType = LevelType.Dungeon })})]
+    let def = def @ [('1', fun _ -> { Place.StairsDown with TransportTarget = Some({ BoardId = Guid.Empty; TargetCoordinates = Point(0,0); TargetLevelType = LevelType.Dungeon })})]
 
     let where = Point(50, 10)
     board
