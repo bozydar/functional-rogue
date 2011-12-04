@@ -36,6 +36,7 @@ type Command =
     | GoUp
     | Look
     | UseObject
+    | ToggleSettingsMainMapHighlightPointsOfInterest
 
 let private commandToSize command = 
     match command with
@@ -135,8 +136,12 @@ let private operateDoor command state =
         :: [for x in (max 0 (playerPosition.X - 1))..(min boardWidth (playerPosition.X + 1)) do
                 for y in (max 0 (playerPosition.Y - 1))..(min boardHeight (playerPosition.Y + 1)) do
                     let p = Point(x, y)
-                    if p <> playerPosition then yield p]        
-    let selected = selectPlace points state
+                    let tmpPlace = Board.get board p
+                    if p <> playerPosition && (tmpPlace.Tile = Tile.ClosedDoor || tmpPlace.Tile = Tile.OpenDoor) then yield p]        
+    let selected = if points.Length = 2 then
+                    Some(points.[1])
+                   else
+                    selectPlace points state
 
     if selected.IsSome then 
         board |> Board.modify selected.Value (
@@ -150,6 +155,10 @@ let private operateDoor command state =
 
 let performCloseOpenAction command state =
     { state with Board = operateDoor command state } 
+
+let performToggleSettingsMainMapHighlightPointsOfInterest command state =
+    let updatedSettings = {state.Settings with HighlightPointsOfInterest = not state.Settings.HighlightPointsOfInterest }
+    { state with Settings = updatedSettings}
 
 let performLookAction command state =
     let board = state.Board
@@ -193,6 +202,12 @@ let performGoDownEnterAction (command: Command) state =
     let currentPlayer = getPlayerCharacter currentBoard
     let playerPlace = currentBoard.Places.[playerPosition.X,playerPosition.Y]
     if (playerPlace.Tile = Tile.StairsDown || playerPlace.Tile = Tile.MainMapForest || playerPlace.Tile = Tile.MainMapGrassland || playerPlace.Tile = Tile.MainMapCoast) then
+        if (playerPlace.TransportTarget.IsSome && playerPlace.TransportTarget.Value.BoardId = Guid.Empty) then
+            let targetMapType = playerPlace.TransportTarget.Value.TargetLevelType
+            let newBoard, newPoint = generateLevel targetMapType (Some({BoardId = currentBoard.Guid; TargetCoordinates = playerPosition; TargetLevelType = currentBoard.Type})) (Some(currentBoard.Level - 1))
+            state.AllBoards.Add(newBoard.Guid, newBoard)                    
+            currentBoard.Places.[playerPosition.X,playerPosition.Y] <- {playerPlace with TransportTarget = Some({ BoardId = newBoard.Guid; TargetCoordinates = newPoint.Value; TargetLevelType = targetMapType }) }
+
         if (playerPlace.TransportTarget.IsNone) then
             let targetMapType = 
                 match playerPlace.Tile with
@@ -200,9 +215,10 @@ let performGoDownEnterAction (command: Command) state =
                 | Tile.MainMapGrassland -> LevelType.Grassland
                 | Tile.MainMapCoast -> LevelType.Coast
                 | _ -> LevelType.Cave
-            let newBoard, newPoint = generateLevel targetMapType (Some({BoardId = currentBoard.Guid; TargetCoordinates = playerPosition})) (Some(currentBoard.Level - 1))
+            let newBoard, newPoint = generateLevel targetMapType (Some({BoardId = currentBoard.Guid; TargetCoordinates = playerPosition; TargetLevelType = currentBoard.Type})) (Some(currentBoard.Level - 1))
             state.AllBoards.Add(newBoard.Guid, newBoard)                    
-            currentBoard.Places.[playerPosition.X,playerPosition.Y] <- {playerPlace with TransportTarget = Some({ BoardId = newBoard.Guid; TargetCoordinates = newPoint.Value }) }
+            currentBoard.Places.[playerPosition.X,playerPosition.Y] <- {playerPlace with TransportTarget = Some({ BoardId = newBoard.Guid; TargetCoordinates = newPoint.Value; TargetLevelType = targetMapType }) }
+        
         switchBoards currentBoard playerPosition state
     else
         state |> addMessage (sprintf "There are no stairs down nor entrance here.")
@@ -214,7 +230,7 @@ let performGoUpAction (command: Command) state =
     let playerPlace = currentBoard.Places.[playerPosition.X,playerPosition.Y]
     if (playerPlace.Tile = Tile.StairsUp) then
         if (playerPlace.TransportTarget.IsNone) then
-            let newBoard, newPoint = generateLevel LevelType.Cave (Some({BoardId = currentBoard.Guid; TargetCoordinates = playerPosition})) (Some(currentBoard.Level + 1))
+            let newBoard, newPoint = generateLevel LevelType.Cave (Some({BoardId = currentBoard.Guid; TargetCoordinates = playerPosition; TargetLevelType = currentBoard.Type})) (Some(currentBoard.Level + 1))
             state.AllBoards.Add(newBoard.Guid, newBoard)
         switchBoards currentBoard playerPosition state
     else

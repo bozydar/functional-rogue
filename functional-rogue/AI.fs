@@ -19,6 +19,12 @@ type GridPoint = {
 
 // tools
 
+let AddMessageIfPlayerCanSeePoint (targetPoint : Point) (message : string) (state : State) = 
+    if (Sight.canSee state.Board (getPlayerPosition state.Board) targetPoint) then
+                State.addMessage (message) state
+            else
+                state
+
 let getDifferentSpeciesTheMonsterCanAttackInMelee (monsterPlace: (Point*Place)) (state:State) =
     let distance = 1
     let monster = (snd monsterPlace).Character.Value :?> Monster
@@ -69,13 +75,17 @@ let aStar (startPoint: Point) (endPoint: Point) (board: Board) : (Point list) =
             [currentNode.point] 
         else
             reconstructPath completeSet (List.find<GridPoint> (fun elem -> elem.point = currentNode.cameFrom ) completeSet) @ [currentNode.point]
-            
+    
+    let sortByFScoreAndRandomizeEquals (e1 : GridPoint) (e2 : GridPoint) =
+            if e1.fScore = e2.fScore then
+                (rnd 3) - 1
+            else e1.fScore - e2.fScore        
 
     let mutable resultList = []
     let mutable closedSet : GridPoint list = []
     let mutable openSet = [{ point = startPoint; cameFrom = startPoint; gScore = 0; hScore = (estimateCostToEnd startPoint endPoint); fScore = (estimateCostToEnd startPoint endPoint) }]
     while openSet.Length > 0 do
-        openSet <- List.sortBy (fun element -> element.fScore) openSet
+        openSet <- List.sortWith (fun e1 e2 -> sortByFScoreAndRandomizeEquals e1 e2) openSet
         let current = openSet.Head
         if (current.point = endPoint) then
             resultList <- reconstructPath closedSet current
@@ -162,11 +172,15 @@ let getSpotsWithDangerScore (enemies: (Point*Character) list) (monsterPlace: Poi
     spots
 
 // specific monster AIs
+let sortByDangerAndRandomizeEquals (e1 : (Point*int)) (e2 : (Point*int)) =
+            if snd e1 = snd e2 then
+                (rnd 3) - 1
+            else snd e1 - snd e2
 
 let aiCowardMonster (monsterPlace: (Point*Place)) (state:State) : State =
     let differentSpecies = getDifferentSpeciesTheMonsterCanSee monsterPlace state
     if (differentSpecies.Length > 0) then
-        let sortedSpotsWithDistanceScore = List.sortBy (fun element -> (snd element)) (getSpotsWithDangerScore differentSpecies (fst monsterPlace) state)
+        let sortedSpotsWithDistanceScore = List.sortWith (fun e1 e2 -> sortByDangerAndRandomizeEquals e1 e2) (getSpotsWithDangerScore differentSpecies (fst monsterPlace) state)
         if sortedSpotsWithDistanceScore.Length > 0 then
             { state with Board = state.Board |> Board.moveCharacter (snd monsterPlace).Character.Value (fst (sortedSpotsWithDistanceScore.Head)) }
         else 
@@ -186,9 +200,12 @@ let aiLurkerPredatorMonster (monsterPlace: (Point*Place)) (state:State) : State 
         let differentSpeciesByDist = getPlacesTheMonsterCanSeeByDistance monsterPlace (fun monster place -> placeContainsDifferentSpeciesThanMonster monster place) state
         let newHungerFactor = monster.HungerFactor - 1
         monster.HungerFactor <- newHungerFactor
-        if (newHungerFactor < 0 || (differentSpeciesByDist.Length > 0 && (pointsDistance monsterPoint differentSpeciesByDist.Head) < 2) ) then
+        if (newHungerFactor < 0) then
             monster.State <- CharacterAiState.Hunting
-            state
+            state |> AddMessageIfPlayerCanSeePoint monsterPoint (monster.Name + " started looking for a prey")
+        elif (differentSpeciesByDist.Length > 0 && (pointsDistance monsterPoint differentSpeciesByDist.Head) < 2) then
+            monster.State <- CharacterAiState.Hunting
+            state |> AddMessageIfPlayerCanSeePoint monsterPoint (monster.Name + " got annoyed by an intruder and is getting ready to attack")
         else
             let positions = getGoodLurkingPositionsInSightSortedFromBest monsterPlace state
             let newState = state
@@ -214,8 +231,9 @@ let aiLurkerPredatorMonster (monsterPlace: (Point*Place)) (state:State) : State 
                     monster.HungerFactor <- rnd2 30 60
                     let thisPlace = state.Board.Places.[monsterPoint.X, monsterPoint.Y]
                     let corpseIndex = thisPlace.Items |> List.findIndex (fun item -> item.Type = Type.Corpse)
+                    let corpseName = thisPlace.Items.[corpseIndex].Name
                     state.Board.Places.[monsterPoint.X, monsterPoint.Y] <- { thisPlace with Items = thisPlace.Items |> List.removeAt corpseIndex }
-                    self
+                    AddMessageIfPlayerCanSeePoint monsterPoint (monster.Name + " has consumed the " + corpseName)
                 else
                     goTowards monsterPlace (corpses.Head)   //go to the nearest corpse to eat it
             else
