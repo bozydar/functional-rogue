@@ -180,12 +180,15 @@ let mainLoop () =
             ])        
     ]
 
+    let d2 : Dialog.Dialog = [
+        Dialog.Title("What's your name?" ) ;        
+        Dialog.Textbox("name")            
+    ]
+
     let test = showDialog d1
     if test.Head = ("ynResult", "1") then
-
-        // TODO: Replace mainMenuReply with wigdet from dialog
-        let mainMenuReply = showMainMenu ()
-        let thePlayer = new Player(mainMenuReply.Name, 20, 10, 16, 10)
+        let _, playerName = (showDialog d2).Head
+        let thePlayer = new Player(playerName, 20, 10, 16, 10)
 
         //initial maps setup
         let mainMapBoard, mainMapPoint = generateMainMap
