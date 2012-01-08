@@ -396,6 +396,8 @@ let private screenWritter () =
                             let dt2 = Dialog.newDecoratedText text ConsoleColor.Black ConsoleColor.Gray
                             yield writeDecoratedText (point 0 (i + j + 1)) dt1
                             yield writeDecoratedText (point 4 (i + j + 1)) dt2
+                | Dialog.Textbox(input) ->
+                    yield Dialog.newDecoratedText "                           " ConsoleColor.Gray ConsoleColor.Black |> writeDecoratedText (point 0 i) 
                     
                 | _ -> yield self
         }           
@@ -519,7 +521,7 @@ let evaluateBoardFramePosition state =
 let private agent = screenWritter ()
 
 let showBoard () = agent.Post (ShowBoard(State.get ()))
-let showMainMenu () = agent.PostAndReply(fun reply -> ShowMainMenu(reply))
+//let showMainMenu () = agent.PostAndReply(fun reply -> ShowMainMenu(reply))
 let showChooseItemDialog items = agent.Post(ShowChooseItemDialog(items))
 let showEquipmentItemDialog items = agent.Post(ShowEquipmentDialog(items))
 let setCursorPositionOnBoard point state = agent.Post(SetCursorPositionOnBoard(point, state))
@@ -550,5 +552,21 @@ let showDialog dialog =
             else
                 loop ()
         loop ()
-    else
-        List.empty
+    else 
+        // Textbox
+        let matcher1 = function 
+            | Dialog.Textbox(variableName) -> Some(variableName) 
+            | _ -> None
+        let matcher2 arg = matcher1 arg <> None
+        let variableName = dialog |> List.tryPick matcher1
+        if variableName.IsSome then
+            let positionY = dialog |> List.findIndex matcher2
+            let rec loop () = 
+                Console.SetCursorPosition(0, positionY)
+                let value = Console.ReadLine()
+                if String.IsNullOrWhiteSpace(value) then 
+                    loop ()
+                else 
+                    [(variableName.Value, value)]
+            loop ()
+        else List.empty
