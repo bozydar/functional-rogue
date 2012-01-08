@@ -4,9 +4,9 @@
 
 
 == do proprawiki ==
-0. Dodac ogolny kod, ktory pozwala na poruszanie kursorem strzalkami. () -> point;  (point -> bool) -> point
+0. DONE - Dodac ogolny kod, ktory pozwala na poruszanie kursorem strzalkami. () -> point;  (point -> bool) -> point
 1. Refaktoring planszy w sensie Character/Monster
-1. Zrobic dwa rodzaje przeszkod fizyczna i optyczna. (isObstacle do przerobki)
+1. DONE - Zrobic dwa rodzaje przeszkod fizyczna i optyczna. (isObstacle do przerobki)
 1. Zrobic ordnung w przesuwaniu postaci - guidy, byc moze mutable na tablicy.
 2. Linia wzroku : point -> point -> bool , FOV : () -> list<point>
 3. Zobaczyc procentowy FOV (stopieni widzialnosci a nie bool)
