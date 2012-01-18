@@ -627,7 +627,7 @@ let generateMainMap: (Board*Point) =
     let smoothNoise = smoothOutNoise (smoothOutNoise noise)
     let withMask = applyMaskModifier smoothNoise
 
-    let board = { Guid = System.Guid.NewGuid(); Places = Array2D.init boardWidth boardHeight (fun x y -> {Place.EmptyPlace with Tile = noiseValueToMap (withMask.[x,y])}); Level = 0; MainMapLocation = Option.None; Type = LevelType.MainMap}
+    let board = { Guid = mainMapGuid; Places = Array2D.init boardWidth boardHeight (fun x y -> {Place.EmptyPlace with Tile = noiseValueToMap (withMask.[x,y])}); Level = 0; MainMapLocation = Option.None; Type = LevelType.MainMap}
 
     //TODO: this to be deleted later... for this is map file generation for dev purposes
     let tileToStr (tile:Tile) =

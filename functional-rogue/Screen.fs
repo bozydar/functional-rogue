@@ -208,7 +208,7 @@ and ShowChooseItemDialogRequest = {
 }
 
 let getHighlightForTile (board : Board) x y =
-    if board.Type = LevelType.MainMap then
+    if board.IsMainMap then
         let tileDetails = (State.get()).MainMapDetails.[x,y]
         let settings = (State.get()).Settings
         if settings.HighlightPointsOfInterest && tileDetails.PointOfInterest.IsSome then
@@ -218,8 +218,8 @@ let getHighlightForTile (board : Board) x y =
     else
         Option.None
 
-let private screenWritter () =    
-    let writeBoard (board: Board) (boardFramePosition: Point) sightRadius (screen: screen) = 
+let private screenWritter () =        
+    let writeBoard (board: Board) (boardFramePosition: Point) (screen: screen) = 
         
         for x in 0..boardFrameSize.Width - 1 do
             for y in 0..boardFrameSize.Height - 1 do
@@ -408,11 +408,11 @@ let private screenWritter () =
             let! msg = inbox.Receive()
 
             match msg with
-            | ShowBoard(state) -> 
+            | ShowBoard(state) ->                 
                 let newScreen = 
                     screen
                     |> Array2D.copy
-                    |> writeBoard state.Board state.BoardFramePosition state.Player.SightRadius
+                    |> writeBoard state.Board state.BoardFramePosition
                     |> writeStats state
                     |> writeLastTurnMessageIfAvailable state
                 refreshScreen screen newScreen

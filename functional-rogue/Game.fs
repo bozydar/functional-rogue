@@ -241,7 +241,10 @@ let subscribeHandlers () =
     Turn.subscribe clearCharacterStates
     Turn.subscribe setVisibilityStates
     Turn.subscribe evaluateBoardFramePosition
-    Turn.subscribe (fun state -> {state with TurnNumber = state.TurnNumber + 1})
+    Turn.subscribe (
+        fun state -> 
+        {state with TurnNumber = state.TurnNumber + 1}
+     )
 
 [<EntryPoint>]
 let main args =    
