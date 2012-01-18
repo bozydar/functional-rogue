@@ -146,6 +146,7 @@ type Place = {
 
 let boardHeight = 24
 let boardWidth = 79
+let mainMapGuid = new Guid("7af1cd0c-8a30-4c6b-990b-5ae24658a816")
 
 type Board = {
     Guid : System.Guid;
@@ -154,7 +155,10 @@ type Board = {
     /// Defines the main map location which the current map is connected to.
     MainMapLocation: Point option;
     Type : LevelType
-}
+} with
+    member this.IsMainMap 
+        with get () = this.Guid = mainMapGuid
+
     
 let boardContains (point: Point) = 
     boardWidth > point.X  && boardHeight > point.Y && point.X >= 0 && point.Y >= 0
