@@ -296,6 +296,15 @@ let private screenWritter () =
         |> writeString (point leftPanelPos.Location.X (leftPanelPos.Location.Y + 7)) (sprintf "Cont. Water: %s " <| state.Player.ContaminatedWater.ToString())
         |> writeString (point leftPanelPos.Location.X (leftPanelPos.Location.Y + 8)) (sprintf "Turn: %d        " <| state.TurnNumber)
         |> writeString (point leftPanelPos.Location.X (leftPanelPos.Location.Y + 9)) (sprintf "Map Level: %d   " <| state.Board.Level)
+        |> 
+            if state.Player.HungerLevel = 1 then 
+                writeString (point leftPanelPos.Location.X (leftPanelPos.Location.Y + 10)) (sprintf "Hungry     ")
+            elif state.Player.HungerLevel = 2 then 
+                writeString (point leftPanelPos.Location.X (leftPanelPos.Location.Y + 10)) (sprintf "Very hungry")
+            elif state.Player.HungerLevel = 3 then 
+                writeString (point leftPanelPos.Location.X (leftPanelPos.Location.Y + 10)) (sprintf "Starving   ")
+            else
+                self
 
     let writeFinishScreen state screen =
         let position = point 1 0
