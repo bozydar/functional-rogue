@@ -313,7 +313,7 @@ let private screenWritter () =
         |> writeString (position + (new Size(0, 10))) (sprintf "Map Level: %d" <| state.Board.Level)
 
     let writeLastTurnMessageIfAvailable state screen =
-        if( state.UserMessages.Length > 0 && (fst (state.UserMessages.Head)) = state.TurnNumber) then
+        if ( state.UserMessages.Length > 0 && (isInBoundary (fst state.UserMessages.Head) (state.TurnNumber - 2) state.TurnNumber)) then
             screen
             |> cleanPartOfScreen (Point(0,(screenSize.Height - 1))) (Size(screenSize.Width, 1))
             |> writeString (point 0 (screenSize.Height - 1)) (snd state.UserMessages.Head)
