@@ -57,7 +57,7 @@ let mainLoop () =
             ()
         else
             let consoleKeyInfo = if printAll then new ConsoleKeyInfo('5', ConsoleKey.NumPad5, false, false, false) else System.Console.ReadKey(true)
-        
+            let isMainMap = (State.get ()).Board.IsMainMap                        
             let command = 
                 match consoleKeyInfo with 
                 | Keys [ConsoleKey.UpArrow; '8'] -> Up            
@@ -69,19 +69,19 @@ let mainLoop () =
                 | Key '1' -> DownLeft
                 | Key '3' -> DownRight
                 | Key '5' -> Wait
-                | Key ',' -> Take
+                | Key ',' when not isMainMap -> Take
                 | Key 'i' -> ShowItems
                 | Key ConsoleKey.Escape -> Quit
-                | Key 'o' -> OpenCloseDoor
+                | Key 'o' when not isMainMap -> OpenCloseDoor
                 | Key 'e' -> ShowEquipment
                 | Key 'm' -> ShowMessages
-                | Key 'h' -> Harvest
+                | Key 'h' when not isMainMap -> Harvest
                 | Key 'W' -> Wear
                 | Key 'T' -> TakeOff
                 | Key '>' -> GoDownEnter
                 | Key '<' -> GoUp
-                | Key 'l' -> Look
-                | Key 'U' -> UseObject
+                | Key 'l' when not isMainMap -> Look
+                | Key 'U' when not isMainMap -> UseObject
                 | Key 'O' -> ToggleSettingsMainMapHighlightPointsOfInterest
                 | _ -> Unknown                        
         
