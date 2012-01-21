@@ -30,6 +30,8 @@ type Character (characterType: CharacterType, startingHP: int, startingDexterity
     let mutable dexterity = startingDexterity
     let mutable strength = startingStrength
     let mutable involvedInFight = false
+    let mutable hungerFactor = 0
+    let mutable hungerFactorStep = 100
 
     let mutable items : list<Item> = []
 
@@ -69,6 +71,24 @@ type Character (characterType: CharacterType, startingHP: int, startingDexterity
 
     member this.ResetVolatileStates () =
         this.InvolvedInFight <- false
+
+    member this.TickBiologicalClock () =
+        this.HungerFactor <- this.HungerFactor + 1
+        match this.HungerLevel with
+        | 1 when rnd 100 < 3 -> this.HitWithDamage 1
+        | 2 when rnd 100 < 10   -> this.HitWithDamage 1
+        | 3 when rnd 100 < 20   -> this.HitWithDamage 1
+        | _ -> ()
+
+    member this.HungerLevel =         
+        if isInBoundary this.HungerFactor hungerFactorStep (hungerFactorStep * 2) then 1
+        elif isInBoundary this.HungerFactor (hungerFactorStep * 2) (hungerFactorStep * 3) then 2
+        elif this.HungerFactor > (hungerFactorStep * 3) then 3
+        else 0
+
+    member this.HungerFactor
+        with get() = hungerFactor
+        and set(value) = hungerFactor <- value        
 
     abstract member MeleeAttack : AttackResult with get
     default this.MeleeAttack
