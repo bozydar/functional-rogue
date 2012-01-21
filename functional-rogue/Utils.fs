@@ -44,6 +44,9 @@ let inBoundary v min max =
     elif v > max then max
     else v    
 
+let isInBoundary v min max = 
+    v >= min && v <= max
+
 let intByIndex tuple index = 
     FSharpValue.GetTupleField(tuple, index)  :?> int
 
