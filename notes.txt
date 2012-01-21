@@ -1,4 +1,4 @@
-== Zarys ==
+﻿== Zarys ==
 1. Bohater rozbija sie na nieznanej planecie. Ma do dyspozycji tylko apteczke z podstawowym sprzetem medycznym (kilka apteczek i testy biologicne), replikator oraz podstawowe mineraly w niewielkich ilosciach. W pierwszej kolejnosci musi znalezc wode oraz pozywienie (wprowadzic glod i pragnienie - kazdy pokarm bedzie zawieral okreslona ilosc wody oraz substancji odzywczych (zastanowic sie czy nie zrobic rozroznienia na tluszcze, bialko i witaminy))
 
 
@@ -34,6 +34,9 @@
 			- brak witamin i gosciowi wypadaja zeby i robia sie rany
 		- weglowodany
 			- gosciu slabnie az do smierci
+    3. Zasoby
+        - gościu zbiera potrzebne zasoby po jaskiniach. Im rzadsze tym głębiej. Do szczególnie wyspecjalizowanych potrzebne są b. rzadkie
+        minerały - np. uran.
 	4. Statek matka orbituje i co jakis czas mozna sie z nim skomunikowac. Dzieki temu autonomiczne systemy cos mu zrzuca - to zasymuluje awans postaci. Np. dostanie jakis nowy program dla replikatora, zeby sobie
 		cos zrobic z dostepnyh mineralow.
 	5. Lornetka
