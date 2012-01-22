@@ -37,6 +37,7 @@ type Command =
     | Look
     | UseObject
     | ToggleSettingsMainMapHighlightPointsOfInterest
+    | Eat
 
 let private commandToSize command = 
     match command with
@@ -363,6 +364,31 @@ let wear (state : State) =
                     | 't' -> state.Player.WornItems <- {state.Player.WornItems with Torso = item }                        
                     | _ -> ()
 
+                state
+            else
+                refreshScreen 
+                loop ()
+    refreshScreen
+    loop ()
+
+let eat (state : State) = 
+    let eatable =            
+        state.Player.Items |> List.filter (fun item -> item.Type = Type.Corpse)
+
+    let refreshScreen = 
+        Screen.showChooseItemDialog {State = state; Filter = (fun item -> List.exists ((=) item) eatable)}
+
+    let rec loop () =
+        let keyInfo = System.Console.ReadKey(true)
+        match keyInfo with 
+        | Key ConsoleKey.Escape -> state
+        | _ -> 
+            let keyChar = keyInfo.KeyChar
+            let item = Map.tryGetItem keyChar state.Player.ShortCuts 
+            if item.IsSome then
+                state.Player.HungerFactor <- state.Player.HungerFactor - 50
+                let indexToRemove = List.findIndex ((=) item.Value) state.Player.Items
+                state.Player.Items <- List.removeAt indexToRemove state.Player.Items
                 state
             else
                 refreshScreen 
