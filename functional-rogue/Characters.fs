@@ -171,6 +171,7 @@ and Type =
     | Hat
     | Corpse
     | Tool
+
 and MiscProperties = {
     OreExtractionRate : int
 }

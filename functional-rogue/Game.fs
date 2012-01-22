@@ -74,6 +74,7 @@ let mainLoop () =
                 | Key ConsoleKey.Escape -> Quit
                 | Key 'o' when not isMainMap -> OpenCloseDoor
                 | Key 'e' -> ShowEquipment
+                | Key 'E' -> Eat
                 | Key 'm' -> ShowMessages
                 | Key 'h' when not isMainMap -> Harvest
                 | Key 'W' -> Wear
@@ -159,6 +160,12 @@ let mainLoop () =
             | Wear ->
                 State.get ()
                 |> wear
+                |> Turn.next
+                Screen.showBoard ()
+                loop false
+            | Eat ->
+                State.get ()
+                |> eat
                 |> Turn.next
                 Screen.showBoard ()
                 loop false
