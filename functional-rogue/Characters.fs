@@ -128,19 +128,29 @@ and WornItems = {
     Torso : option<Item>;
     Legs : option<Item>
 } 
-and [<CustomEquality; CustomComparison>] Item = {    
-    Id : Guid;
-    Name : string;
-    Wearing : Wearing
-    Type : Type;
-    MiscProperties : MiscProperties;
-    // attacker -> defener -> distance -> (damage * attackBonus * defenceBonus)
-    Attack : (Character -> Character -> int -> AttackResult) option  
-} 
-with 
+and 
+    Item (name: string, wearing: Wearing, _type: Type, 
+            attack : (Character -> Character -> int -> AttackResult) option ) =    
+    let id = Guid.NewGuid()
+
+    member this.Id
+        with get() : Guid = id 
+   
+    member this.Name
+        with get() : string = name
+
+    member this.Wearing 
+        with get() : Wearing = wearing
+
+    member this.Type
+        with get() : Type = _type
+
+    member this.Attack 
+        with get() : (Character -> Character -> int -> AttackResult) option = attack
+
     override this.Equals(other) =
         match other with
-        | :? Item as other -> other.Id = this.Id
+        | :? Item as other -> other.Id = id
         | _ -> false
     
     override this.GetHashCode() = 
@@ -151,6 +161,7 @@ with
             match other with
             | :? Item as other -> compare this other
             | _ -> invalidArg "other" "cannot compare values of different types"        
+
 and Wearing = {
     OnHead : bool;
     InHand : bool;
@@ -170,7 +181,8 @@ and Type =
     | Knife
     | Hat
     | Corpse
-    | Tool
+    | OreExtractor of OreExtractorProperties
+and OreExtractorProperties = { HarvestRate: int }
 
 and MiscProperties = {
     OreExtractionRate : int
@@ -180,7 +192,7 @@ let defaultMiscProperties = {
     OreExtractionRate = 0
 }
 
-let itemShortDescription item =
+let itemShortDescription (item: Item)=
     let rest = 
         item.Name 
     rest

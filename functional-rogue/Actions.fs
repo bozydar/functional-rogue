@@ -263,9 +263,10 @@ let performHarvest state =
         match place.Ore with
         | Iron(v) | Gold(v) | Uranium(v) ->
             if state.Player.WornItems.Hand.IsSome then
-                state.Player.WornItems.Hand.Value.MiscProperties.OreExtractionRate
-            else
-                0
+                match state.Player.WornItems.Hand.Value.Type with
+                | OreExtractor(oreExtractorProperties) -> oreExtractorProperties.HarvestRate            
+                | _ -> 0
+            else 0
         | _ -> 5    //rate for water
     if harvestRate = 0 then
         state |> addMessage "You cannot harvest anything. You need a special tool for that." 

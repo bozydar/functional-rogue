@@ -53,7 +53,7 @@ let toTextel item (highlighOption : ConsoleColor option) =
                         | Sword | Knife -> {Char = '/'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
                         | Hat -> {Char = ']'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
                         | Corpse -> {Char = '%'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
-                        | Tool -> {Char = '['; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
+                        | OreExtractor(_) -> {Char = '['; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
                 | _ -> 
                     match item.Ore with
                     | Iron(_) -> {Char = '$'; FGColor = ConsoleColor.Black; BGColor = ConsoleColor.Gray}
@@ -407,8 +407,7 @@ let private screenWritter () =
                             yield writeDecoratedText (point 4 (i + j + 1)) dt2
                 | Dialog.Textbox(input) ->
                     yield Dialog.newDecoratedText "                           " ConsoleColor.Gray ConsoleColor.Black |> writeDecoratedText (point 0 i) 
-                    
-                | _ -> yield self
+                                    
         }           
         screen |>> sequence
 
