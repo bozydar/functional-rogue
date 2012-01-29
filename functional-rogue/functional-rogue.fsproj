@@ -60,10 +60,10 @@
     <Compile Include="Player.fs" />
     <Compile Include="State.fs" />
     <Compile Include="Turn.fs" />
+    <Compile Include="Predefined.Items.fs" />
     <Compile Include="Mechanics.fs" />
     <Compile Include="Sight.fs" />
     <Compile Include="Predefined.Parser.fs" />
-    <Compile Include="Predefined.Items.fs" />
     <Compile Include="Replication.fs" />
     <Compile Include="Predefined.Resources.fs" />
     <Compile Include="LevelGeneration.fs" />

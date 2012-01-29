@@ -5,6 +5,7 @@ open Characters
 open Board
 open Log
 open State
+open Predefined.Items
 
 let roll () =
     rnd2 1 21
@@ -93,19 +94,7 @@ let private evalDefendMeleeDamage (attacker : Character) (defender : Character) 
 let killCharacter (victim: Character) (state: State) =
     let allBoardPlaces = places (state.Board)
     let victimPlace = Seq.find (fun x -> (snd x).Character = Some(victim)) allBoardPlaces
-    let corpseItem = {
-        Id = Guid.NewGuid();
-        Name = victim.Name + " corpse";
-        Wearing = {
-                    OnHead = false;
-                    InHand = false;
-                    OnTorso = false;
-                    OnLegs = false
-        };
-        Type = Corpse;
-        MiscProperties = Characters.defaultMiscProperties
-        Attack = Option.None
-        }
+    let corpseItem = corpse victim.Name
     { state with 
         Board = state.Board
         |> modify (fst victimPlace) (fun place -> { place with Character = option.None })

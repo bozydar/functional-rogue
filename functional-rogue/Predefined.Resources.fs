@@ -4,6 +4,7 @@ open Parser
 open Board
 open System.Drawing
 open System
+open Predefined.Items
 
 
 let startLocationShip board =
@@ -17,7 +18,7 @@ let startLocationShip board =
     let getStartShipReplicator =
         { ComputerContent = { ComputerName = "Universal Replicator"; Notes = []; CanOperateDoors = false; CanOperateCameras = false; CanReplicate = true; HasCamera = false } }
 
-    let def = def @ [('1', fun _ -> { Place.Floor with Items = [Items.createPredefinedItem Items.OreExtractor]})]
+    let def = def @ [('1', fun _ -> { Place.Floor with Items = [oreExtractor]})]
                   @ [('2', fun _ -> { Place.ClosedDoor with ElectronicMachine = Some({ ComputerContent = { ComputerName = "Ship door"; Notes = []; CanOperateDoors = false; CanOperateCameras = false; CanReplicate = false; HasCamera = true } })})]
                   @ [('3', fun _ -> { Place.Computer with ElectronicMachine = Some(getStartShipComputer)})]
                   @ [('4', fun _ -> { Place.Create Tile.Replicator with ElectronicMachine = Some(getStartShipReplicator)})]
