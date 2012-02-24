@@ -612,7 +612,7 @@ let generateStartLocationWithInitialPlayerPositon (cameFrom:Point) : (Board*Poin
         board
         |> Predefined.Resources.startLocationShip
     //TODO: Delete the line below - it's for testing only
-    result.Places.[0,0] <- { result.Places.[0,0] with ElectronicMachine = Some( { ComputerContent = { ComputerName = "Upper left camera"; Notes = []; CanOperateDoors = false; CanOperateCameras = false; CanReplicate = false; HasCamera = true } } )}
+    result.Places.[0,0] <- { result.Places.[0,0] with ElectronicMachine = Some( { ComputerContent = { ComputerName = "Upper left camera"; Notes = []; CanOperateDoors = false; CanOperateCameras = false; CanReplicate = false; HasCamera = true; ReplicationRecipes = [] } } )}
     (result,(Point(32,12)))
 
 let generateMainMap: (Board*Point) =
