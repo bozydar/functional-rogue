@@ -23,6 +23,7 @@ let knife = Item("Knife", Wearing.HandOnly, Type.Knife, Some(fun attacker _ _ ->
             else { result with Damage = lightWound, heavyWound, heavyWound }))
 let randomRock = Item("Rock", Wearing.HandOnly, Rock, None)
        
+let ironHelmet = Item("Iron Helmet", Wearing.HeadOnly, Type.Hat, Some(fun attacker _ _ -> { Damage = 0, 0, 0; AttackBonus = 0; DefenceBonus = 5}))
 
 (*
 { Id = Guid.NewGuid();
