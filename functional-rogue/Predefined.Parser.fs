@@ -6,15 +6,16 @@ open System
     
 
 let def = [
-    ('0', Place.EmptyPlace); 
-    ('#', Place.Wall);
-    ('g', { Place.Wall with Tile = Tile.Glass});
-    ('>', { Place.EmptyPlace with Tile = Tile.StairsDown});
-    ('+', { Place.EmptyPlace with Tile = Tile.ClosedDoor});
-    ('.', { Place.EmptyPlace with Tile = Tile.Floor});
-    (',', { Place.EmptyPlace with Tile = Tile.Grass})]
+    ('0', fun _ -> Place.EmptyPlace); 
+    ('#', fun _ -> Place.Wall);
+    ('g', fun _ -> { Place.Wall with Tile = Tile.Glass});
+    ('>', fun _ -> { Place.EmptyPlace with Tile = Tile.StairsDown});
+    ('+', fun _ -> { Place.EmptyPlace with Tile = Tile.ClosedDoor});
+    ('.', fun _ -> { Place.EmptyPlace with Tile = Tile.Floor});
+    (',', fun _ -> { Place.EmptyPlace with Tile = Tile.Grass})
+    ('_', fun current -> current)]
 
-let (|Definition|_|) (def : (char * Place) list) input =
+let (|Definition|_|) (def : (char * (Place -> Place)) list) input =
     match List.tryFind (fun item -> input = fst item ) def with
     | Some(_, place) -> Some(place)
     | _ -> Option.None
@@ -43,7 +44,9 @@ let putPredefinedOnBoard defs (position : Point) pattern board =
         for y, items in pairs do   
             let pairs2 = Seq.mapi (fun i item -> position.X + i, item) items
             for x, item in pairs2 do
-                yield Board.set (new Point(x, y)) item
+                let p = new Point(x, y)
+                let newItem = item (Board.get board p)
+                yield Board.set (new Point(x, y)) newItem
 
     }
     board

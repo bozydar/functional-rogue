@@ -31,7 +31,7 @@ let breakStringIfTooLong (maxWidth: int) (text: string) =
         else
             [text]
 
-let toTextel item =  
+let toTextel item (highlighOption : ConsoleColor option) =  
     if item.WasSeen then
         let result = 
             let character = 
@@ -53,7 +53,7 @@ let toTextel item =
                         | Sword | Knife -> {Char = '/'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
                         | Hat -> {Char = ']'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
                         | Corpse -> {Char = '%'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
-                        | Tool -> {Char = '['; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
+                        | OreExtractor(_) -> {Char = '['; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
                 | _ -> 
                     match item.Ore with
                     | Iron(_) -> {Char = '$'; FGColor = ConsoleColor.Black; BGColor = ConsoleColor.Gray}
@@ -62,6 +62,7 @@ let toTextel item =
                     | CleanWater(_) -> {Char = '~'; FGColor = ConsoleColor.Blue; BGColor = ConsoleColor.Black}
                     | ContaminatedWater(_) -> {Char = '~'; FGColor = ConsoleColor.Blue; BGColor = ConsoleColor.Black}
                     | _ ->
+                        let mainMapBackground = if highlighOption.IsSome then highlighOption.Value else ConsoleColor.Black
                         match item.Tile with
                         | Wall ->  {Char = '#'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
                         | Floor -> {Char = '.'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
@@ -78,11 +79,11 @@ let toTextel item =
                         | StairsUp -> {Char = '<'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
                         | Computer -> {Char = '#'; FGColor = ConsoleColor.Red; BGColor = ConsoleColor.Black}
                         | Replicator -> {Char = '_'; FGColor = ConsoleColor.Red; BGColor = ConsoleColor.Black}
-                        | MainMapForest -> {Char = '&'; FGColor = ConsoleColor.DarkGreen; BGColor = ConsoleColor.Black}
-                        | MainMapGrassland -> {Char = '"'; FGColor = ConsoleColor.Green; BGColor = ConsoleColor.Black}
-                        | MainMapMountains -> {Char = '^'; FGColor = ConsoleColor.Gray; BGColor = ConsoleColor.Black}
-                        | MainMapWater -> {Char = '~'; FGColor = ConsoleColor.Blue; BGColor = ConsoleColor.Black}
-                        | MainMapCoast -> {Char = '.'; FGColor = ConsoleColor.Yellow; BGColor = ConsoleColor.Black}
+                        | MainMapForest -> {Char = '&'; FGColor = ConsoleColor.DarkGreen; BGColor = mainMapBackground}
+                        | MainMapGrassland -> {Char = '"'; FGColor = ConsoleColor.Green; BGColor = mainMapBackground}
+                        | MainMapMountains -> {Char = '^'; FGColor = ConsoleColor.Gray; BGColor = mainMapBackground}
+                        | MainMapWater -> {Char = '~'; FGColor = ConsoleColor.Blue; BGColor = mainMapBackground}
+                        | MainMapCoast -> {Char = '.'; FGColor = ConsoleColor.Yellow; BGColor = mainMapBackground}
                         | _ -> empty
         if not item.IsSeen then {result with FGColor = ConsoleColor.DarkGray } else result
     else empty
@@ -139,7 +140,7 @@ type ScreenContentBuilder (maxWidth: int, theme: ColorTheme) =
             |> Seq.toList
             |> List.permute (fun i -> (i % width) * width + (i / width))    //changes 'by columns' to 'by rows'
             |> Seq.ofList
-            |> Seq.fold (fun (acc: textel[] list) place -> if not(acc.IsEmpty) && acc.Head.Length < widthWithPadding then [Array.append acc.Head [|toTextel place|]] @ acc.Tail else [Array.append leftPadding [|toTextel place|]] @ acc) List.empty<textel[]> 
+            |> Seq.fold (fun (acc: textel[] list) place -> if not(acc.IsEmpty) && acc.Head.Length < widthWithPadding then [Array.append acc.Head [|toTextel place Option.None|]] @ acc.Tail else [Array.append leftPadding [|toTextel place Option.None|]] @ acc) List.empty<textel[]> 
         textelArraysList <- textelArraysList @ List.rev reverseTextelsList
         ()
 
@@ -184,6 +185,9 @@ type ScreenAgentMessage =
     | ShowOptions of seq<char * string>
     | SetCursorPositionOnBoard of Point * State
     | DisplayComputerScreen of ScreenContentBuilder * State
+    | ShowFinishScreen of State
+    | ShowDialog of Dialog.Dialog * AsyncReplyChannel<unit>
+
 and MainMenuReply = {
     Name: String
 } 
@@ -203,15 +207,26 @@ and ShowChooseItemDialogRequest = {
     Filter: Item -> bool
 }
 
-let private screenWritter () =    
-    let writeBoard (board: Board) (boardFramePosition: Point) sightRadius (screen: screen) = 
+let getHighlightForTile (board : Board) x y =
+    if board.IsMainMap then
+        let tileDetails = (State.get()).MainMapDetails.[x,y]
+        let settings = (State.get()).Settings
+        if settings.HighlightPointsOfInterest && tileDetails.PointOfInterest.IsSome then
+            Some(ConsoleColor.Yellow)
+        else
+            Option.None
+    else
+        Option.None
+
+let private screenWritter () =        
+    let writeBoard (board: Board) (boardFramePosition: Point) (screen: screen) = 
         
         for x in 0..boardFrameSize.Width - 1 do
             for y in 0..boardFrameSize.Height - 1 do
                 // move board                                
                 let virtualX = x + boardFramePosition.X
                 let virtualY = y + boardFramePosition.Y
-                screen.[x, y] <- toTextel board.Places.[virtualX, virtualY]
+                screen.[x, y] <- toTextel board.Places.[virtualX, virtualY] (getHighlightForTile board virtualX virtualY)
         screen      
         
     let writeString (position: Point) (text: String) (screen: screen) = 
@@ -221,6 +236,16 @@ let private screenWritter () =
         text.Substring(0, length)
         |> String.iteri (fun i char -> 
             screen.[x + i, y] <- {empty with Char = char})
+        screen
+
+    let writeDecoratedText (position: Point) (decoratedText: Dialog.DecoratedText) (screen: screen) = 
+        let x = position.X
+        let y = position.Y
+        let text = decoratedText.Text
+        let length = min (screenSize.Width - x) text.Length
+        text.Substring(0, length)
+        |> String.iteri (fun i char -> 
+            screen.[x + i, y] <- {BGColor = decoratedText.BGColor; FGColor = decoratedText.FGColor; Char = char})
         screen
 
     let writeStrings (position: Point) (lines: String list) (fgcolor: ConsoleColor) (screen: screen) =
@@ -251,7 +276,7 @@ let private screenWritter () =
         writeAllLines x y (builder.ToTextels()) screen
 
     let cleanPartOfScreen (point: Point) (size: Size) (screen: screen) =
-        for x in (point.X)..(point.X + size.Width - 1)do
+        for x in (point.X)..(point.X + size.Width - 1) do
             for y in (point.Y)..(point.Y + size.Height - 1) do
                 screen.[x, y] <- empty
         screen
@@ -262,18 +287,42 @@ let private screenWritter () =
     let writeStats state screen =
         screen 
         |> writeString leftPanelPos.Location (sprintf "HP: %d/%d" state.Player.CurrentHP state.Player.MaxHP)
-        |> writeString (point leftPanelPos.Location.X (leftPanelPos.Location.Y + 1)) (sprintf "%s the rogue" state.Player.Name)
-        |> writeString (point leftPanelPos.Location.X (leftPanelPos.Location.Y + 2)) (sprintf "Ma: %d/%d" state.Player.CurrentHP state.Player.MaxHP)
-        |> writeString (point leftPanelPos.Location.X (leftPanelPos.Location.Y + 3)) (sprintf "Iron: %s" <| state.Player.Iron.ToString())
-        |> writeString (point leftPanelPos.Location.X (leftPanelPos.Location.Y + 4)) (sprintf "Gold: %s" <| state.Player.Gold.ToString())
-        |> writeString (point leftPanelPos.Location.X (leftPanelPos.Location.Y + 5)) (sprintf "Uranium: %s" <| state.Player.Uranium.ToString())
-        |> writeString (point leftPanelPos.Location.X (leftPanelPos.Location.Y + 6)) (sprintf "Water: %s" <| state.Player.Water.ToString())
-        |> writeString (point leftPanelPos.Location.X (leftPanelPos.Location.Y + 7)) (sprintf "Cont. Water: %s" <| state.Player.ContaminatedWater.ToString())
-        |> writeString (point leftPanelPos.Location.X (leftPanelPos.Location.Y + 8)) (sprintf "Turn: %d" <| state.TurnNumber)
-        |> writeString (point leftPanelPos.Location.X (leftPanelPos.Location.Y + 9)) (sprintf "Map Level: %d" <| state.Board.Level)
+        |> writeString (point leftPanelPos.Location.X (leftPanelPos.Location.Y + 1)) (sprintf "%s the rogue    " state.Player.Name)
+        |> writeString (point leftPanelPos.Location.X (leftPanelPos.Location.Y + 2)) (sprintf "Ma: %d/%d       " state.Player.CurrentHP state.Player.MaxHP)
+        |> writeString (point leftPanelPos.Location.X (leftPanelPos.Location.Y + 3)) (sprintf "Iron: %s        " <| state.Player.Iron.ToString())
+        |> writeString (point leftPanelPos.Location.X (leftPanelPos.Location.Y + 4)) (sprintf "Gold: %s        " <| state.Player.Gold.ToString())
+        |> writeString (point leftPanelPos.Location.X (leftPanelPos.Location.Y + 5)) (sprintf "Uranium: %s     " <| state.Player.Uranium.ToString())
+        |> writeString (point leftPanelPos.Location.X (leftPanelPos.Location.Y + 6)) (sprintf "Water: %s       " <| state.Player.Water.ToString())
+        |> writeString (point leftPanelPos.Location.X (leftPanelPos.Location.Y + 7)) (sprintf "Cont. Water: %s " <| state.Player.ContaminatedWater.ToString())
+        |> writeString (point leftPanelPos.Location.X (leftPanelPos.Location.Y + 8)) (sprintf "Turn: %d        " <| state.TurnNumber)
+        |> writeString (point leftPanelPos.Location.X (leftPanelPos.Location.Y + 9)) (sprintf "Map Level: %d   " <| state.Board.Level)
+        |> 
+            if state.Player.HungerLevel = 1 then 
+                writeString (point leftPanelPos.Location.X (leftPanelPos.Location.Y + 10)) (sprintf "Hungry     ")
+            elif state.Player.HungerLevel = 2 then 
+                writeString (point leftPanelPos.Location.X (leftPanelPos.Location.Y + 10)) (sprintf "Very hungry")
+            elif state.Player.HungerLevel = 3 then 
+                writeString (point leftPanelPos.Location.X (leftPanelPos.Location.Y + 10)) (sprintf "Starving   ")
+            else
+                self
+
+    let writeFinishScreen state screen =
+        let position = point 1 0
+        screen 
+        |> writeString position "You have been died. Nobody heard your scream."
+        |> writeString (position + (new Size(0, 1))) (sprintf "HP: %d/%d" state.Player.CurrentHP state.Player.MaxHP)
+        |> writeString (position + (new Size(0, 2))) (sprintf "%s the rogue" state.Player.Name)
+        |> writeString (position + (new Size(0, 3))) (sprintf "Ma: %d/%d" state.Player.CurrentHP state.Player.MaxHP)
+        |> writeString (position + (new Size(0, 4))) (sprintf "Iron: %s" <| state.Player.Iron.ToString())
+        |> writeString (position + (new Size(0, 5))) (sprintf "Gold: %s" <| state.Player.Gold.ToString())
+        |> writeString (position + (new Size(0, 6))) (sprintf "Uranium: %s" <| state.Player.Uranium.ToString())
+        |> writeString (position + (new Size(0, 7))) (sprintf "Water: %s" <| state.Player.Water.ToString())
+        |> writeString (position + (new Size(0, 8))) (sprintf "Cont. Water: %s" <| state.Player.ContaminatedWater.ToString())
+        |> writeString (position + (new Size(0, 9))) (sprintf "Turn: %d" <| state.TurnNumber)
+        |> writeString (position + (new Size(0, 10))) (sprintf "Map Level: %d" <| state.Board.Level)
 
     let writeLastTurnMessageIfAvailable state screen =
-        if( state.UserMessages.Length > 0 && (fst (state.UserMessages.Head)) = state.TurnNumber - 1) then
+        if ( state.UserMessages.Length > 0 && (isInBoundary (fst state.UserMessages.Head) (state.TurnNumber - 2) state.TurnNumber)) then
             screen
             |> cleanPartOfScreen (Point(0,(screenSize.Height - 1))) (Size(screenSize.Width, 1))
             |> writeString (point 0 (screenSize.Height - 1)) (snd state.UserMessages.Head)
@@ -308,10 +357,10 @@ let private screenWritter () =
             if item.IsSome then itemShortDescription (item.Value) else ""
 
         let writeProperties (allItems : Item list) (wornItems : WornItems) = [
-            (writeString (new Point(1,0)) (sprintf "Head - %s"  (writeIfExisits wornItems.Head )));
-            (writeString (new Point(1,1)) (sprintf "In Hand - %s" (writeIfExisits wornItems.Hand )));
-            (writeString (new Point(1,2)) (sprintf "On Torso - %s" (writeIfExisits wornItems.Torso )));
-            (writeString (new Point(1,3)) (sprintf "On Legs - %s" (writeIfExisits wornItems.Legs )));
+            (writeString (new Point(1,0)) (sprintf "Head - %s     "  (writeIfExisits wornItems.Head )));
+            (writeString (new Point(1,1)) (sprintf "In Hand - %s  " (writeIfExisits wornItems.Hand )));
+            (writeString (new Point(1,2)) (sprintf "On Torso - %s " (writeIfExisits wornItems.Torso )));
+            (writeString (new Point(1,3)) (sprintf "On Legs - %s  " (writeIfExisits wornItems.Legs )));
         ]
 
         let currentState = State.get ()
@@ -338,16 +387,40 @@ let private screenWritter () =
         )
         Console.SetCursorPosition(screenSize.Width, screenSize.Height)
 
+    let showDialog dialog screen =        
+        let sequence = seq {            
+            for i, item in dialog |> Seq.mapi (fun i item -> i, item) do
+                match item with
+                | Dialog.Title(text) -> 
+                    yield writeDecoratedText (point 0 i) (Dialog.newDecoratedText text  ConsoleColor.White ConsoleColor.Black)
+                | Dialog.Label(text) ->
+                    yield writeDecoratedText (point 0 i) (Dialog.newDecoratedText text  ConsoleColor.Black ConsoleColor.Gray)
+                | Dialog.Raw(decoratedText) ->
+                    yield writeDecoratedText (point 0 i) decoratedText
+                | Dialog.Menu(_, items) ->
+                    for j, itemj in items |> List.mapi (fun i item -> i, item) do
+                        match itemj with
+                        | Dialog.Item(input, text, _) -> 
+                            let dt1 = Dialog.newDecoratedText (input.ToString() + " - " + text) ConsoleColor.Black ConsoleColor.White 
+                            let dt2 = Dialog.newDecoratedText text ConsoleColor.Black ConsoleColor.Gray
+                            yield writeDecoratedText (point 0 (i + j + 1)) dt1
+                            yield writeDecoratedText (point 4 (i + j + 1)) dt2
+                | Dialog.Textbox(input) ->
+                    yield Dialog.newDecoratedText "                           " ConsoleColor.Gray ConsoleColor.Black |> writeDecoratedText (point 0 i) 
+                                    
+        }           
+        screen |>> sequence
+
     MailboxProcessor<ScreenAgentMessage>.Start(fun inbox ->
         let rec loop screen = async {
             let! msg = inbox.Receive()
 
             match msg with
-            | ShowBoard(state) -> 
+            | ShowBoard(state) ->                 
                 let newScreen = 
                     screen
                     |> Array2D.copy
-                    |> writeBoard state.Board state.BoardFramePosition state.Player.SightRadius
+                    |> writeBoard state.Board state.BoardFramePosition
                     |> writeStats state
                     |> writeLastTurnMessageIfAvailable state
                 refreshScreen screen newScreen
@@ -404,7 +477,7 @@ let private screenWritter () =
                 let realPosition = (Math.Min(boardFrameSize.Width, Math.Max(0, point.X - state.BoardFramePosition.X)),
                                     Math.Min(boardFrameSize.Height, Math.Max(0, point.Y - state.BoardFramePosition.Y)))
                 let place = state.Board.Places.[point.X,point.Y]
-                let description = Place.GetDescription place
+                let description = Place.GetDescription place (if state.Board.Type = LevelType.MainMap then getMainMapTileDetails point.X point.Y else String.Empty)
                 let newScreen =
                     screen
                     |> Array2D.copy
@@ -421,6 +494,23 @@ let private screenWritter () =
                     |> writeStats state
                 refreshScreen screen newScreen
                 return! loop newScreen
+            | ShowFinishScreen(state) ->
+                let newScreen =
+                    screen
+                    |> Array2D.copy
+                    |> cleanScreen
+                    |> writeFinishScreen(state)                    
+                refreshScreen screen newScreen
+                return! loop newScreen
+            | ShowDialog(dialog, reply) ->
+                let newScreen =
+                    screen
+                    |> Array2D.copy
+                    |> cleanScreen
+                    |> showDialog(dialog)                    
+                refreshScreen screen newScreen
+                reply.Reply ()
+                return! loop newScreen                
         }
         loop <| Array2D.create screenSize.Width screenSize.Height empty
     )
@@ -437,11 +527,54 @@ let evaluateBoardFramePosition state =
 
 
 let private agent = screenWritter ()
+
 let showBoard () = agent.Post (ShowBoard(State.get ()))
-let showMainMenu () = agent.PostAndReply(fun reply -> ShowMainMenu(reply))
+//let showMainMenu () = agent.PostAndReply(fun reply -> ShowMainMenu(reply))
 let showChooseItemDialog items = agent.Post(ShowChooseItemDialog(items))
 let showEquipmentItemDialog items = agent.Post(ShowEquipmentDialog(items))
 let setCursorPositionOnBoard point state = agent.Post(SetCursorPositionOnBoard(point, state))
 let displayComputerScreen content = agent.Post(DisplayComputerScreen(content, State.get()))
 let showMessages () = agent.Post (ShowMessages(State.get ()))
 let showOptions options  = agent.Post(ShowOptions(options))
+let showFinishScreen state  = agent.Post(ShowFinishScreen(state))
+let showDialog dialog = 
+    agent.PostAndReply (fun reply -> ShowDialog(dialog, reply))
+    let findKeyInDialog key dialog = 
+        dialog    
+        |> List.tryPick (function 
+            | Dialog.Menu(varName, items) -> 
+                let preResult =
+                    items
+                    |> List.tryPick (function 
+                        | Dialog.Item(itemKey, _, value) when itemKey = key -> Some(value)
+                        | _ -> None)
+                if preResult.IsSome then Some (varName, preResult.Value) else None
+            | _ -> None)
+    if List.exists (function | Dialog.Menu(_, _) -> true | _ -> false) dialog then        
+        let rec loop () =
+            let variableValuePair = 
+                (Console.ReadKey(true).KeyChar, dialog)
+                ||> findKeyInDialog    
+            if variableValuePair.IsSome then 
+                [variableValuePair.Value]
+            else
+                loop ()
+        loop ()
+    else 
+        // Textbox
+        let matcher1 = function 
+            | Dialog.Textbox(variableName) -> Some(variableName) 
+            | _ -> None
+        let matcher2 arg = matcher1 arg <> None
+        let variableName = dialog |> List.tryPick matcher1
+        if variableName.IsSome then
+            let positionY = dialog |> List.findIndex matcher2
+            let rec loop () = 
+                Console.SetCursorPosition(0, positionY)
+                let value = Console.ReadLine()
+                if String.IsNullOrWhiteSpace(value) then 
+                    loop ()
+                else 
+                    [(variableName.Value, value)]
+            loop ()
+        else List.empty

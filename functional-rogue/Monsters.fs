@@ -16,8 +16,6 @@ type Monster (monsterType : MonsterType, hp : int,  dexterity : int, strength : 
 
     let mutable state = CharacterAiState.Default
 
-    let mutable hungerFactor = 0
-
     member this.Type
         with get() = monsterType
 
@@ -43,9 +41,7 @@ type Monster (monsterType : MonsterType, hp : int,  dexterity : int, strength : 
         with get() = state
         and set(value) = state <- value
 
-    member this.HungerFactor
-        with get() = hungerFactor
-        and set(value) = hungerFactor <- value        
+    
 
 let createNewMonster (monsterType: MonsterType) : Monster =
     match monsterType with
