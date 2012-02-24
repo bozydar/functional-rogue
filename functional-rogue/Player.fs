@@ -56,7 +56,6 @@ type Player (name : string, hp : int, dexterity : int, strength : int, sightRadi
 
     override this.Appearance
         with get() = '@'
- 
 
 let createShortCuts currentShortCuts items =
     // use those characters

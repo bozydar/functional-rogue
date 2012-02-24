@@ -6,7 +6,7 @@ open Board
 
 type ReplicationRecipe = {
     Name : string
-    ResultItem : PredefinedItems
+    ResultItem : Item
     RequiredResources : RequiredResources
 }
 and RequiredResources = {
@@ -20,4 +20,4 @@ let defaultRequiredResources = {
 }
 
 let allRecipes =
-    [{ Name = "Knife"; ResultItem = Knife; RequiredResources = { defaultRequiredResources with Iron = 2 } }]
+    [{ Name = "Knife"; ResultItem = knife; RequiredResources = { defaultRequiredResources with Iron = 2 } }]

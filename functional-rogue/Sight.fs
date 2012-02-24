@@ -226,7 +226,8 @@ let canSee (board : Board) (from : Point) (where : Point) : bool =
 
 let setVisibilityStates state  = 
     let playerPosition = getPlayerPosition state.Board
-    let positions = visiblePositions playerPosition state.Player.SightRadius state.Board    
+    let sightRadius = if state.Board.IsMainMap then 1 else state.Player.SightRadius
+    let positions = visiblePositions playerPosition sightRadius state.Board    
     let preResult = Array2D.mapi (fun x y place -> 
         let p = point x y
         if Seq.exists ((=) p) positions then {place with IsSeen = true; WasSeen = true} else {place with IsSeen = false}) state.Board.Places
