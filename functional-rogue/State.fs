@@ -60,6 +60,11 @@ let get () =
     | Some(value) -> value
     | Option.None -> failwith "Cannot return None"
 
+let stateExists () = 
+    match agent.PostAndReply(fun replyChannel -> Get(replyChannel)) with
+    | Some(value) -> true
+    | Option.None -> false
+
 let getMainMapTileDetails x y =
    let tileDetails = get().MainMapDetails.[x,y]
    if tileDetails.PointOfInterest.IsSome then " " + tileDetails.PointOfInterest.Value else String.Empty
