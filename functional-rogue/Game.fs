@@ -213,7 +213,7 @@ let mainLoop () =
 
         let getInitialReplicationRecipes = 
             let result = new System.Collections.Generic.HashSet<string>()
-            ignore (result.Add("Knife"))
+            //ignore (result.Add("Knife"))
             result
 
         let entryState =

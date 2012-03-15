@@ -66,6 +66,21 @@ type Ore =
             | ContaminatedWater(value) -> value
             | _ -> QuantityValue(0)
 
+
+
+type ReplicationRecipe = {
+    Name : string
+    ResultItem : Item
+    RequiredResources : RequiredResources
+}
+and RequiredResources = {
+    Iron : int
+    Gold : int
+    Uranium : int
+}
+
+
+
 type ElectronicMachine = {
     ComputerContent : ComputerContent
 }
@@ -76,6 +91,7 @@ and ComputerContent = {
     CanOperateCameras : bool;
     CanReplicate : bool;
     HasCamera : bool;
+    ReplicationRecipes : ReplicationRecipe list;
 }
 and ComputerNote = {
     Topic : string;

@@ -18,12 +18,14 @@ type ComputerNavigation =
     | Camera
     | Replication
     | ReplicationItem
+    | ReplicationRecipes
 
 type ComputerCommand =
     | None
     | OpenDoor
     | CloseDoor
     | Replicate
+    | DownloadRecipes
 
 let getElectronicDoorPlaces (state: State) =
     state.Board |> getFilteredPlaces (fun place -> (place.Tile = Tile.ClosedDoor || place.Tile = Tile.OpenDoor) && place.ElectronicMachine.IsSome)
@@ -88,6 +90,9 @@ let operateComputer (computerPoint: Point option) (electronicMachine: Electronic
                 else
                     builder.AddString "You don't have enough resources to replicate this item."
 
+        let download (builder: ScreenContentBuilder) =
+            builder.AddSelectables false [("d", ". download")]
+
         let addPageableSelectableItems (itemNr: int) (descriptionFunction: 'a -> string) (builder: ScreenContentBuilder) (items: 'a list) =
             items |> getListSlice itemNr |> List.mapi (fun i item -> ( (i + 1).ToString(), ". " + (descriptionFunction item) )) |> builder.AddSelectables false
             builder.AddEmptyLine()
@@ -106,6 +111,8 @@ let operateComputer (computerPoint: Point option) (electronicMachine: Electronic
                     if content.CanOperateCameras && (getCameraPlaces state).Length > 0 then ["Cameras"] else []
                     @
                     if content.CanReplicate then ["Replicate"] else []
+                    @
+                    if content.ReplicationRecipes.Length > 0 then ["Replication Recipes"] else []
                 result |> List.mapi (fun i item -> ((i+1).ToString(),(". " + item))) |> builder.AddSelectables false
             | Notes ->
                 content.Notes |> addPageableSelectableItems itemNr (fun note -> note.Topic) builder
@@ -151,6 +158,10 @@ let operateComputer (computerPoint: Point option) (electronicMachine: Electronic
                 builder.AddEmptyLine ()
                 replicate recipe state builder
                 builder.AddSelectables false [selectBack]
+            | ReplicationRecipes ->
+                content.ReplicationRecipes |> addPageableSelectableItems itemNr (fun recipe -> recipe.Name) builder
+                builder.AddEmptyLine ()
+                download builder
         builder.AddEmptyLineIfPreviousNotEmpty ()
         builder.AddSelectables false [("Esc"," - to exit the computer")]
         builder
@@ -166,6 +177,7 @@ let operateComputer (computerPoint: Point option) (electronicMachine: Electronic
                 @ (if content.CanOperateDoors then [ComputerNavigation.Doors] else [])
                 @ (if content.CanOperateCameras && (getCameraPlaces state).Length > 0 then [ComputerNavigation.Cameras] else [])
                 @ (if content.CanReplicate then [ComputerNavigation.Replication] else [])
+                @ (if content.ReplicationRecipes.Length > 0 then [ComputerNavigation.ReplicationRecipes] else [])
             (
             match keyInfo with
             | Keys ['1';'2';'3';'4';'5';'6';'7';'8';'9'] ->
@@ -251,6 +263,11 @@ let operateComputer (computerPoint: Point option) (electronicMachine: Electronic
             | Keys ['b'] -> ((Replication,0), None)
             | Keys ['r'] -> if canReplicate recipe state then ((Replication,0),Replicate) else ((nav, itemNr), None)
             | _ -> ((nav, itemNr), None)
+        | ReplicationRecipes ->
+            match keyInfo with
+            | Keys ['b'] -> ((MainMenu,0), None)
+            | Keys ['d'] -> ((MainMenu,0), DownloadRecipes)
+            | _ -> ((nav, itemNr), None)
     
     let performComputerCommand (computerPoint: Point option) (currentNav: ComputerNavigation*int) (command: ComputerCommand) (state : State) =
         let nav, itemNr = currentNav
@@ -277,6 +294,16 @@ let operateComputer (computerPoint: Point option) (electronicMachine: Electronic
             let compPlace = state.Board.Places.[computerPoint.Value.X,computerPoint.Value.Y]
             let updatedPlace = { compPlace with Items = compPlace.Items @ [item] }
             state.Board.Places.[computerPoint.Value.X,computerPoint.Value.Y] <- updatedPlace
+            state |> Turn.next
+        | DownloadRecipes ->
+            let rec addRecipesAsAvailable (availableRecipes: Collections.Generic.HashSet<string>) (newRecipes: ReplicationRecipe list) =
+                match newRecipes with
+                | [] -> ()
+                | head::tail ->
+                    ignore(availableRecipes.Add(head.Name))
+                    addRecipesAsAvailable availableRecipes tail
+            let compPlace = state.Board.Places.[computerPoint.Value.X,computerPoint.Value.Y]
+            addRecipesAsAvailable state.AvailableReplicationRecipes compPlace.ElectronicMachine.Value.ComputerContent.ReplicationRecipes
             state |> Turn.next
         | _ ->
             ()
