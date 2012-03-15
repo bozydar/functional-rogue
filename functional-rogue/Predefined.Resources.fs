@@ -33,18 +33,41 @@ let startLocationShip board =
              0g#4.#,,,,,,
              00##g#,,,,,,"        
 
-let ancientRuins board =
-    let def = def @ [('1', fun _ -> { Place.StairsDown with TransportTarget = Some({ BoardId = Guid.Empty; TargetCoordinates = Point(0,0); TargetLevelType = LevelType.Dungeon })})]
+let randomAncientRuins board =
+    
+    let ancientRuins1 board =
+        let def = def @ [('1', fun _ -> { Place.StairsDown with TransportTarget = Some({ BoardId = Guid.Empty; TargetCoordinates = Point(0,0); TargetLevelType = LevelType.Dungeon })})]
 
-    let where = Point(50, 10)
-    board
-    |> putPredefinedOnBoard def where
-            "##########.##########
-             ###...............###
-             #...................#
-             #...................#
-             ..........1..........
-             #...................#
-             #...................#
-             ###...............###
-             ##########.##########"      
+        let where = Point(50, 10)
+        board
+        |> putPredefinedOnBoard def where
+                "##########.##########
+                 ###...............###
+                 #...................#
+                 #...................#
+                 ..........1..........
+                 #...................#
+                 #...................#
+                 ###...............###
+                 ##########.##########"      
+
+    let ancientRuins2 board =
+        let def = def @ [('1', fun _ -> { Place.StairsDown with TransportTarget = Some({ BoardId = Guid.Empty; TargetCoordinates = Point(0,0); TargetLevelType = LevelType.Dungeon })})]
+
+        let where = Point(50, 10)
+        board
+        |> putPredefinedOnBoard def where
+                "________##.##________
+                 _______###.###_______
+                 ____######.######____
+                 __###...........###__
+                 __##.............##__
+                 ___##.....1.....##___
+                 ____##.........##____
+                 _____###########_____"   
+
+    let ruinsFunctions = [ancientRuins1;ancientRuins2]
+
+    let index = rnd ruinsFunctions.Length
+
+    board |> ruinsFunctions.[index]
