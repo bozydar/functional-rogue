@@ -111,6 +111,12 @@ let maybePlaceCaveEntrance (backgroundTile:Tile) (probability:float) (board: Boa
     else
         board
 
+let maybePlaceNonNaturalObjects (probability:float) (board: Board) =
+    if((float)(rnd 100) < (probability * (float)100) && State.stateExists()) then   //stateExists prevents from creating a non natural object on the starting map (the crash site) as it is created before the state is initialized
+        board |> Predefined.Resources.randomAncientRuins
+    else
+        board
+
 let maybePlaceSomeOre (backgroundTile:Tile) (level: int) (board: Board) =
     if (rnd 100) < (min 90 (level*(-2)*10)) then // probablity for underground levels 20%, 40%, 60%, 80%, 90%, 90%, ...
         let getkaka = Ore.Iron
@@ -583,6 +589,7 @@ let generateForest (cameFrom:Point) : (Board*Point option) =
         |> placeSomeRandomItems Tile.Grass LevelType.Forest
         |> scatterTilesRamdomlyOnBoard Tile.Bush Tile.Grass 0.05 false
         |> scatterTilesRamdomlyOnBoard Tile.SmallPlants Tile.Grass 0.05 false
+        |> maybePlaceNonNaturalObjects 0.1
     (resultBoard, Some(Point(35,15)))
 
 let generateGrassland (cameFrom:Point) : (Board*Point option) =
@@ -612,7 +619,7 @@ let generateStartLocationWithInitialPlayerPositon (cameFrom:Point) : (Board*Poin
         board
         |> Predefined.Resources.startLocationShip
     //TODO: Delete the line below - it's for testing only
-    result.Places.[0,0] <- { result.Places.[0,0] with ElectronicMachine = Some( { ComputerContent = { ComputerName = "Upper left camera"; Notes = []; CanOperateDoors = false; CanOperateCameras = false; CanReplicate = false; HasCamera = true } } )}
+    result.Places.[0,0] <- { result.Places.[0,0] with ElectronicMachine = Some( { ComputerContent = { ComputerName = "Upper left camera"; Notes = []; CanOperateDoors = false; CanOperateCameras = false; CanReplicate = false; HasCamera = true; ReplicationRecipes = [] } } )}
     (result,(Point(32,12)))
 
 let generateMainMap: (Board*Point) =
@@ -671,7 +678,7 @@ let generateEmpty : (Board * Point option) =
 
 let generateTestStartLocationWithInitialPlayerPositon (cameFrom:Point) : (Board*Point) =
     let board, startpoint = generateEmpty
-    let result = board |> Predefined.Resources.ancientRuins
+    let result = board |> Predefined.Resources.randomAncientRuins
     (result,(Point(32,12)))
 
 
