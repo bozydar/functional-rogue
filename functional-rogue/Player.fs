@@ -5,8 +5,8 @@ open System.Collections.Generic
 open Characters
 open Quantity
 
-type Player (name : string, hp : int, dexterity : int, strength : int, sightRadius : int) = 
-    inherit Character (CharacterType.Avatar, hp, dexterity, strength, sightRadius)
+type Player (name : string, hp : int, dexterity : int, strength : int, sightRadius : int, hungerFactorStep : int) = 
+    inherit Character (CharacterType.Avatar, hp, dexterity, strength, sightRadius, hungerFactorStep)
 
     let mutable hP = hp
 

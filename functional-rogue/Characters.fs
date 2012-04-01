@@ -22,7 +22,8 @@ type CharacterType =
     | NPC
 
 [<AbstractClass>]
-type Character (characterType: CharacterType, startingHP: int, startingDexterity : int, startingStrength : int, startingSightRadius : int) =
+type Character (characterType: CharacterType, startingHP: int, startingDexterity : int, startingStrength : int, startingSightRadius : int,
+    startingHungerFactorStep : int) =
     let id = System.Guid.NewGuid ()
     let mutable hp = startingHP
     let mutable maxHP = startingHP
@@ -31,7 +32,7 @@ type Character (characterType: CharacterType, startingHP: int, startingDexterity
     let mutable strength = startingStrength
     let mutable involvedInFight = false
     let mutable hungerFactor = 0
-    let mutable hungerFactorStep = 100
+    let mutable hungerFactorStep = startingHungerFactorStep
 
     let mutable items : list<Item> = []
 

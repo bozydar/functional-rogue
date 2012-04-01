@@ -41,7 +41,7 @@ let elapse turns (state : option<State>) =
     agent.PostAndReply(fun reply -> Elapse(turns, myState, reply))
 
 let next state = 
-    let turnsToGo = if state.Board.IsMainMap then 100M else 1M
+    let turnsToGo = if state.Board.IsMainMap then 50M else 1M
     agent.PostAndReply(fun reply -> Elapse(turnsToGo, state, reply))
 
 let subscribe stateChange = agent.Post(SubscribeStateChange(stateChange))
