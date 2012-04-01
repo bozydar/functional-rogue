@@ -339,7 +339,7 @@ let wear (state : State) =
         |> List.map Option.get
 
     let refreshScreen = 
-        Screen.showChooseItemDialog {State = state; Filter = (fun item -> not <| List.exists ((=) item) alreadyWorn)}
+        Screen.showChooseItemDialog {State = state; Filter = (fun item -> not <| List.exists ((=) item) alreadyWorn && item.IsWearable ) }
 
     let rec loop () =
         let keyInfo = System.Console.ReadKey(true)
@@ -373,11 +373,9 @@ let wear (state : State) =
     loop ()
 
 let eat (state : State) = 
-    let eatable =            
-        state.Player.Items |> List.filter (fun item -> item.Type = Type.Corpse)
 
     let refreshScreen = 
-        Screen.showChooseItemDialog {State = state; Filter = (fun item -> List.exists ((=) item) eatable)}
+        Screen.showChooseItemDialog {State = state; Filter = (fun item -> item.IsEatable)}
 
     let rec loop () =
         let keyInfo = System.Console.ReadKey(true)
@@ -387,7 +385,7 @@ let eat (state : State) =
             let keyChar = keyInfo.KeyChar
             let item = Map.tryGetItem keyChar state.Player.ShortCuts 
             if item.IsSome then
-                state.Player.HungerFactor <- state.Player.HungerFactor - 50
+                state.Player.Eat(item.Value)
                 let indexToRemove = List.findIndex ((=) item.Value) state.Player.Items
                 state.Player.Items <- List.removeAt indexToRemove state.Player.Items
                 state

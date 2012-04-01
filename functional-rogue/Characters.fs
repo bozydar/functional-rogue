@@ -22,8 +22,7 @@ type CharacterType =
     | NPC
 
 [<AbstractClass>]
-type Character (characterType: CharacterType, startingHP: int, startingDexterity : int, startingStrength : int, startingSightRadius : int,
-    startingHungerFactorStep : int) =
+type Character (characterType: CharacterType, startingHP: int, startingDexterity : int, startingStrength : int, startingSightRadius : int, startingHungerFactorStep : int) =
     let id = System.Guid.NewGuid ()
     let mutable hp = startingHP
     let mutable maxHP = startingHP
@@ -74,7 +73,7 @@ type Character (characterType: CharacterType, startingHP: int, startingDexterity
         this.InvolvedInFight <- false
 
     member this.TickBiologicalClock () =
-        this.HungerFactor <- this.HungerFactor + 1
+        hungerFactor <- hungerFactor + 1
         match this.HungerLevel with
         | 1 when rnd 100 < 3 -> this.HitWithDamage 1
         | 2 when rnd 100 < 10   -> this.HitWithDamage 1
@@ -89,7 +88,10 @@ type Character (characterType: CharacterType, startingHP: int, startingDexterity
 
     member this.HungerFactor
         with get() = hungerFactor
-        and set(value) = hungerFactor <- value        
+        and set(value) = hungerFactor <- value
+
+    member this.Eat (item : Item) =
+        hungerFactor <- Math.Min(0, hungerFactor - if item.IsEatable then -100 else 0)
 
     abstract member MeleeAttack : AttackResult with get
     default this.MeleeAttack
@@ -148,6 +150,12 @@ and
 
     member this.Attack 
         with get() : (Character -> Character -> int -> AttackResult) option = attack
+
+    member this.IsWearable
+        with get() : bool = this.Wearing <> Wearing.NotWearable
+
+    member this.IsEatable
+        with get() : bool = this.Type = Type.Corpse
 
     override this.Equals(other) =
         match other with
