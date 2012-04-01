@@ -195,7 +195,7 @@ let mainLoop () =
     let test = showDialog d1
     if test.Head = ("ynResult", "1") then
         let _, playerName = (showDialog d2).Head
-        let thePlayer = new Player(playerName, 20, 10, 16, 10)
+        let thePlayer = new Player(playerName, 20, 10, 16, 10, 300)
 
         //initial maps setup
         let mainMapBoard, mainMapPoint = generateMainMap
