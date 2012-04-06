@@ -12,11 +12,15 @@ and Widget =
     | Textbox of string
 and Item = 
     | Item of char * string * string
+    | Subdialog of char * string * Dialog
+    | CheckItem of char * string * string
 and DecoratedText = {
     Text : string;
     BGColor : ConsoleColor;
     FGColor : ConsoleColor;
-} 
+}
+and TextOrDialog =
+    | Text of string
 
 let newDecoratedText text bg fg = { Text = text; BGColor = bg; FGColor = fg }
 
