@@ -537,28 +537,27 @@ let displayComputerScreen content = agent.Post(DisplayComputerScreen(content, St
 let showMessages () = agent.Post (ShowMessages(State.get ()))
 let showOptions options  = agent.Post(ShowOptions(options))
 let showFinishScreen state  = agent.Post(ShowFinishScreen(state))
-let showDialog dialog = 
+let rec showDialog dialog = 
     agent.PostAndReply (fun reply -> ShowDialog(dialog, reply))
     let findKeyInDialog key dialog = 
         dialog    
         |> List.tryPick (function 
             | Dialog.Menu(varName, items) -> 
-                let preResult =
-                    items
-                    |> List.tryPick (function 
-                        | Dialog.Item(itemKey, _, value) when itemKey = key -> Some(value)
-                        | _ -> None)
-                if preResult.IsSome then Some (varName, preResult.Value) else None
+                items
+                |> List.tryPick (function 
+                    | Dialog.Item(itemKey, _, value) as item when itemKey = key -> Some(varName, item)
+                    | Dialog.Subdialog(itemKey, _, innerDialog) as subdialog when itemKey = key -> Some(varName, subdialog)
+                    | _ -> None)
             | _ -> None)
     if List.exists (function | Dialog.Menu(_, _) -> true | _ -> false) dialog then        
         let rec loop () =
             let variableValuePair = 
                 (Console.ReadKey(true).KeyChar, dialog)
                 ||> findKeyInDialog    
-            if variableValuePair.IsSome then 
-                [variableValuePair.Value]
-            else
-                loop ()
+            match variableValuePair with
+                | Some(varName, Dialog.Item(_, _, value)) -> [(varName, value)]
+                | Some(_, Dialog.Subdialog(_, _, subdialog)) -> showDialog subdialog @ loop ()
+                | _ -> loop ()
         loop ()
     else 
         // Textbox
