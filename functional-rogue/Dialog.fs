@@ -13,7 +13,7 @@ and Widget =
 and Item = 
     | Item of char * string * string
     | Subdialog of char * string * Dialog
-    | CheckItem of char * string * string
+    | CheckItem of char * string * (string list)
 and DecoratedText = {
     Text : string;
     BGColor : ConsoleColor;

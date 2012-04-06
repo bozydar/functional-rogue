@@ -200,9 +200,9 @@ let mainLoop () =
         Dialog.Textbox("name")            
     ]
 
-    let test = showDialog d1
+    let test = showDialog(d1, []) 
     if test.Head = ("ynResult", "1") then
-        let _, playerName = (showDialog d2).Head
+        let _, playerName = (showDialog (d2, [])).Head
         let thePlayer = new Player(playerName, 20, 10, 16, 10, 300)
 
         //initial maps setup
