@@ -186,7 +186,7 @@ type ScreenAgentMessage =
     | SetCursorPositionOnBoard of Point * State
     | DisplayComputerScreen of ScreenContentBuilder * State
     | ShowFinishScreen of State
-    | ShowDialog of Dialog.Dialog * AsyncReplyChannel<unit>
+    | ShowDialog of Dialog.Dialog * DialogResult * AsyncReplyChannel<unit>
 
 and MainMenuReply = {
     Name: String
@@ -206,6 +206,7 @@ and ShowChooseItemDialogRequest = {
     State: State;
     Filter: Item -> bool
 }
+and DialogResult = list<string * string>
 
 let getHighlightForTile (board : Board) x y =
     if board.IsMainMap then
@@ -387,7 +388,7 @@ let private screenWritter () =
         )
         Console.SetCursorPosition(screenSize.Width, screenSize.Height)
 
-    let showDialog dialog screen =        
+    let showDialog (dialog : Dialog.Dialog, values : DialogResult) screen =        
         let sequence = seq {            
             for i, item in dialog |> Seq.mapi (fun i item -> i, item) do
                 match item with
@@ -406,6 +407,11 @@ let private screenWritter () =
                             yield writeDecoratedText (point 0 (i + j + 1)) dt1
                             yield writeDecoratedText (point 4 (i + j + 1)) dt2
                         | Dialog.Subdialog(input, text, _) ->
+                            let dt1 = Dialog.newDecoratedText (input.ToString() + " - " + text) ConsoleColor.Black ConsoleColor.White 
+                            let dt2 = Dialog.newDecoratedText text ConsoleColor.Black ConsoleColor.Gray
+                            yield writeDecoratedText (point 0 (i + j + 1)) dt1
+                            yield writeDecoratedText (point 4 (i + j + 1)) dt2
+                        | Dialog.CheckItem(input, text, _) ->
                             let dt1 = Dialog.newDecoratedText (input.ToString() + " - " + text) ConsoleColor.Black ConsoleColor.White 
                             let dt2 = Dialog.newDecoratedText text ConsoleColor.Black ConsoleColor.Gray
                             yield writeDecoratedText (point 0 (i + j + 1)) dt1
@@ -507,12 +513,12 @@ let private screenWritter () =
                     |> writeFinishScreen(state)                    
                 refreshScreen screen newScreen
                 return! loop newScreen
-            | ShowDialog(dialog, reply) ->
+            | ShowDialog(dialog, values, reply) ->
                 let newScreen =
                     screen
                     |> Array2D.copy
                     |> cleanScreen
-                    |> showDialog(dialog)                    
+                    |> showDialog(dialog, values)                    
                 refreshScreen screen newScreen
                 reply.Reply ()
                 return! loop newScreen                
@@ -542,16 +548,17 @@ let displayComputerScreen content = agent.Post(DisplayComputerScreen(content, St
 let showMessages () = agent.Post (ShowMessages(State.get ()))
 let showOptions options  = agent.Post(ShowOptions(options))
 let showFinishScreen state  = agent.Post(ShowFinishScreen(state))
-let rec showDialog dialog = 
-    agent.PostAndReply (fun reply -> ShowDialog(dialog, reply))
+let rec showDialog (dialog : Dialog.Dialog, dialogResult : DialogResult) : DialogResult = 
+    agent.PostAndReply (fun reply -> ShowDialog(dialog, dialogResult, reply))
     let findKeyInDialog key dialog = 
         dialog    
         |> List.tryPick (function 
             | Dialog.Menu(varName, items) -> 
                 items
                 |> List.tryPick (function 
-                    | Dialog.Item(itemKey, _, value) as item when itemKey = key -> Some(varName, item)
+                    | Dialog.Item(itemKey, _, _) as item when itemKey = key -> Some(varName, item)
                     | Dialog.Subdialog(itemKey, _, innerDialog) as subdialog when itemKey = key -> Some(varName, subdialog)
+                    | Dialog.CheckItem(itemKey, _, _) as checkItem when itemKey = key -> Some(varName, checkItem)
                     | _ -> None)
             | _ -> None)
     if List.exists (function | Dialog.Menu(_, _) -> true | _ -> false) dialog then        
