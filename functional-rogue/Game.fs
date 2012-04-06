@@ -183,8 +183,16 @@ let mainLoop () =
         Dialog.Menu("ynResult",
             [
                 Dialog.Item('y', "Yes", "1");
-                Dialog.Item('n', "No", "0");
-            ])        
+                Dialog.Subdialog('n', "No", 
+                    [
+                        Dialog.Title("Subtitle") ;
+                        Dialog.Menu("option1", 
+                            [
+                                Dialog.Item('a', "A", "0");
+                                Dialog.Item('b', "B", "1");
+                            ])
+                    ])
+            ])
     ]
 
     let d2 : Dialog.Dialog = [

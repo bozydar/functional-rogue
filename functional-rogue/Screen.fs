@@ -405,6 +405,11 @@ let private screenWritter () =
                             let dt2 = Dialog.newDecoratedText text ConsoleColor.Black ConsoleColor.Gray
                             yield writeDecoratedText (point 0 (i + j + 1)) dt1
                             yield writeDecoratedText (point 4 (i + j + 1)) dt2
+                        | Dialog.Subdialog(input, text, _) ->
+                            let dt1 = Dialog.newDecoratedText (input.ToString() + " - " + text) ConsoleColor.Black ConsoleColor.White 
+                            let dt2 = Dialog.newDecoratedText text ConsoleColor.Black ConsoleColor.Gray
+                            yield writeDecoratedText (point 0 (i + j + 1)) dt1
+                            yield writeDecoratedText (point 4 (i + j + 1)) dt2
                 | Dialog.Textbox(input) ->
                     yield Dialog.newDecoratedText "                           " ConsoleColor.Gray ConsoleColor.Black |> writeDecoratedText (point 0 i) 
                                     
@@ -556,7 +561,10 @@ let rec showDialog dialog =
                 ||> findKeyInDialog    
             match variableValuePair with
                 | Some(varName, Dialog.Item(_, _, value)) -> [(varName, value)]
-                | Some(_, Dialog.Subdialog(_, _, subdialog)) -> showDialog subdialog @ loop ()
+                | Some(_, Dialog.Subdialog(_, _, subdialog)) -> 
+                    let result = showDialog subdialog 
+                    agent.PostAndReply (fun reply -> ShowDialog(dialog, reply))
+                    result @ loop ()
                 | _ -> loop ()
         loop ()
     else 
