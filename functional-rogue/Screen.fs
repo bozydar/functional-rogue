@@ -186,7 +186,7 @@ type ScreenAgentMessage =
     | SetCursorPositionOnBoard of Point * State
     | DisplayComputerScreen of ScreenContentBuilder * State
     | ShowFinishScreen of State
-    | ShowDialog of Dialog.Dialog * DialogResult * AsyncReplyChannel<unit>
+    | ShowDialog of Dialog.Dialog * Dialog.Result * AsyncReplyChannel<unit>
 
 and MainMenuReply = {
     Name: String
@@ -206,7 +206,6 @@ and ShowChooseItemDialogRequest = {
     State: State;
     Filter: Item -> bool
 }
-and DialogResult = list<string * string>
 
 let getHighlightForTile (board : Board) x y =
     if board.IsMainMap then
@@ -388,7 +387,7 @@ let private screenWritter () =
         )
         Console.SetCursorPosition(screenSize.Width, screenSize.Height)
 
-    let showDialog (dialog : Dialog.Dialog, values : DialogResult) screen =        
+    let showDialog (dialog : Dialog.Dialog, values : Dialog.Result) screen =        
         let sequence = seq {            
             for i, item in dialog |> Seq.mapi (fun i item -> i, item) do
                 match item with
@@ -398,25 +397,22 @@ let private screenWritter () =
                     yield writeDecoratedText (point 0 i) (Dialog.newDecoratedText text  ConsoleColor.Black ConsoleColor.Gray)
                 | Dialog.Raw(decoratedText) ->
                     yield writeDecoratedText (point 0 i) decoratedText
-                | Dialog.Menu(_, items) ->
-                    for j, itemj in items |> List.mapi (fun i item -> i, item) do
-                        match itemj with
-                        | Dialog.Item(input, text, _) -> 
-                            let dt1 = Dialog.newDecoratedText (input.ToString() + " - " + text) ConsoleColor.Black ConsoleColor.White 
-                            let dt2 = Dialog.newDecoratedText text ConsoleColor.Black ConsoleColor.Gray
-                            yield writeDecoratedText (point 0 (i + j + 1)) dt1
-                            yield writeDecoratedText (point 4 (i + j + 1)) dt2
-                        | Dialog.Subdialog(input, text, _) ->
-                            let dt1 = Dialog.newDecoratedText (input.ToString() + " - " + text) ConsoleColor.Black ConsoleColor.White 
-                            let dt2 = Dialog.newDecoratedText text ConsoleColor.Black ConsoleColor.Gray
-                            yield writeDecoratedText (point 0 (i + j + 1)) dt1
-                            yield writeDecoratedText (point 4 (i + j + 1)) dt2
-                        | Dialog.CheckItem(input, text, _) ->
-                            let dt1 = Dialog.newDecoratedText (input.ToString() + " - " + text) ConsoleColor.Black ConsoleColor.White 
-                            let dt2 = Dialog.newDecoratedText text ConsoleColor.Black ConsoleColor.Gray
-                            yield writeDecoratedText (point 0 (i + j + 1)) dt1
-                            yield writeDecoratedText (point 4 (i + j + 1)) dt2
-                | Dialog.Textbox(input) ->
+                | Dialog.Action(input, text, _, _) ->
+                    let dt1 = Dialog.newDecoratedText (input.ToString() + " - " + text) ConsoleColor.Black ConsoleColor.White 
+                    let dt2 = Dialog.newDecoratedText text ConsoleColor.Black ConsoleColor.Gray
+                    yield writeDecoratedText (point 0 i) dt1
+                    yield writeDecoratedText (point 4 i) dt2
+                | Dialog.Subdialog(input, text, _) ->
+                    let dt1 = Dialog.newDecoratedText (input.ToString() + " - " + text) ConsoleColor.Black ConsoleColor.White 
+                    let dt2 = Dialog.newDecoratedText text ConsoleColor.Black ConsoleColor.Gray
+                    yield writeDecoratedText (point 0 i) dt1
+                    yield writeDecoratedText (point 4 i) dt2
+                | Dialog.Option(input, text, _, _) ->
+                    let dt1 = Dialog.newDecoratedText (input.ToString() + " - " + text) ConsoleColor.Black ConsoleColor.White 
+                    let dt2 = Dialog.newDecoratedText text ConsoleColor.Black ConsoleColor.Gray
+                    yield writeDecoratedText (point 0 i) dt1
+                    yield writeDecoratedText (point 4 i) dt2
+                | Dialog.Textbox(input, _) ->
                     yield Dialog.newDecoratedText "                           " ConsoleColor.Gray ConsoleColor.Black |> writeDecoratedText (point 0 i) 
                                     
         }           
@@ -548,47 +544,65 @@ let displayComputerScreen content = agent.Post(DisplayComputerScreen(content, St
 let showMessages () = agent.Post (ShowMessages(State.get ()))
 let showOptions options  = agent.Post(ShowOptions(options))
 let showFinishScreen state  = agent.Post(ShowFinishScreen(state))
-let rec showDialog (dialog : Dialog.Dialog, dialogResult : DialogResult) : DialogResult = 
+let rec showDialog (dialog : Dialog.Dialog, dialogResult : Dialog.Result) : Dialog.Result = 
     agent.PostAndReply (fun reply -> ShowDialog(dialog, dialogResult, reply))
-    let findKeyInDialog key dialog = 
+    let findMenuItemsInDialog key dialog : option<Dialog.Widget> = 
         dialog    
         |> List.tryPick (function 
-            | Dialog.Menu(varName, items) -> 
-                items
-                |> List.tryPick (function 
-                    | Dialog.Item(itemKey, _, _) as item when itemKey = key -> Some(varName, item)
-                    | Dialog.Subdialog(itemKey, _, innerDialog) as subdialog when itemKey = key -> Some(varName, subdialog)
-                    | Dialog.CheckItem(itemKey, _, _) as checkItem when itemKey = key -> Some(varName, checkItem)
-                    | _ -> None)
-            | _ -> None)
-    if List.exists (function | Dialog.Menu(_, _) -> true | _ -> false) dialog then        
-        let rec loop () =
-            let variableValuePair = 
-                (Console.ReadKey(true).KeyChar, dialog)
-                ||> findKeyInDialog    
-            match variableValuePair with
-                | Some(varName, Dialog.Item(_, _, value)) -> [(varName, value)]
-                | Some(_, Dialog.Subdialog(_, _, subdialog)) -> 
-                    let result = showDialog subdialog 
-                    agent.PostAndReply (fun reply -> ShowDialog(dialog, reply))
-                    result @ loop ()
+            | Dialog.Action(itemKey, _, _, _) as item when itemKey = key -> Some(item)
+            | Dialog.Subdialog(itemKey, _, innerDialog) as item when itemKey = key -> Some(item)
+            | Dialog.Option(itemKey, _, varName, _) as item when itemKey = key -> Some(item)
+            | _ -> None)    
+    let rec loop () : Dialog.Result =
+        let selectedWidget = 
+            (Console.ReadKey(true).KeyChar, dialog)
+            ||> findMenuItemsInDialog    
+        if selectedWidget.IsSome then
+            match selectedWidget.Value with
+                | Dialog.Action(_, _, varName, value) -> Dialog.newResult [(varName, value)]
+                | Dialog.Subdialog(_, _, subdialog) -> 
+                    let result = showDialog (subdialog, dialogResult)
+                    agent.PostAndReply (fun reply -> ShowDialog(dialog, result, reply))
+                    Dialog.replaceWith (result, loop ())
+                | Dialog.Option(_, _, varName, optionItems) ->
+                    if dialogResult.ContainsKey(varName) then
+                        dialogResult
+
+//                        let value = dialogResult.Item(varName)
+//                        let index =
+//                            optionItems
+//                            |> List.tryFindIndex (function 
+//                                | Dialog.OptionItem(_, selectedValue) -> 
+//                                    snd item = value)
+//                        match index with
+//                        | Some(i) -> 
+//                            let newIndex = (i + 1) % (List.length optionItems)
+//                            optionItems @ newIndex
+//                        | _ -> ""
+                    else
+                        dialogResult
                 | _ -> loop ()
-        loop ()
-    else 
-        // Textbox
-        let matcher1 = function 
-            | Dialog.Textbox(variableName) -> Some(variableName) 
-            | _ -> None
-        let matcher2 arg = matcher1 arg <> None
-        let variableName = dialog |> List.tryPick matcher1
-        if variableName.IsSome then
-            let positionY = dialog |> List.findIndex matcher2
-            let rec loop () = 
-                Console.SetCursorPosition(0, positionY)
-                let value = Console.ReadLine()
-                if String.IsNullOrWhiteSpace(value) then 
-                    loop ()
-                else 
-                    [(variableName.Value, value)]
+        else
             loop ()
-        else List.empty
+    loop ()
+    
+    
+    
+//    else 
+//        // Textbox
+//        let matcher1 = function 
+//            | Dialog.Textbox(variableName) -> Some(variableName) 
+//            | _ -> None
+//        let matcher2 arg = matcher1 arg <> None
+//        let variableName = dialog |> List.tryPick matcher1
+//        if variableName.IsSome then
+//            let positionY = dialog |> List.findIndex matcher2
+//            let rec loop () = 
+//                Console.SetCursorPosition(0, positionY)
+//                let value = Console.ReadLine()
+//                if String.IsNullOrWhiteSpace(value) then 
+//                    loop ()
+//                else 
+//                    Dialog.newResult [(variableName.Value, [value])]
+//            loop ()
+//        else dialogResult

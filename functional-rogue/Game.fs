@@ -178,32 +178,36 @@ let mainLoop () =
     
 
     let d1 : Dialog.Dialog = [
-        Dialog.Title("Welcome to functional rogue" ) ;
-        Dialog.Label("Do you want to play?");        
-        Dialog.Menu("ynResult",
+        Dialog.Title("Build Hero");
+        Dialog.Option('a', "Fork", "fork", 
             [
-                Dialog.Item('y', "Yes", "1");
-                Dialog.Subdialog('n', "No", 
-                    [
-                        Dialog.Title("Subtitle") ;
-                        Dialog.Menu("option1", 
-                            [
-                                Dialog.Item('a', "A", "0");
-                                Dialog.Item('b', "B", "1");
-                            ])
-                    ])
-            ])
+                Dialog.OptionItem("Selected", "Y");
+                Dialog.OptionItem("", "N");
+            ]);
+        Dialog.Option('b', "Knife", "knife", 
+            [
+                Dialog.OptionItem("Selected", "Y");
+                Dialog.OptionItem("", "N");
+            ]);
+        Dialog.Option('c', "Spoon", "spoon", 
+            [
+                Dialog.OptionItem("Selected", "Y");
+                Dialog.OptionItem("", "N");
+            ]);
+        Dialog.Label("Actions");
+        Dialog.Action('1', "[enter]", "result", "1");
+        Dialog.Action('0', "[escape]", "result", "0");
     ]
 
     let d2 : Dialog.Dialog = [
         Dialog.Title("What's your name?" ) ;        
-        Dialog.Textbox("name")            
+        Dialog.Textbox('n', "name")            
     ]
 
-    let test = showDialog(d1, []) 
-    if test.Head = ("ynResult", "1") then
-        let _, playerName = (showDialog (d2, [])).Head
-        let thePlayer = new Player(playerName, 20, 10, 16, 10, 300)
+    let test = showDialog(d1, Dialog.emptyResult) 
+    if test.Item("result") = "1" then
+        //let playerName = (showDialog (d2, Dialog.emptyResult)).Item("name")
+        let thePlayer = new Player("Great Hero", 20, 10, 16, 10, 300)
 
         //initial maps setup
         let mainMapBoard, mainMapPoint = generateMainMap
