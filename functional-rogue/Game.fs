@@ -180,12 +180,7 @@ let mainLoop () =
     let characterOptions : Dialog.Dialog = [
         Dialog.Title("Create Hero");
         Dialog.Option('a', "Class", "class", 
-            [
-                ("Navigator", "navigator");
-                ("Soldier", "soldier");
-                ("Medic", "medic");
-                ("Engineer", "engineer");
-            ]);
+            [ for item in Predefined.Classes.getClasses -> (item, item)]);
         Dialog.Label("Actions");
         Dialog.Action('1', "[enter]", "result", "1");
         Dialog.Action('0', "[escape]", "result", "0");

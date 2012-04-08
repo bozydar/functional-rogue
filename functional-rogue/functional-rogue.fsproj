@@ -65,6 +65,7 @@
     <Compile Include="Sight.fs" />
     <Compile Include="Predefined.Parser.fs" />
     <Compile Include="Replication.fs" />
+    <Compile Include="Predefined.Classes.fs" />
     <Compile Include="Predefined.Resources.fs" />
     <Compile Include="LevelGeneration.fs" />
     <Compile Include="Dialog.fs" />
