@@ -178,24 +178,36 @@ let mainLoop () =
     
 
     let d1 : Dialog.Dialog = [
-        Dialog.Title("Welcome to functional rogue" ) ;
-        Dialog.Label("Do you want to play?");        
-        Dialog.Menu("ynResult",
+        Dialog.Title("Build Hero");
+        Dialog.Option('a', "Fork", "fork", 
             [
-                Dialog.Item('y', "Yes", "1");
-                Dialog.Item('n', "No", "0");
-            ])        
+                ("X", "Y");
+                ("", "N");
+            ]);
+        Dialog.Option('b', "Knife", "knife", 
+            [
+                ("X", "Y");
+                ("", "N");
+            ]);
+        Dialog.Option('c', "Spoon", "spoon", 
+            [
+                ("X", "Y");
+                ("", "N");
+            ]);
+        Dialog.Label("Actions");
+        Dialog.Action('1', "[enter]", "result", "1");
+        Dialog.Action('0', "[escape]", "result", "0");
     ]
 
     let d2 : Dialog.Dialog = [
         Dialog.Title("What's your name?" ) ;        
-        Dialog.Textbox("name")            
+        Dialog.Textbox('n', "name")            
     ]
 
-    let test = showDialog d1
-    if test.Head = ("ynResult", "1") then
-        let _, playerName = (showDialog d2).Head
-        let thePlayer = new Player(playerName, 20, 10, 16, 10, 300)
+    let test = showDialog(d1, Dialog.emptyResult) 
+    if test.Item("result") = "1" then
+        //let playerName = (showDialog (d2, Dialog.emptyResult)).Item("name")
+        let thePlayer = new Player("Great Hero", 20, 10, 16, 10, 300)
 
         //initial maps setup
         let mainMapBoard, mainMapPoint = generateMainMap
