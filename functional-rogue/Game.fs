@@ -177,7 +177,7 @@ let mainLoop () =
                 loop false
     
 
-    let characterOptions : Dialog.Dialog = [
+    let characterOptionsDialog : Dialog.Dialog = [
         Dialog.Title("Create Hero");
         Dialog.Option('a', "Class", "class", 
             [ for item in Predefined.Classes.getClasses -> (item, item)]);
@@ -191,9 +191,9 @@ let mainLoop () =
         Dialog.Textbox('n', "name")            
     ]
 
-    let test = showDialog(characterOptions, Dialog.emptyResult) 
+    let characterOptions = showDialog(characterOptionsDialog, Dialog.newResult([("class", "Soldier")])) 
     //let playerName = (showDialog (d2, Dialog.emptyResult)).Item("name")
-    let thePlayer = new Player("Great Hero", 20, 10, 16, 10, 300)
+    let thePlayer = Predefined.Classes.buildCharacterByPlayerClass characterOptions.["class"]
 
     //initial maps setup
     let mainMapBoard, mainMapPoint = generateMainMap
