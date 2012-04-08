@@ -5,14 +5,14 @@ open System.Collections.Generic
 open Characters
 open Quantity
 
-type Player (name : string, hp : int, dexterity : int, strength : int, sightRadius : int) = 
-    inherit Character (CharacterType.Avatar, hp, dexterity, strength, sightRadius)
+type Player (name : string, hp : int, dexterity : int, strength : int, sightRadius : int, hungerFactorStep : int) = 
+    inherit Character (CharacterType.Avatar, hp, dexterity, strength, sightRadius, hungerFactorStep)
 
     let mutable hP = hp
 
     let maxHp = hp
 
-    let mutable iron : int = 0
+    let mutable iron : int = 5
 
     let mutable gold : int = 0
 
@@ -56,7 +56,6 @@ type Player (name : string, hp : int, dexterity : int, strength : int, sightRadi
 
     override this.Appearance
         with get() = '@'
- 
 
 let createShortCuts currentShortCuts items =
     // use those characters

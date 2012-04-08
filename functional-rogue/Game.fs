@@ -52,10 +52,12 @@ let mainLoop () =
     let rec loop printAll =                
 
         if not(State.get().Player.IsAlive) then
+            State.get ()                  
+            |> Screen.showFinishScreen
             ()
         else
             let consoleKeyInfo = if printAll then new ConsoleKeyInfo('5', ConsoleKey.NumPad5, false, false, false) else System.Console.ReadKey(true)
-        
+            let isMainMap = (State.get ()).Board.IsMainMap                        
             let command = 
                 match consoleKeyInfo with 
                 | Keys [ConsoleKey.UpArrow; '8'] -> Up            
@@ -67,23 +69,26 @@ let mainLoop () =
                 | Key '1' -> DownLeft
                 | Key '3' -> DownRight
                 | Key '5' -> Wait
-                | Key ',' -> Take
+                | Key ',' when not isMainMap -> Take
                 | Key 'i' -> ShowItems
                 | Key ConsoleKey.Escape -> Quit
-                | Key 'o' -> OpenCloseDoor
+                | Key 'o' when not isMainMap -> OpenCloseDoor
                 | Key 'e' -> ShowEquipment
+                | Key 'E' -> Eat
                 | Key 'm' -> ShowMessages
-                | Key 'h' -> Harvest
+                | Key 'h' when not isMainMap -> Harvest
                 | Key 'W' -> Wear
                 | Key 'T' -> TakeOff
                 | Key '>' -> GoDownEnter
                 | Key '<' -> GoUp
-                | Key 'l' -> Look
+                | Key 'l' when not isMainMap -> Look
+                | Key 'U' when not isMainMap -> UseObject
+                | Key 'O' -> ToggleSettingsMainMapHighlightPointsOfInterest
                 | _ -> Unknown                        
         
             match command with
             | Quit -> 
-                State.get ()  
+                State.get ()
                 |> writeState
                 ()
             | Unknown -> loop false
@@ -121,8 +126,18 @@ let mainLoop () =
                 |> Turn.next
                 Screen.showBoard ()
                 loop false
+            | ToggleSettingsMainMapHighlightPointsOfInterest ->
+                State.set (State.get() |> Actions.performToggleSettingsMainMapHighlightPointsOfInterest command)
+                Screen.showBoard ()
+                loop false
             | Look ->
                 Actions.performLookAction command (State.get ())
+                Screen.showBoard ()
+                loop false
+            | UseObject ->
+                State.get ()
+                |> performUseObjectAction command
+                |> Turn.next
                 Screen.showBoard ()
                 loop false
             | Harvest -> 
@@ -148,58 +163,113 @@ let mainLoop () =
                 |> Turn.next
                 Screen.showBoard ()
                 loop false
+            | Eat ->
+                State.get ()
+                |> eat
+                |> Turn.next
+                Screen.showBoard ()
+                loop false
             | TakeOff ->
                 State.get ()
                 |> takeOff
                 |> Turn.next
                 Screen.showBoard ()
                 loop false
-
-    let mainMenuReply = showMainMenu ()
-
-    let thePlayer = new Player(mainMenuReply.Name, 20, 10, 16, 10)
-
-    //initial maps setup
-    let mainMapBoard, mainMapPoint = generateMainMap
-
-    let startLevel, startLevelPosition = generateStartLocationWithInitialPlayerPositon mainMapPoint
-    let board = startLevel |> Board.moveCharacter thePlayer (startLevelPosition)
-
-    let mainBoardStartPlace = mainMapBoard.Places.[mainMapPoint.X,mainMapPoint.Y]
-    mainMapBoard.Places.[mainMapPoint.X,mainMapPoint.Y] <- { mainBoardStartPlace with TransportTarget = Some({ BoardId = board.Guid; TargetCoordinates = startLevelPosition })}
     
-    let initialBoards = new System.Collections.Generic.Dictionary<System.Guid,Board>()
-    initialBoards.Add(board.Guid, board)
-    initialBoards.Add(mainMapBoard.Guid, mainMapBoard)
-    //end maps setup
 
-    let entryState =
-        try
-            if Config.Settings.LoadSave then loadState () else raise (new FileNotFoundException())
-        with
-            | :? FileNotFoundException ->
-                    {         
-                        Board = board; 
-                        BoardFramePosition = point 0 0;
-                        Player = thePlayer
-                        TurnNumber = 0;
-                        UserMessages = [];
-                        AllBoards = initialBoards;
-                        MainMapGuid = mainMapBoard.Guid
-                    }
-    State.set entryState
-    loop true      
+    let d1 : Dialog.Dialog = [
+        Dialog.Title("Build Hero");
+        Dialog.Option('a', "Fork", "fork", 
+            [
+                ("X", "Y");
+                ("", "N");
+            ]);
+        Dialog.Option('b', "Knife", "knife", 
+            [
+                ("X", "Y");
+                ("", "N");
+            ]);
+        Dialog.Option('c', "Spoon", "spoon", 
+            [
+                ("X", "Y");
+                ("", "N");
+            ]);
+        Dialog.Label("Actions");
+        Dialog.Action('1', "[enter]", "result", "1");
+        Dialog.Action('0', "[escape]", "result", "0");
+    ]
+
+    let d2 : Dialog.Dialog = [
+        Dialog.Title("What's your name?" ) ;        
+        Dialog.Textbox('n', "name")            
+    ]
+
+    let test = showDialog(d1, Dialog.emptyResult) 
+    if test.Item("result") = "1" then
+        //let playerName = (showDialog (d2, Dialog.emptyResult)).Item("name")
+        let thePlayer = new Player("Great Hero", 20, 10, 16, 10, 300)
+
+        //initial maps setup
+        let mainMapBoard, mainMapPoint = generateMainMap
+
+        let startLevel, startLevelPosition = if Config.Settings.TestStartOnEmpty then generateTestStartLocationWithInitialPlayerPositon mainMapPoint else generateStartLocationWithInitialPlayerPositon mainMapPoint
+        let board = startLevel |> Board.moveCharacter thePlayer (startLevelPosition)
+
+        let mainBoardStartPlace = mainMapBoard.Places.[mainMapPoint.X,mainMapPoint.Y]
+        mainMapBoard.Places.[mainMapPoint.X,mainMapPoint.Y] <- { mainBoardStartPlace with TransportTarget = Some({ BoardId = board.Guid; TargetCoordinates = startLevelPosition; TargetLevelType = LevelType.Forest})}
+    
+        let initialBoards = new System.Collections.Generic.Dictionary<System.Guid,Board>()
+        initialBoards.Add(board.Guid, board)
+        initialBoards.Add(mainMapBoard.Guid, mainMapBoard)
+        //end maps setup
+
+        let getInitialReplicationRecipes = 
+            let result = new System.Collections.Generic.HashSet<string>()
+            //ignore (result.Add("Knife"))
+            result
+
+        let entryState =
+            try
+                if Config.Settings.LoadSave then loadState () else raise (new FileNotFoundException())
+            with
+                | :? FileNotFoundException ->
+                        {         
+                            Board = board; 
+                            BoardFramePosition = point 0 0;
+                            Player = thePlayer
+                            TurnNumber = 0;
+                            UserMessages = [];
+                            AllBoards = initialBoards;
+                            MainMapGuid = mainMapBoard.Guid;
+                        AvailableReplicationRecipes = getInitialReplicationRecipes;
+                        MainMapDetails = Array2D.init boardWidth boardHeight (fun x y -> if mainMapPoint.X = x && mainMapPoint.Y = y then { PointOfInterest = Some("Your ship's crash site")} else { PointOfInterest = Option.None});
+                        Settings = { HighlightPointsOfInterest = false }
+                        }
+        State.set entryState
+        loop true      
+
+let clearCharacterStates state = 
+    let characters = 
+        Board.getFilteredPlaces (fun item -> item.Character.IsSome) state.Board
+        |> List.map (fun (_, item) -> item.Character.Value)
+    characters |> List.iter (fun item -> 
+        item.ResetVolatileStates()
+        item.TickBiologicalClock()
+        )
+    state
 
 let subscribeHandlers () =
     Turn.subscribe handleMonsters
+    Turn.subscribe clearCharacterStates
     Turn.subscribe setVisibilityStates
-    Turn.subscribe evaluateBoardFramePosition
-    Turn.subscribe (fun state -> {state with TurnNumber = state.TurnNumber + 1})
+    Turn.subscribe evaluateBoardFramePosition    
+    Turn.subscribe (
+        fun state -> 
+        {state with TurnNumber = state.TurnNumber + 1}
+     )
 
 [<EntryPoint>]
 let main args =    
     subscribeHandlers ()
-    mainLoop ()
-    //printf "%s" <| Seq.fold (fun acc x -> acc + " " + x.ToString()) "" (circles.[2])
-    System.Console.ReadKey(true) |> ignore
+    mainLoop ()    
     0

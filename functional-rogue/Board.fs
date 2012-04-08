@@ -23,6 +23,8 @@ type Tile =
     | Water
     | StairsDown
     | StairsUp
+    | Computer
+    | Replicator
     | MainMapForest
     | MainMapGrassland
     | MainMapWater
@@ -39,10 +41,12 @@ type LevelType =
     | Empty
     | Grassland
     | Coast
+    | MainMap
 
 type TransportTarget = {
     BoardId : Guid;
     TargetCoordinates : Point
+    TargetLevelType : LevelType
 }   
 
 type Ore = 
@@ -62,6 +66,38 @@ type Ore =
             | ContaminatedWater(value) -> value
             | _ -> QuantityValue(0)
 
+
+
+type ReplicationRecipe = {
+    Name : string
+    ResultItem : Item
+    RequiredResources : RequiredResources
+}
+and RequiredResources = {
+    Iron : int
+    Gold : int
+    Uranium : int
+}
+
+
+
+type ElectronicMachine = {
+    ComputerContent : ComputerContent
+}
+and ComputerContent = {
+    ComputerName : string;
+    Notes : ComputerNote list;
+    CanOperateDoors : bool;
+    CanOperateCameras : bool;
+    CanReplicate : bool;
+    HasCamera : bool;
+    ReplicationRecipes : ReplicationRecipe list;
+}
+and ComputerNote = {
+    Topic : string;
+    Content : string;
+}
+
 type Place = {
     Tile : Tile; 
     Items : Item list;
@@ -69,13 +105,24 @@ type Place = {
     Character : Character option;    
     IsSeen : bool;
     WasSeen : bool;
-    TransportTarget : TransportTarget option
+    TransportTarget : TransportTarget option;
+    ElectronicMachine : ElectronicMachine option
 } with
     static member EmptyPlace = 
-            {Tile = Tile.Empty; Items = []; Character = Option.None; IsSeen = false; WasSeen = Settings.EntireLevelSeen; Ore = NoneOre; TransportTarget = Option.None}
+            {Tile = Tile.Empty; Items = []; Character = Option.None; IsSeen = false; WasSeen = Settings.EntireLevelSeen; Ore = NoneOre; TransportTarget = None; ElectronicMachine = None}
     static member Wall = 
-            {Tile = Tile.Wall; Items = []; Character = Option.None; IsSeen = false; WasSeen = Settings.EntireLevelSeen; Ore = NoneOre; TransportTarget = Option.None }
-    static member GetDescription (place: Place) =
+            {Tile = Tile.Wall; Items = []; Character = Option.None; IsSeen = false; WasSeen = Settings.EntireLevelSeen; Ore = NoneOre; TransportTarget = None; ElectronicMachine = None }
+    static member Floor = 
+            {Tile = Tile.Floor; Items = []; Character = Option.None; IsSeen = false; WasSeen = Settings.EntireLevelSeen; Ore = NoneOre; TransportTarget = None; ElectronicMachine = None }
+    static member StairsDown = 
+            {Tile = Tile.StairsDown; Items = []; Character = Option.None; IsSeen = false; WasSeen = Settings.EntireLevelSeen; Ore = NoneOre; TransportTarget = None; ElectronicMachine = None }
+    static member ClosedDoor =
+            {Tile = Tile.ClosedDoor; Items = []; Character = Option.None; IsSeen = false; WasSeen = Settings.EntireLevelSeen; Ore = NoneOre; TransportTarget = None; ElectronicMachine = None }
+    static member Computer =
+            {Tile = Tile.Computer; Items = []; Character = Option.None; IsSeen = false; WasSeen = Settings.EntireLevelSeen; Ore = NoneOre; TransportTarget = None; ElectronicMachine = None }
+    static member Create tile =
+        {Tile = tile; Items = []; Character = Option.None; IsSeen = false; WasSeen = Settings.EntireLevelSeen; Ore = NoneOre; TransportTarget = None; ElectronicMachine = None }
+    static member GetDescription (place: Place) additionalDescription =
         let tileDescription = 
             match place.Tile with
             | Tile.Floor -> "Floor."
@@ -91,6 +138,13 @@ type Place = {
             | Tile.OpenDoor -> "Open door."
             | Tile.StairsDown -> "Stairs leading down."
             | Tile.StairsUp -> "Stairs leading up."
+            | Tile.Computer -> "Computer."
+            | Tile.Replicator -> "Replicator."
+            | Tile.MainMapForest -> "Forest." + additionalDescription
+            | Tile.MainMapCoast -> "Coast." + additionalDescription
+            | Tile.MainMapGrassland -> "Grassland." + additionalDescription
+            | Tile.MainMapMountains -> "Mountains." + additionalDescription
+            | Tile.MainMapWater -> "Water." + additionalDescription
             | _ -> ""
         let characterDescription =
             if place.Character.IsSome then
@@ -108,14 +162,19 @@ type Place = {
 
 let boardHeight = 24
 let boardWidth = 79
+let mainMapGuid = new Guid("7af1cd0c-8a30-4c6b-990b-5ae24658a816")
 
 type Board = {
     Guid : System.Guid;
     Places : Place[,];
     Level : int;
     /// Defines the main map location which the current map is connected to.
-    MainMapLocation: Point option
-}
+    MainMapLocation: Point option;
+    Type : LevelType
+} with
+    member this.IsMainMap 
+        with get () = this.Guid = mainMapGuid
+
     
 let boardContains (point: Point) = 
     boardWidth > point.X  && boardHeight > point.Y && point.X >= 0 && point.Y >= 0
@@ -168,6 +227,16 @@ let monsterPlaces (board: Board) =
         | Some(character) when (character :? Monster) -> Some(item) 
         | _ -> None)
     |> Seq.toList
+
+let getFilteredPlaces (filterFunc: Place -> bool) (board: Board) =
+    let tempSeq = seq {
+        for x = 0 to boardWidth - 1 do
+            for y = 0 to boardHeight - 1 do
+                let item = Array2D.get board.Places x y
+                if (filterFunc item) then
+                    yield (new Point(x, y), item)
+    }
+    Seq.toList tempSeq
 
 let getPlayerPosition (board: Board) = 
     let preResult = Seq.tryFind (fun (point, place) -> 
@@ -322,7 +391,7 @@ let private createProcessor board =
         loop board)
         
 // WARNING!!! The crap below... what is it for? what guid to put in here?
-let private agent = createProcessor <| { Guid = Guid.NewGuid(); Places = Array2D.create boardWidth boardHeight Place.EmptyPlace; Level = 0; MainMapLocation = Option.None }
+let private agent = createProcessor <| { Guid = Guid.NewGuid(); Places = Array2D.create boardWidth boardHeight Place.EmptyPlace; Level = 0; MainMapLocation = Option.None; Type = LevelType.MainMap }
 
 // TODO: refact functions to use BoardMessage structure
 

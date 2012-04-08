@@ -10,6 +10,7 @@ open Screen
 open Sight
 open Player
 open Characters
+open Computers
 
 type Command = 
     | Up
@@ -34,6 +35,9 @@ type Command =
     | GoDownEnter
     | GoUp
     | Look
+    | UseObject
+    | ToggleSettingsMainMapHighlightPointsOfInterest
+    | Eat
 
 let private commandToSize command = 
     match command with
@@ -119,11 +123,11 @@ let selectPlace (positions : Point list) state : Point option =
             | Keys [ConsoleKey.LeftArrow; '4'] -> loop (left current) //Left            
             | Keys [ConsoleKey.RightArrow; '6'] -> loop (right current) //Right
             | Key ConsoleKey.Enter -> Some(current)
-            | Key ConsoleKey.Escape -> None
+            | Key ConsoleKey.Escape -> Option.None
             | _ -> loop current
         loop start                
     else
-        None
+        Option.None
 
 let private operateDoor command state =
     let board = state.Board
@@ -133,8 +137,12 @@ let private operateDoor command state =
         :: [for x in (max 0 (playerPosition.X - 1))..(min boardWidth (playerPosition.X + 1)) do
                 for y in (max 0 (playerPosition.Y - 1))..(min boardHeight (playerPosition.Y + 1)) do
                     let p = Point(x, y)
-                    if p <> playerPosition then yield p]        
-    let selected = selectPlace points state
+                    let tmpPlace = Board.get board p
+                    if p <> playerPosition && (tmpPlace.Tile = Tile.ClosedDoor || tmpPlace.Tile = Tile.OpenDoor) then yield p]        
+    let selected = if points.Length = 2 then
+                    Some(points.[1])
+                   else
+                    selectPlace points state
 
     if selected.IsSome then 
         board |> Board.modify selected.Value (
@@ -149,11 +157,35 @@ let private operateDoor command state =
 let performCloseOpenAction command state =
     { state with Board = operateDoor command state } 
 
+let performToggleSettingsMainMapHighlightPointsOfInterest command state =
+    let updatedSettings = {state.Settings with HighlightPointsOfInterest = not state.Settings.HighlightPointsOfInterest }
+    { state with Settings = updatedSettings}
+
 let performLookAction command state =
     let board = state.Board
     let playerPosition = getPlayerPosition board
     let points = visiblePositions playerPosition state.Player.SightRadius board    
     ignore (selectPlace points state)
+
+let performUseObjectAction command state =
+    let board = state.Board
+    let playerPosition = getPlayerPosition board
+    let points = 
+        playerPosition 
+        :: [for x in (max 0 (playerPosition.X - 1))..(min boardWidth (playerPosition.X + 1)) do
+                for y in (max 0 (playerPosition.Y - 1))..(min boardHeight (playerPosition.Y + 1)) do
+                    let p = Point(x, y)
+                    if p <> playerPosition then yield p]        
+    let selected = selectPlace points state
+    if selected.IsSome then 
+        let selectedPlace = board.Places.[selected.Value.X,selected.Value.Y]
+        match selectedPlace.Tile with
+        | Tile.Computer | Tile.Replicator ->
+            state |> operateComputer selected selectedPlace.ElectronicMachine.Value
+        | _ ->
+            state |> addMessage (sprintf "There is nothing to use here.")
+    else
+        state
 
 let switchBoards (oldBoard: Board) (playerPoint: Point) (state: State) =
     let playerPlace = oldBoard.Places.[playerPoint.X,playerPoint.Y]
@@ -171,6 +203,12 @@ let performGoDownEnterAction (command: Command) state =
     let currentPlayer = getPlayerCharacter currentBoard
     let playerPlace = currentBoard.Places.[playerPosition.X,playerPosition.Y]
     if (playerPlace.Tile = Tile.StairsDown || playerPlace.Tile = Tile.MainMapForest || playerPlace.Tile = Tile.MainMapGrassland || playerPlace.Tile = Tile.MainMapCoast) then
+        if (playerPlace.TransportTarget.IsSome && playerPlace.TransportTarget.Value.BoardId = Guid.Empty) then
+            let targetMapType = playerPlace.TransportTarget.Value.TargetLevelType
+            let newBoard, newPoint = generateLevel targetMapType (Some({BoardId = currentBoard.Guid; TargetCoordinates = playerPosition; TargetLevelType = currentBoard.Type})) (Some(currentBoard.Level - 1))
+            state.AllBoards.Add(newBoard.Guid, newBoard)                    
+            currentBoard.Places.[playerPosition.X,playerPosition.Y] <- {playerPlace with TransportTarget = Some({ BoardId = newBoard.Guid; TargetCoordinates = newPoint.Value; TargetLevelType = targetMapType }) }
+
         if (playerPlace.TransportTarget.IsNone) then
             let targetMapType = 
                 match playerPlace.Tile with
@@ -178,9 +216,10 @@ let performGoDownEnterAction (command: Command) state =
                 | Tile.MainMapGrassland -> LevelType.Grassland
                 | Tile.MainMapCoast -> LevelType.Coast
                 | _ -> LevelType.Cave
-            let newBoard, newPoint = generateLevel targetMapType (Some({BoardId = currentBoard.Guid; TargetCoordinates = playerPosition})) (Some(currentBoard.Level - 1))
+            let newBoard, newPoint = generateLevel targetMapType (Some({BoardId = currentBoard.Guid; TargetCoordinates = playerPosition; TargetLevelType = currentBoard.Type})) (Some(currentBoard.Level - 1))
             state.AllBoards.Add(newBoard.Guid, newBoard)                    
-            currentBoard.Places.[playerPosition.X,playerPosition.Y] <- {playerPlace with TransportTarget = Some({ BoardId = newBoard.Guid; TargetCoordinates = newPoint.Value }) }
+            currentBoard.Places.[playerPosition.X,playerPosition.Y] <- {playerPlace with TransportTarget = Some({ BoardId = newBoard.Guid; TargetCoordinates = newPoint.Value; TargetLevelType = targetMapType }) }
+        
         switchBoards currentBoard playerPosition state
     else
         state |> addMessage (sprintf "There are no stairs down nor entrance here.")
@@ -192,7 +231,7 @@ let performGoUpAction (command: Command) state =
     let playerPlace = currentBoard.Places.[playerPosition.X,playerPosition.Y]
     if (playerPlace.Tile = Tile.StairsUp) then
         if (playerPlace.TransportTarget.IsNone) then
-            let newBoard, newPoint = generateLevel LevelType.Cave (Some({BoardId = currentBoard.Guid; TargetCoordinates = playerPosition})) (Some(currentBoard.Level + 1))
+            let newBoard, newPoint = generateLevel LevelType.Cave (Some({BoardId = currentBoard.Guid; TargetCoordinates = playerPosition; TargetLevelType = currentBoard.Type})) (Some(currentBoard.Level + 1))
             state.AllBoards.Add(newBoard.Guid, newBoard)
         switchBoards currentBoard playerPosition state
     else
@@ -224,9 +263,10 @@ let performHarvest state =
         match place.Ore with
         | Iron(v) | Gold(v) | Uranium(v) ->
             if state.Player.WornItems.Hand.IsSome then
-                state.Player.WornItems.Hand.Value.MiscProperties.OreExtractionRate
-            else
-                0
+                match state.Player.WornItems.Hand.Value.Type with
+                | OreExtractor(oreExtractorProperties) -> oreExtractorProperties.HarvestRate            
+                | _ -> 0
+            else 0
         | _ -> 5    //rate for water
     if harvestRate = 0 then
         state |> addMessage "You cannot harvest anything. You need a special tool for that." 
@@ -299,7 +339,7 @@ let wear (state : State) =
         |> List.map Option.get
 
     let refreshScreen = 
-        Screen.showChooseItemDialog {State = state; Filter = (fun item -> not <| List.exists ((=) item) alreadyWorn)}
+        Screen.showChooseItemDialog {State = state; Filter = (fun item -> not <| List.exists ((=) item) alreadyWorn && item.IsWearable ) }
 
     let rec loop () =
         let keyInfo = System.Console.ReadKey(true)
@@ -332,6 +372,29 @@ let wear (state : State) =
     refreshScreen
     loop ()
 
+let eat (state : State) = 
+
+    let refreshScreen = 
+        Screen.showChooseItemDialog {State = state; Filter = (fun item -> item.IsEatable)}
+
+    let rec loop () =
+        let keyInfo = System.Console.ReadKey(true)
+        match keyInfo with 
+        | Key ConsoleKey.Escape -> state
+        | _ -> 
+            let keyChar = keyInfo.KeyChar
+            let item = Map.tryGetItem keyChar state.Player.ShortCuts 
+            if item.IsSome then
+                state.Player.Eat(item.Value)
+                let indexToRemove = List.findIndex ((=) item.Value) state.Player.Items
+                state.Player.Items <- List.removeAt indexToRemove state.Player.Items
+                state
+            else
+                refreshScreen 
+                loop ()
+    refreshScreen
+    loop ()
+
 let takeOff (state : State) = 
     let options = Seq.toList <| seq {
         if state.Player.WornItems.Hand.IsSome then yield ('g', "Put off - " + itemShortDescription state.Player.WornItems.Hand.Value)
@@ -345,10 +408,10 @@ let takeOff (state : State) =
         else
             ' '                    
     match chosenOption with
-    | 'g' -> state.Player.WornItems <- {state.Player.WornItems with Hand = None }
-    | 'h' -> state.Player.WornItems <- {state.Player.WornItems with Head = None }
-    | 'l' -> state.Player.WornItems <- {state.Player.WornItems with Legs = None }
-    | 't' -> state.Player.WornItems <- {state.Player.WornItems with Torso = None }                      
+    | 'g' -> state.Player.WornItems <- {state.Player.WornItems with Hand = Option.None }
+    | 'h' -> state.Player.WornItems <- {state.Player.WornItems with Head = Option.None }
+    | 'l' -> state.Player.WornItems <- {state.Player.WornItems with Legs = Option.None }
+    | 't' -> state.Player.WornItems <- {state.Player.WornItems with Torso = Option.None }                      
     | _ -> ()
     state
 

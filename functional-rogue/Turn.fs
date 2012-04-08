@@ -24,9 +24,9 @@ let private turnAgent () =
             let iElapsed = Convert.ToInt32(Math.Floor(elapsed))
             let iState = Convert.ToInt32(Math.Floor(time))
             let turnsToGo = iElapsed - iState
-            if turnsToGo > 0 then 
-                for i = 1 to turnsToGo do
-                    State.set (state |>> funcs)
+            let numbers = seq { 0 .. (turnsToGo - 1)} 
+            let evaluatedState = numbers |> Seq.fold (fun acc _ ->  acc |>> funcs) state
+            State.set evaluatedState
             reply.Reply ()
 
             return! loop elapsed funcs
@@ -40,7 +40,9 @@ let elapse turns (state : option<State>) =
     let myState = if state.IsSome then state.Value else State.get ()
     agent.PostAndReply(fun reply -> Elapse(turns, myState, reply))
 
-let next state = agent.PostAndReply(fun reply -> Elapse(1M, state, reply))
+let next state = 
+    let turnsToGo = if state.Board.IsMainMap then 50M else 1M
+    agent.PostAndReply(fun reply -> Elapse(turnsToGo, state, reply))
 
 let subscribe stateChange = agent.Post(SubscribeStateChange(stateChange))
 
