@@ -181,18 +181,18 @@ let mainLoop () =
         Dialog.Title("Build Hero");
         Dialog.Option('a', "Fork", "fork", 
             [
-                Dialog.OptionItem("Selected", "Y");
-                Dialog.OptionItem("", "N");
+                ("X", "Y");
+                ("", "N");
             ]);
         Dialog.Option('b', "Knife", "knife", 
             [
-                Dialog.OptionItem("Selected", "Y");
-                Dialog.OptionItem("", "N");
+                ("X", "Y");
+                ("", "N");
             ]);
         Dialog.Option('c', "Spoon", "spoon", 
             [
-                Dialog.OptionItem("Selected", "Y");
-                Dialog.OptionItem("", "N");
+                ("X", "Y");
+                ("", "N");
             ]);
         Dialog.Label("Actions");
         Dialog.Action('1', "[enter]", "result", "1");

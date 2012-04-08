@@ -387,7 +387,7 @@ let private screenWritter () =
         )
         Console.SetCursorPosition(screenSize.Width, screenSize.Height)
 
-    let showDialog (dialog : Dialog.Dialog, values : Dialog.Result) screen =        
+    let showDialog (dialog : Dialog.Dialog, dialogResult : Dialog.Result) screen =        
         let sequence = seq {            
             for i, item in dialog |> Seq.mapi (fun i item -> i, item) do
                 match item with
@@ -407,11 +407,16 @@ let private screenWritter () =
                     let dt2 = Dialog.newDecoratedText text ConsoleColor.Black ConsoleColor.Gray
                     yield writeDecoratedText (point 0 i) dt1
                     yield writeDecoratedText (point 4 i) dt2
-                | Dialog.Option(input, text, _, _) ->
+                | Dialog.Option(input, text, varName, optionItems) ->
                     let dt1 = Dialog.newDecoratedText (input.ToString() + " - " + text) ConsoleColor.Black ConsoleColor.White 
                     let dt2 = Dialog.newDecoratedText text ConsoleColor.Black ConsoleColor.Gray
                     yield writeDecoratedText (point 0 i) dt1
                     yield writeDecoratedText (point 4 i) dt2
+                    if dialogResult.ContainsKey(varName) then
+                        let selectedItem = List.tryFind (fun item -> snd item = dialogResult.[varName]) optionItems
+                        if selectedItem.IsSome then
+                            let dt3 = Dialog.newDecoratedText (fst selectedItem.Value) ConsoleColor.Black ConsoleColor.Gray
+                            yield writeDecoratedText (point (dt1.Text.Length + 2) i) dt3
                 | Dialog.Textbox(input, _) ->
                     yield Dialog.newDecoratedText "                           " ConsoleColor.Gray ConsoleColor.Black |> writeDecoratedText (point 0 i) 
                                     
@@ -553,38 +558,38 @@ let rec showDialog (dialog : Dialog.Dialog, dialogResult : Dialog.Result) : Dial
             | Dialog.Subdialog(itemKey, _, innerDialog) as item when itemKey = key -> Some(item)
             | Dialog.Option(itemKey, _, varName, _) as item when itemKey = key -> Some(item)
             | _ -> None)    
-    let rec loop () : Dialog.Result =
+    let rec loop dialogResult : Dialog.Result =
         let selectedWidget = 
             (Console.ReadKey(true).KeyChar, dialog)
             ||> findMenuItemsInDialog    
         if selectedWidget.IsSome then
             match selectedWidget.Value with
-                | Dialog.Action(_, _, varName, value) -> Dialog.newResult [(varName, value)]
+                | Dialog.Action(_, _, varName, value) -> 
+                    Dialog.replaceWith (dialogResult, Dialog.newResult [(varName, value)])
                 | Dialog.Subdialog(_, _, subdialog) -> 
                     let result = showDialog (subdialog, dialogResult)
                     agent.PostAndReply (fun reply -> ShowDialog(dialog, result, reply))
-                    Dialog.replaceWith (result, loop ())
-                | Dialog.Option(_, _, varName, optionItems) ->
-                    if dialogResult.ContainsKey(varName) then
-                        dialogResult
-
-//                        let value = dialogResult.Item(varName)
-//                        let index =
-//                            optionItems
-//                            |> List.tryFindIndex (function 
-//                                | Dialog.OptionItem(_, selectedValue) -> 
-//                                    snd item = value)
-//                        match index with
-//                        | Some(i) -> 
-//                            let newIndex = (i + 1) % (List.length optionItems)
-//                            optionItems @ newIndex
-//                        | _ -> ""
-                    else
-                        dialogResult
-                | _ -> loop ()
+                    Dialog.replaceWith (result, loop dialogResult)
+                | Dialog.Option(_, _, varName, optionItems) ->        
+                    let foundValueIndex =
+                        if dialogResult.ContainsKey(varName) then
+                            let value = dialogResult.Item(varName)
+                            optionItems
+                            |> List.tryFindIndex (function 
+                                | _, selectedValue when selectedValue = value -> true
+                                | _ -> false)
+                         else
+                            None
+                    let index = if foundValueIndex.IsSome then foundValueIndex.Value else -1
+                    let newIndex = (index + 1) % (List.length optionItems)
+                    let _, newValue = optionItems.[newIndex]
+                    let result = Dialog.replaceWith (dialogResult, Dialog.newResult ([(varName, newValue)]))
+                    agent.PostAndReply (fun reply -> ShowDialog(dialog, result, reply))
+                    loop result
+                | _ -> loop dialogResult
         else
-            loop ()
-    loop ()
+            loop dialogResult
+    loop dialogResult
     
     
     

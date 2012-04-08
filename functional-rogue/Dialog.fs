@@ -24,8 +24,7 @@ and Widget =
     | Subdialog of char * string * Dialog
     | Raw of DecoratedText
     | Textbox of char * string
-and OptionItem = 
-    | OptionItem of string * string
+and OptionItem = string * string
 
 and DecoratedText = {
     Text : string;
