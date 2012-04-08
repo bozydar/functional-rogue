@@ -44,10 +44,16 @@ let inBoundary v min max =
     elif v > max then max
     else v    
 
+let isInBoundary v min max = 
+    v >= min && v <= max
+
 let intByIndex tuple index = 
     FSharpValue.GetTupleField(tuple, index)  :?> int
 
 let self x = x
+
+let pointsDistance (point1: Point) (point2: Point) =
+    max (abs(point1.X - point2.X)) (abs(point1.Y - point2.Y))
 
 (*
 type FloatingPoint = {
