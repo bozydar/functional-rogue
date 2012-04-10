@@ -36,6 +36,7 @@ type Command =
     | GoUp
     | Look
     | UseObject
+    | UseItem
     | ToggleSettingsMainMapHighlightPointsOfInterest
     | Eat
 
@@ -371,6 +372,19 @@ let wear (state : State) =
                 loop ()
     refreshScreen
     loop ()
+
+let useItem (state : State) =
+    let letters = ['a'..'z']
+    let dialog : Dialog.Dialog =
+        [ Dialog.Title("") ]
+        @ (state.Player.Items |> List.mapi (fun i item -> Dialog.Action(letters.[i], item.Name, "result", item.Id.ToString())))
+        @ [Dialog.Action('0', "[escape]", "result", "0")]
+    let test = showDialog(dialog, Dialog.emptyResult) 
+    if test.Item("result") <> "0" then
+        let choosenItem = state.Player.Items |> List.find (fun item -> item.Id.ToString() = test.Item("result"))
+        state
+    else
+        state
 
 let eat (state : State) = 
 
