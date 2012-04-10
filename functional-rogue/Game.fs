@@ -82,7 +82,8 @@ let mainLoop () =
                 | Key '>' -> GoDownEnter
                 | Key '<' -> GoUp
                 | Key 'l' when not isMainMap -> Look
-                | Key 'U' when not isMainMap -> UseObject
+                | Key 'U' when not isMainMap -> UseObject   // objects are anything not in your inventory
+                | Key 'u' -> UseItem    // items are things in your inventory
                 | Key 'O' -> ToggleSettingsMainMapHighlightPointsOfInterest
                 | _ -> Unknown                        
         
@@ -137,6 +138,12 @@ let mainLoop () =
             | UseObject ->
                 State.get ()
                 |> performUseObjectAction command
+                |> Turn.next
+                Screen.showBoard ()
+                loop false
+            | UseItem ->
+                State.get ()
+                |> useItem
                 |> Turn.next
                 Screen.showBoard ()
                 loop false
