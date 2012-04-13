@@ -53,6 +53,7 @@
     <Compile Include="Utils.fs" />
     <Compile Include="Quantity.fs" />
     <Compile Include="Config.fs" />
+    <Compile Include="Dialog.fs" />
     <Compile Include="Log.fs" />
     <Compile Include="Characters.fs" />
     <Compile Include="Monsters.fs" />
@@ -68,7 +69,6 @@
     <Compile Include="Predefined.Classes.fs" />
     <Compile Include="Predefined.Resources.fs" />
     <Compile Include="LevelGeneration.fs" />
-    <Compile Include="Dialog.fs" />
     <Compile Include="Screen.fs" />
     <Compile Include="Computers.fs" />
     <Compile Include="ItemActions.fs" />

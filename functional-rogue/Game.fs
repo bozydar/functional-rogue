@@ -190,19 +190,21 @@ let mainLoop () =
                 loop false
     
 
-    let characterOptionsDialog : Dialog.Dialog = [
-        Dialog.Title("Create Hero");
-        Dialog.Option('a', "Class", "class", 
-            [ for item in Predefined.Classes.getClasses -> (item, item)]);
-        Dialog.Label("Actions");
-        Dialog.Action('1', "[enter]", "result", "1");
-        Dialog.Action('0', "[escape]", "result", "0");
-    ]
+    let characterOptionsDialog = 
+        Dialog.Dialog [
+            Dialog.Title("Create Hero");
+            Dialog.Option('a', "Class", "class", 
+                [ for item in Predefined.Classes.getClasses -> (item, item)]);
+            Dialog.Label("Actions");
+            Dialog.Action('1', "[enter]", "result", "1");
+            Dialog.Action('0', "[escape]", "result", "0");
+        ]
 
-    let d2 : Dialog.Dialog = [
-        Dialog.Title("What's your name?" ) ;        
-        Dialog.Textbox('n', "name")            
-    ]
+    let d2 = 
+        Dialog.Dialog [
+            Dialog.Title("What's your name?" ) ;        
+            Dialog.Textbox('n', "name")            
+        ]
 
     let characterOptions = showDialog(characterOptionsDialog, Dialog.newResult([("class", "Soldier")])) 
     //let playerName = (showDialog (d2, Dialog.emptyResult)).Item("name")

@@ -554,7 +554,7 @@ let rec showDialog (dialog : Dialog.Dialog, dialogResult : Dialog.Result) : Dial
     agent.PostAndReply (fun reply -> ShowDialog(dialog, dialogResult, reply))
     let findMenuItemsInDialog key dialog : option<Dialog.Widget> = 
         dialog    
-        |> List.tryPick (function 
+        |> Seq.tryPick (function 
             | Dialog.Action(itemKey, _, _, _) as item when itemKey = key -> Some(item)
             | Dialog.Subdialog(itemKey, _, innerDialog) as item when itemKey = key -> Some(item)
             | Dialog.Option(itemKey, _, varName, _) as item when itemKey = key -> Some(item)
