@@ -121,6 +121,12 @@ let mainLoop () =
                 |> Turn.next
                 Screen.showBoard ()
                 loop false
+            | Drop ->
+                State.get () 
+                |> Actions.performDropAction
+                |> Turn.next
+                Screen.showBoard ()
+                loop false
             | OpenCloseDoor ->
                 State.get () 
                 |> Actions.performCloseOpenAction command

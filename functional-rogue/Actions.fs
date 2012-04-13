@@ -258,6 +258,9 @@ let performTakeAction state =
 
     {state1 with Board = board1}
 
+let performDropAction state =
+    raise (new NotImplementedException("Not implemented yet"))
+
 let performHarvest state = 
     let playerPosition = getPlayerPosition state.Board
     let place = get state.Board playerPosition
