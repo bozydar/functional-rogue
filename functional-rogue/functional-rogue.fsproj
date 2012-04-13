@@ -70,6 +70,7 @@
     <Compile Include="Dialog.fs" />
     <Compile Include="Screen.fs" />
     <Compile Include="Computers.fs" />
+    <Compile Include="ItemActions.fs" />
     <Compile Include="Actions.fs" />
     <Compile Include="AI.fs" />
     <Compile Include="Game.fs" />
