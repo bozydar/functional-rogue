@@ -24,6 +24,7 @@ type Command =
     | DownRight
     | Wait
     | Take
+    | Drop
     | ShowItems
     | Quit
     | Unknown
@@ -345,6 +346,26 @@ let wear (state : State) =
 
     let refreshScreen = 
         Screen.showChooseItemDialog {State = state; Filter = (fun item -> not <| List.exists ((=) item) alreadyWorn && item.IsWearable ) }
+
+    let wearItemMenu = 
+        Dialog.Dialog [
+            Dialog.Title "Choose item to wear" ]
+         + Dialog.Dialog (seq {
+            yield Dialog.Label "a"
+         })
+        
+    (*
+    let listAllItems (items : Item list) (shortCuts : Map<char, Item>) screen = 
+        //let plainItems = items |> Seq.choose (function | Gold(_) -> Option.None | Plain(_, itemProperties) -> Some itemProperties)
+        
+        let writeProperties = seq {
+            for i, item in Seq.mapi (fun i item -> i, item) items do
+                let pos = point 1 i                
+                let char = match findShortCut shortCuts item with Some(value) -> value.ToString() | _ -> ""                
+                yield writeString pos (sprintf "%s (id=%s): %s" char (item.Id.ToString()) (itemShortDescription item))
+        }
+        screen |>> writeProperties
+    *)
 
     let rec loop () =
         let keyInfo = System.Console.ReadKey(true)
