@@ -351,7 +351,10 @@ let wear (state : State) =
         Dialog.Dialog [
             Dialog.Title "Choose item to wear" ]
          + Dialog.Dialog (seq {
-            yield Dialog.Label "a"
+            for i, item in Seq.mapi (fun i item -> i, item) state.Player.Items do
+                let pos = point 1 i                
+                let char = match findShortCut state.Player.ShortCuts item with Some(value) -> value.ToString() | _ -> ""                
+                yield Dialog.Action (char.[0], (sprintf "(id=%s): %s" (item.Id.ToString()) (itemShortDescription item)), "selected", "aaa")
          })
         
     (*
