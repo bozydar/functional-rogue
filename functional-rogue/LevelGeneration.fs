@@ -679,6 +679,7 @@ let generateEmpty : (Board * Point option) =
 let generateTestStartLocationWithInitialPlayerPositon (cameFrom:Point) : (Board*Point) =
     let board, startpoint = generateEmpty
     let result = board |> Predefined.Resources.randomAncientRuins
+    result.Places.[33,13] <- { result.Places.[33,13] with Items = List.replicate 15 (Predefined.Items.createRandomNaturalItem 0) }
     (result,(Point(32,12)))
 
 

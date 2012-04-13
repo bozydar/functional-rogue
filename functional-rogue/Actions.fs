@@ -11,6 +11,7 @@ open Sight
 open Player
 open Characters
 open Computers
+open ItemActions
 
 type Command = 
     | Up
@@ -374,15 +375,43 @@ let wear (state : State) =
     loop ()
 
 let useItem (state : State) =
-    let letters = ['a'..'z']
-    let dialog : Dialog.Dialog =
-        [ Dialog.Title("") ]
-        @ (state.Player.Items |> List.mapi (fun i item -> Dialog.Action(letters.[i], item.Name, "result", item.Id.ToString())))
-        @ [Dialog.Action('0', "[escape]", "result", "0")]
-    let test = showDialog(dialog, Dialog.emptyResult) 
-    if test.Item("result") <> "0" then
-        let choosenItem = state.Player.Items |> List.find (fun item -> item.Id.ToString() = test.Item("result"))
-        state
+//    let chooseListItemThroughDialog (title : string) (mapToName : 'T -> string ) (listItems : 'T list) =
+//        let letters = ['a'..'z']
+//        let dialog : Dialog.Dialog =
+//            [ Dialog.Title(title) ]
+//            @ (listItems |> List.mapi (fun i item -> Dialog.Action(letters.[i], item |> mapToName, "result", i.ToString())))
+//            @ [Dialog.Action('z', "[escape]", "result", "z")]
+//        let dialogResult = showDialog(dialog, Dialog.emptyResult)
+//        if dialogResult.Item("result") <> "z" then
+//            let chosenItem = listItems.[Int32.Parse(dialogResult.Item("result"))]
+//            Some(chosenItem)
+//        else
+//            Option.None
+    
+    let chooseListItemThroughPagedDialog (title : string) (mapToName : 'T -> string ) (listItems : 'T list) =
+        let rec chooseFromPage (pageNr : int) (title : string) (mapToName : 'T -> string ) (listItems : 'T list) =
+            let letters = ['a'..'z']
+            let itemsPerPage = 10
+            let dialog : Dialog.Dialog =
+                [ Dialog.Title(title) ]
+                @ (listItems |> Seq.skip (pageNr * itemsPerPage) |> Seq.truncate itemsPerPage |> Seq.toList |> List.mapi (fun i item -> Dialog.Action(letters.[i], item |> mapToName, "result", i.ToString())))
+                @ if pageNr > 0 then [Dialog.Action('p', "[prev]", "result", "p")] else []
+                @ if listItems.Length > (pageNr * itemsPerPage + itemsPerPage) then [Dialog.Action('n', "[next]", "result", "n")] else []
+                @ [Dialog.Action('z', "[escape]", "result", "z")]
+            let dialogResult = showDialog(dialog, Dialog.emptyResult)
+            match dialogResult.Item("result") with
+            | "z" -> Option.None
+            | "n" -> listItems |> chooseFromPage (pageNr + 1) title mapToName 
+            | "p" -> listItems |> chooseFromPage (pageNr - 1) title mapToName 
+            | _ -> 
+                let chosenItem = listItems.[Int32.Parse(dialogResult.Item("result")) + (pageNr * itemsPerPage)]
+                Some(chosenItem)
+        listItems |> chooseFromPage 0 title mapToName
+
+
+    let choiceResult = state.Player.Items |> chooseListItemThroughPagedDialog "Choose item to use:" (fun (item : Item) -> item.Name)
+    if choiceResult.IsSome then
+        state |> (performUseItemAction choiceResult.Value)
     else
         state
 
