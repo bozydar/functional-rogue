@@ -248,6 +248,7 @@ let mainLoop () =
                             UserMessages = [];
                             AllBoards = initialBoards;
                             MainMapGuid = mainMapBoard.Guid;
+                            TemporaryModifiers = [];
                         AvailableReplicationRecipes = getInitialReplicationRecipes;
                         MainMapDetails = Array2D.init boardWidth boardHeight (fun x y -> if mainMapPoint.X = x && mainMapPoint.Y = y then { PointOfInterest = Some("Your ship's crash site")} else { PointOfInterest = Option.None});
                         Settings = { HighlightPointsOfInterest = false }
@@ -265,11 +266,33 @@ let clearCharacterStates state =
         )
     state
 
+let evaluateTemporaryModifiers (state : State) =
+    let actionOnDeactivateModifier (modifier : TemporaryModifier) (state : State) =
+        match modifier.Type with
+        | TemporaryModifierType.PlayerSightMultiplier value ->
+            state.Player.SightRadiusMultiplier <- Math.Min(1, state.Player.SightRadiusMultiplier - value)
+            state
+        | _ -> state
+
+    let stillActiveModifiers = state.TemporaryModifiers |> List.filter (fun x -> x.TurnOffOnTurnNr > state.TurnNumber)
+    let rec evaluateAllModifiers (state : State) =
+        match state.TemporaryModifiers with
+        | [] -> state
+        | head :: tail ->
+            if head.TurnOffOnTurnNr <= state.TurnNumber then
+                evaluateAllModifiers { (state |> actionOnDeactivateModifier head) with TemporaryModifiers = tail}
+            else
+                evaluateAllModifiers {state with TemporaryModifiers = tail}
+    let modifiedState = state |> evaluateAllModifiers
+    {modifiedState with TemporaryModifiers = stillActiveModifiers}
+    
+
 let subscribeHandlers () =
     Turn.subscribe handleMonsters
     Turn.subscribe clearCharacterStates
     Turn.subscribe setVisibilityStates
-    Turn.subscribe evaluateBoardFramePosition    
+    Turn.subscribe evaluateBoardFramePosition  
+    Turn.subscribe evaluateTemporaryModifiers  
     Turn.subscribe (
         fun state -> 
         {state with TurnNumber = state.TurnNumber + 1}

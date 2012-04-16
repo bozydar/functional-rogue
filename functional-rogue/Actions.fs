@@ -166,7 +166,7 @@ let performToggleSettingsMainMapHighlightPointsOfInterest command state =
 let performLookAction command state =
     let board = state.Board
     let playerPosition = getPlayerPosition board
-    let points = visiblePositions playerPosition state.Player.SightRadius board    
+    let points = visiblePositions playerPosition state.Player.SightRadius false board    
     ignore (selectPlace points state)
 
 let performUseObjectAction command state =

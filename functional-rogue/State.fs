@@ -17,6 +17,14 @@ type Settings = {
     HighlightPointsOfInterest : bool
 }
 
+type TemporaryModifier = {
+    Type : TemporaryModifierType
+    TurnOffOnTurnNr : int
+} and
+ TemporaryModifierType = 
+    | PlayerSightMultiplier of int
+    | SeeThroughWalls of bool
+
 type State = {
     Board: Board;
     BoardFramePosition: Point;
@@ -28,6 +36,7 @@ type State = {
     AvailableReplicationRecipes : System.Collections.Generic.HashSet<string>
     MainMapDetails : MainMapTileDetails[,]
     Settings : Settings
+    TemporaryModifiers : TemporaryModifier list
 } 
 
 type private StateAgentMessage = 
