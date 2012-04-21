@@ -267,22 +267,19 @@ let clearCharacterStates state =
     state
 
 let evaluateTemporaryModifiers (state : State) =
-    let actionOnDeactivateModifier (modifier : TemporaryModifier) (state : State) =
-        match modifier.Type with
-        | TemporaryModifierType.PlayerSightMultiplier value ->
-            state.Player.SightRadiusMultiplier <- Math.Min(1, state.Player.SightRadiusMultiplier - value)
-            state
-        | _ -> state
-
     let stillActiveModifiers = state.TemporaryModifiers |> List.filter (fun x -> x.TurnOffOnTurnNr > state.TurnNumber)
     let rec evaluateAllModifiers (state : State) =
         match state.TemporaryModifiers with
         | [] -> state
         | head :: tail ->
-            if head.TurnOffOnTurnNr <= state.TurnNumber then
-                evaluateAllModifiers { (state |> actionOnDeactivateModifier head) with TemporaryModifiers = tail}
+            if head.TurnOnOnTurnNr = state.TurnNumber then
+                evaluateAllModifiers {( state |> head.OnTurningOn  ) with TemporaryModifiers = tail}
+            else if head.TurnOffOnTurnNr = state.TurnNumber then
+                evaluateAllModifiers { (state |> head.OnTurnigOff) with TemporaryModifiers = tail}
+            else if (head.TurnOnOnTurnNr > state.TurnNumber && head.TurnOffOnTurnNr < state.TurnNumber) then
+                evaluateAllModifiers { (state |> head.OnEachTurn) with TemporaryModifiers = tail}
             else
-                evaluateAllModifiers {state with TemporaryModifiers = tail}
+                evaluateAllModifiers { state with TemporaryModifiers = tail}
     let modifiedState = state |> evaluateAllModifiers
     {modifiedState with TemporaryModifiers = stillActiveModifiers}
     
