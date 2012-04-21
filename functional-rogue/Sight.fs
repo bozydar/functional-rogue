@@ -227,7 +227,7 @@ let canSee (board : Board) (from : Point) (where : Point) : bool =
 let setVisibilityStates state  = 
     let playerPosition = getPlayerPosition state.Board
     let sightRadius = if state.Board.IsMainMap then 1 * state.Player.SightRadiusMultiplier else state.Player.SightRadius
-    let isSeeThroughWalls = state.TemporaryModifiers |> List.exists (fun modifier -> modifier.Type = SeeThroughWalls(true))
+    let isSeeThroughWalls = state.Player.CanSeeThroughWalls
     let positions = visiblePositions playerPosition sightRadius isSeeThroughWalls state.Board    
     let preResult = Array2D.mapi (fun x y place -> 
         let p = point x y

@@ -3,6 +3,7 @@
 open Characters
 open State
 open Predefined.Items
+open System
 
 let performUseItemDrone  (item : Item) (state : State)=
     match item.Name with
@@ -11,12 +12,23 @@ let performUseItemDrone  (item : Item) (state : State)=
             state |> addMessage (sprintf "You cannot use this item under ground.")
         else
             let sightRadiusMultiplier = 5
-            let endEffectTurn = state.TurnNumber + 3
-            state.Player.SightRadiusMultiplier <- state.Player.SightRadiusMultiplier + sightRadiusMultiplier
-            let modifiers =
-                [{ Type = PlayerSightMultiplier(5); TurnOffOnTurnNr = endEffectTurn }]
-                @[ { Type = SeeThroughWalls(true); TurnOffOnTurnNr = endEffectTurn }]
-            { state with TemporaryModifiers = state.TemporaryModifiers @ modifiers }
+            let reconDroneModifier = {
+                Type = PlayerSightMultiplier(sightRadiusMultiplier);
+                TurnOnOnTurnNr = 0;
+                TurnOffOnTurnNr = 0;
+                OnTurningOn = (fun state ->
+                    state.Player.SightRadiusMultiplier <- state.Player.SightRadiusMultiplier + sightRadiusMultiplier
+                    state.Player.CanSeeThroughWalls <- true
+                    state |> addMessage (sprintf "The Reconnaissance Drone flies up into the air sending the video recording of the nearby surroundings into your pocket computer.")
+                    )
+                OnEachTurn = (fun state -> state)
+                OnTurnigOff = (fun state ->
+                    state.Player.SightRadiusMultiplier <- Math.Min(1, state.Player.SightRadiusMultiplier - sightRadiusMultiplier)
+                    state.Player.CanSeeThroughWalls <- false
+                    state |> addMessage (sprintf "The Reconnaissance Drone falls down ending its transmission.")
+                    )
+                }
+            state |> addTemporaryModifier reconDroneModifier 0 2
     | _ -> state
 
 let performUseItemAction (item : Item) (state : State)=

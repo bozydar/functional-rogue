@@ -33,6 +33,7 @@ type Character (characterType: CharacterType, startingHP: int, startingDexterity
     let mutable hungerFactor = 0
     let mutable hungerFactorStep = startingHungerFactorStep
     let mutable sightRadiusMultiplier = 1
+    let mutable canSeeThroughWalls = false
 
     let mutable items : list<Item> = []
 
@@ -69,6 +70,10 @@ type Character (characterType: CharacterType, startingHP: int, startingDexterity
     member this.SightRadiusMultiplier
         with get() = sightRadiusMultiplier
         and set(value) = sightRadiusMultiplier <- value
+
+    member this.CanSeeThroughWalls
+        with get() = canSeeThroughWalls
+        and set(value) = canSeeThroughWalls <- value
 
     member this.InvolvedInFight
         with get() = involvedInFight
