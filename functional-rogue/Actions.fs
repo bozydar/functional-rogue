@@ -409,7 +409,10 @@ let useItem (state : State) =
         listItems |> chooseFromPage 0 title mapToName
 
 
-    let choiceResult = state.Player.Items |> chooseListItemThroughPagedDialog "Choose item to use:" (fun (item : Item) -> item.Name)
+    let choiceResult =
+        state.Player.Items 
+        |> List.filter (fun item -> (getUseItemFunction item).IsSome)
+        |> chooseListItemThroughPagedDialog "Choose item to use:" (fun (item : Item) -> item.Name)
     if choiceResult.IsSome then
         state |> (performUseItemAction choiceResult.Value)
     else
