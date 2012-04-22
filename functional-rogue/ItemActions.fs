@@ -31,7 +31,14 @@ let performUseItemDrone  (item : Item) (state : State)=
             state |> addTemporaryModifier reconDroneModifier 0 2
     | _ -> state
 
-let performUseItemAction (item : Item) (state : State)=
+let getUseItemFunction (item : Item) =
     match item.Type with
-    | Drone -> performUseItemDrone item state
-    | _ -> state
+    | Drone -> Some(performUseItemDrone)
+    | _ -> None
+
+let performUseItemAction (item : Item) (state : State)=
+    let useItemFunction = getUseItemFunction item
+    if useItemFunction.IsSome then
+        useItemFunction.Value item state
+    else
+        state
