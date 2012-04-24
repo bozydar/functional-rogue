@@ -416,12 +416,17 @@ let useItem (state : State) =
         let rec chooseFromPage (pageNr : int) (title : string) (mapToName : 'T -> string ) (listItems : 'T list) =
             let letters = ['a'..'z']
             let itemsPerPage = 10
-            let dialog : Dialog.Dialog =
-                [ Dialog.Title(title) ]
-                @ (listItems |> Seq.skip (pageNr * itemsPerPage) |> Seq.truncate itemsPerPage |> Seq.toList |> List.mapi (fun i item -> Dialog.Action(letters.[i], item |> mapToName, "result", i.ToString())))
-                @ if pageNr > 0 then [Dialog.Action('p', "[prev]", "result", "p")] else []
-                @ if listItems.Length > (pageNr * itemsPerPage + itemsPerPage) then [Dialog.Action('n', "[next]", "result", "n")] else []
-                @ [Dialog.Action('z', "[escape]", "result", "z")]
+
+            let dialog = new Dialog.Dialog(seq {
+                yield Dialog.Title(title)
+                yield! listItems 
+                    |> Seq.skip (pageNr * itemsPerPage) 
+                    |> Seq.truncate itemsPerPage 
+                    |> Seq.mapi (fun i item -> Dialog.Action(letters.[i], mapToName item, "result", i.ToString()))
+                if pageNr > 0 then yield Dialog.Action('p', "[prev]", "result", "p")
+                if listItems.Length > (pageNr * itemsPerPage + itemsPerPage) then yield Dialog.Action('n', "[next]", "result", "n")
+                yield Dialog.Action('z', "[escape]", "result", "z")
+            })
             let dialogResult = showDialog(dialog, Dialog.emptyResult)
             match dialogResult.Item("result") with
             | "z" -> Option.None
