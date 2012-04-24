@@ -82,7 +82,8 @@ let mainLoop () =
                 | Key '>' -> GoDownEnter
                 | Key '<' -> GoUp
                 | Key 'l' when not isMainMap -> Look
-                | Key 'U' when not isMainMap -> UseObject
+                | Key 'U' when not isMainMap -> UseObject   // objects are anything not in your inventory
+                | Key 'u' -> UseItem    // items are things in your inventory
                 | Key 'O' -> ToggleSettingsMainMapHighlightPointsOfInterest
                 | _ -> Unknown                        
         
@@ -120,6 +121,12 @@ let mainLoop () =
                 |> Turn.next
                 Screen.showBoard ()
                 loop false
+            | Drop ->
+                State.get () 
+                |> Actions.performDropAction
+                |> Turn.next
+                Screen.showBoard ()
+                loop false
             | OpenCloseDoor ->
                 State.get () 
                 |> Actions.performCloseOpenAction command
@@ -137,6 +144,12 @@ let mainLoop () =
             | UseObject ->
                 State.get ()
                 |> performUseObjectAction command
+                |> Turn.next
+                Screen.showBoard ()
+                loop false
+            | UseItem ->
+                State.get ()
+                |> useItem
                 |> Turn.next
                 Screen.showBoard ()
                 loop false
@@ -177,19 +190,21 @@ let mainLoop () =
                 loop false
     
 
-    let characterOptionsDialog : Dialog.Dialog = [
-        Dialog.Title("Create Hero");
-        Dialog.Option('a', "Class", "class", 
-            [ for item in Predefined.Classes.getClasses -> (item, item)]);
-        Dialog.Label("Actions");
-        Dialog.Action('1', "[enter]", "result", "1");
-        Dialog.Action('0', "[escape]", "result", "0");
-    ]
+    let characterOptionsDialog = 
+        Dialog.Dialog [
+            Dialog.Title("Create Hero");
+            Dialog.Option('a', "Class", "class", 
+                [ for item in Predefined.Classes.getClasses -> (item, item)]);
+            Dialog.Label("Actions");
+            Dialog.Action('1', "[enter]", "result", "1");
+            Dialog.Action('0', "[escape]", "result", "0");
+        ]
 
-    let d2 : Dialog.Dialog = [
-        Dialog.Title("What's your name?" ) ;        
-        Dialog.Textbox('n', "name")            
-    ]
+    let d2 = 
+        Dialog.Dialog [
+            Dialog.Title("What's your name?" ) ;        
+            Dialog.Textbox('n', "name")            
+        ]
 
     let characterOptions = showDialog(characterOptionsDialog, Dialog.newResult([("class", "Soldier")])) 
     //let playerName = (showDialog (d2, Dialog.emptyResult)).Item("name")
@@ -227,9 +242,10 @@ let mainLoop () =
                         UserMessages = [];
                         AllBoards = initialBoards;
                         MainMapGuid = mainMapBoard.Guid;
-                    AvailableReplicationRecipes = getInitialReplicationRecipes;
-                    MainMapDetails = Array2D.init boardWidth boardHeight (fun x y -> if mainMapPoint.X = x && mainMapPoint.Y = y then { PointOfInterest = Some("Your ship's crash site")} else { PointOfInterest = Option.None});
-                    Settings = { HighlightPointsOfInterest = false }
+                        TemporaryModifiers = [];
+                        AvailableReplicationRecipes = getInitialReplicationRecipes;
+                        MainMapDetails = Array2D.init boardWidth boardHeight (fun x y -> if mainMapPoint.X = x && mainMapPoint.Y = y then { PointOfInterest = Some("Your ship's crash site")} else { PointOfInterest = Option.None});
+                        Settings = { HighlightPointsOfInterest = false }
                     }
     State.set entryState
     loop true      
@@ -244,11 +260,30 @@ let clearCharacterStates state =
         )
     state
 
+let evaluateTemporaryModifiers (state : State) =
+    let stillActiveModifiers = state.TemporaryModifiers |> List.filter (fun x -> x.TurnOffOnTurnNr > state.TurnNumber)
+    let rec evaluateAllModifiers (state : State) =
+        match state.TemporaryModifiers with
+        | [] -> state
+        | head :: tail ->
+            if head.TurnOnOnTurnNr = state.TurnNumber then
+                evaluateAllModifiers {( state |> head.OnTurningOn  ) with TemporaryModifiers = tail}
+            else if head.TurnOffOnTurnNr = state.TurnNumber then
+                evaluateAllModifiers { (state |> head.OnTurnigOff) with TemporaryModifiers = tail}
+            else if (head.TurnOnOnTurnNr > state.TurnNumber && head.TurnOffOnTurnNr < state.TurnNumber) then
+                evaluateAllModifiers { (state |> head.OnEachTurn) with TemporaryModifiers = tail}
+            else
+                evaluateAllModifiers { state with TemporaryModifiers = tail}
+    let modifiedState = state |> evaluateAllModifiers
+    {modifiedState with TemporaryModifiers = stillActiveModifiers}
+    
+
 let subscribeHandlers () =
     Turn.subscribe handleMonsters
     Turn.subscribe clearCharacterStates
     Turn.subscribe setVisibilityStates
-    Turn.subscribe evaluateBoardFramePosition    
+    Turn.subscribe evaluateBoardFramePosition  
+    Turn.subscribe evaluateTemporaryModifiers  
     Turn.subscribe (
         fun state -> 
         {state with TurnNumber = state.TurnNumber + 1}

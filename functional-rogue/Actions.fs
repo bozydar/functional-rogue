@@ -11,6 +11,7 @@ open Sight
 open Player
 open Characters
 open Computers
+open ItemActions
 
 type Command = 
     | Up
@@ -23,6 +24,7 @@ type Command =
     | DownRight
     | Wait
     | Take
+    | Drop
     | ShowItems
     | Quit
     | Unknown
@@ -36,6 +38,7 @@ type Command =
     | GoUp
     | Look
     | UseObject
+    | UseItem
     | ToggleSettingsMainMapHighlightPointsOfInterest
     | Eat
 
@@ -164,7 +167,7 @@ let performToggleSettingsMainMapHighlightPointsOfInterest command state =
 let performLookAction command state =
     let board = state.Board
     let playerPosition = getPlayerPosition board
-    let points = visiblePositions playerPosition state.Player.SightRadius board    
+    let points = visiblePositions playerPosition state.Player.SightRadius false board    
     ignore (selectPlace points state)
 
 let performUseObjectAction command state =
@@ -256,6 +259,9 @@ let performTakeAction state =
 
     {state1 with Board = board1}
 
+let performDropAction state =
+    raise (new NotImplementedException("Not implemented yet"))
+
 let performHarvest state = 
     let playerPosition = getPlayerPosition state.Board
     let place = get state.Board playerPosition
@@ -341,6 +347,29 @@ let wear (state : State) =
     let refreshScreen = 
         Screen.showChooseItemDialog {State = state; Filter = (fun item -> not <| List.exists ((=) item) alreadyWorn && item.IsWearable ) }
 
+    let wearItemMenu = 
+        Dialog.Dialog [
+            Dialog.Title "Choose item to wear" ]
+         + Dialog.Dialog (seq {
+            for i, item in Seq.mapi (fun i item -> i, item) state.Player.Items do
+                let pos = point 1 i                
+                let char = match findShortCut state.Player.ShortCuts item with Some(value) -> value.ToString() | _ -> ""                
+                yield Dialog.Action (char.[0], (sprintf "(id=%s): %s" (item.Id.ToString()) (itemShortDescription item)), "selected", "aaa")
+         })
+        
+    (*
+    let listAllItems (items : Item list) (shortCuts : Map<char, Item>) screen = 
+        //let plainItems = items |> Seq.choose (function | Gold(_) -> Option.None | Plain(_, itemProperties) -> Some itemProperties)
+        
+        let writeProperties = seq {
+            for i, item in Seq.mapi (fun i item -> i, item) items do
+                let pos = point 1 i                
+                let char = match findShortCut shortCuts item with Some(value) -> value.ToString() | _ -> ""                
+                yield writeString pos (sprintf "%s (id=%s): %s" char (item.Id.ToString()) (itemShortDescription item))
+        }
+        screen |>> writeProperties
+    *)
+
     let rec loop () =
         let keyInfo = System.Console.ReadKey(true)
         match keyInfo with 
@@ -371,6 +400,55 @@ let wear (state : State) =
                 loop ()
     refreshScreen
     loop ()
+
+let useItem (state : State) =
+//    let chooseListItemThroughDialog (title : string) (mapToName : 'T -> string ) (listItems : 'T list) =
+//        let letters = ['a'..'z']
+//        let dialog : Dialog.Dialog =
+//            [ Dialog.Title(title) ]
+//            @ (listItems |> List.mapi (fun i item -> Dialog.Action(letters.[i], item |> mapToName, "result", i.ToString())))
+//            @ [Dialog.Action('z', "[escape]", "result", "z")]
+//        let dialogResult = showDialog(dialog, Dialog.emptyResult)
+//        if dialogResult.Item("result") <> "z" then
+//            let chosenItem = listItems.[Int32.Parse(dialogResult.Item("result"))]
+//            Some(chosenItem)
+//        else
+//            Option.None
+    
+    let chooseListItemThroughPagedDialog (title : string) (mapToName : 'T -> string ) (listItems : 'T list) =
+        let rec chooseFromPage (pageNr : int) (title : string) (mapToName : 'T -> string ) (listItems : 'T list) =
+            let letters = ['a'..'z']
+            let itemsPerPage = 10
+
+            let dialog = new Dialog.Dialog(seq {
+                yield Dialog.Title(title)
+                yield! listItems 
+                    |> Seq.skip (pageNr * itemsPerPage) 
+                    |> Seq.truncate itemsPerPage 
+                    |> Seq.mapi (fun i item -> Dialog.Action(letters.[i], mapToName item, "result", i.ToString()))
+                if pageNr > 0 then yield Dialog.Action('p', "[prev]", "result", "p")
+                if listItems.Length > (pageNr * itemsPerPage + itemsPerPage) then yield Dialog.Action('n', "[next]", "result", "n")
+                yield Dialog.Action('z', "[escape]", "result", "z")
+            })
+            let dialogResult = showDialog(dialog, Dialog.emptyResult)
+            match dialogResult.Item("result") with
+            | "z" -> Option.None
+            | "n" -> listItems |> chooseFromPage (pageNr + 1) title mapToName 
+            | "p" -> listItems |> chooseFromPage (pageNr - 1) title mapToName 
+            | _ -> 
+                let chosenItem = listItems.[Int32.Parse(dialogResult.Item("result")) + (pageNr * itemsPerPage)]
+                Some(chosenItem)
+        listItems |> chooseFromPage 0 title mapToName
+
+
+    let choiceResult =
+        state.Player.Items 
+        |> List.filter (fun item -> (getUseItemFunction item).IsSome)
+        |> chooseListItemThroughPagedDialog "Choose item to use:" (fun (item : Item) -> item.Name)
+    if choiceResult.IsSome then
+        state |> (performUseItemAction choiceResult.Value)
+    else
+        state
 
 let eat (state : State) = 
 

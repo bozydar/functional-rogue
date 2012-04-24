@@ -479,7 +479,7 @@ let addRandomDoors (board : Board) =
     let floor = {Place.EmptyPlace with Tile = Tile.Floor}
     { board with Places = Array2D.mapi (fun x y i -> if (i = floor && (isGoodPlaceForDoor board x y) && (rnd 100) < 30) then closedDoor else i) board.Places }
 
-let generateDungeon (cameFrom: TransportTarget option) : (Board*Point option) = 
+let generateDungeon (cameFrom: TransportTarget option) (level: int) : (Board*Point option) = 
     let board = Array2D.create boardWidth boardHeight {Place.EmptyPlace with Tile = Tile.Wall}
     let sectionsHorizontal = 4
     let sectionsVertical = 3
@@ -491,7 +491,7 @@ let generateDungeon (cameFrom: TransportTarget option) : (Board*Point option) =
         match rooms with
         | [] -> board
         | item::t -> addRooms t <| (item :> IModifier).Modify board 
-    let resultBoard = addRooms (generateDungeonTunnels sections sectionWidth sectionHeight sectionsHorizontal sectionsVertical) { Guid = System.Guid.NewGuid(); Places = board; Level = 0; MainMapLocation = Option.None; Type = LevelType.Dungeon}
+    let resultBoard = addRooms (generateDungeonTunnels sections sectionWidth sectionHeight sectionsHorizontal sectionsVertical) { Guid = System.Guid.NewGuid(); Places = board; Level = level; MainMapLocation = Option.None; Type = LevelType.Dungeon}
     let finalBoard, startpoint = resultBoard |> addRandomDoors |> placeStairsUp Tile.Floor cameFrom.Value
     (finalBoard
         |> placeSomeRandomItems Tile.Floor LevelType.Dungeon
@@ -679,6 +679,8 @@ let generateEmpty : (Board * Point option) =
 let generateTestStartLocationWithInitialPlayerPositon (cameFrom:Point) : (Board*Point) =
     let board, startpoint = generateEmpty
     let result = board |> Predefined.Resources.randomAncientRuins
+    result.Places.[33,13] <- { result.Places.[33,13] with Items = List.replicate 15 (Predefined.Items.createRandomNaturalItem 0) }
+    result.Places.[33,14] <- { result.Places.[33,14] with Items = [Predefined.Items.reconnaissanceDrone] }
     (result,(Point(32,12)))
 
 
@@ -686,7 +688,7 @@ let generateTestStartLocationWithInitialPlayerPositon (cameFrom:Point) : (Board*
 let generateLevel levelType (cameFrom: TransportTarget option) (level: int option) : (Board*Point option) = 
     match levelType with
     | LevelType.Test -> generateTest
-    | LevelType.Dungeon -> generateDungeon cameFrom // generateBSPDungeon //generateDungeon
+    | LevelType.Dungeon -> generateDungeon cameFrom (defaultArg level 0) // generateBSPDungeon //generateDungeon
     | LevelType.Cave -> generateCave cameFrom (defaultArg level 0)
     | LevelType.Forest -> generateForest cameFrom.Value.TargetCoordinates
     | LevelType.Grassland -> generateGrassland cameFrom.Value.TargetCoordinates
