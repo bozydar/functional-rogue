@@ -51,6 +51,7 @@
   <Import Project="$(MSBuildExtensionsPath32)\..\Microsoft F#\v4.0\Microsoft.FSharp.Targets" Condition=" Exists('$(MSBuildBinPath)\Microsoft.Build.Tasks.v4.0.dll')" />
   <ItemGroup>
     <Compile Include="Utils.fs" />
+    <Compile Include="Keyboard.fs" />
     <Compile Include="Quantity.fs" />
     <Compile Include="Config.fs" />
     <Compile Include="Dialog.fs" />
