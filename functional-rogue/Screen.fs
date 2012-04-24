@@ -54,6 +54,7 @@ let toTextel item (highlighOption : ConsoleColor option) =
                         | Hat -> {Char = ']'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
                         | Corpse -> {Char = '%'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
                         | OreExtractor(_) -> {Char = '['; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
+                        | Drone -> {Char = '^'; FGColor = ConsoleColor.Cyan; BGColor = ConsoleColor.Black}
                 | _ -> 
                     match item.Ore with
                     | Iron(_) -> {Char = '$'; FGColor = ConsoleColor.Black; BGColor = ConsoleColor.Gray}
@@ -553,7 +554,7 @@ let rec showDialog (dialog : Dialog.Dialog, dialogResult : Dialog.Result) : Dial
     agent.PostAndReply (fun reply -> ShowDialog(dialog, dialogResult, reply))
     let findMenuItemsInDialog key dialog : option<Dialog.Widget> = 
         dialog    
-        |> List.tryPick (function 
+        |> Seq.tryPick (function 
             | Dialog.Action(itemKey, _, _, _) as item when itemKey = key -> Some(item)
             | Dialog.Subdialog(itemKey, _, innerDialog) as item when itemKey = key -> Some(item)
             | Dialog.Option(itemKey, _, varName, _) as item when itemKey = key -> Some(item)

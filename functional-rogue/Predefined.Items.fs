@@ -39,6 +39,8 @@ let oreExtractor = Item("Ore Extractor", Wearing.HandOnly, OreExtractor {Harvest
 let stickOfDoom = Item("Stick of doom", Wearing.HandOnly, Stick, Some(fun attacker _ _ -> 
     { Damage = lightWound, lightWound, lightWound; AttackBonus = 0; DefenceBonus = 0 }))
 
+let reconnaissanceDrone = Item("Reconnaissance Drone", Wearing.NotWearable, Drone, Option.None)
+
 let createRandomNaturalItem (playerLevel: int) =
     //later player level will be used to determine probability of some more powerful/valuable items
     let randomResult = rnd 2

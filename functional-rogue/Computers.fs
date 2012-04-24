@@ -261,7 +261,7 @@ let operateComputer (computerPoint: Point option) (electronicMachine: Electronic
             let recipe = (getAvailableReplicationRecipes state).[itemNr]
             match keyInfo with
             | Keys ['b'] -> ((Replication,0), None)
-            | Keys ['r'] -> if canReplicate recipe state then ((Replication,0),Replicate) else ((nav, itemNr), None)
+            | Keys ['r'] -> if canReplicate recipe state then ((Replication,itemNr),Replicate) else ((nav, itemNr), None)
             | _ -> ((nav, itemNr), None)
         | ReplicationRecipes ->
             match keyInfo with

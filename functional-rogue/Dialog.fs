@@ -15,7 +15,15 @@ let newResult (items : seq<string * string>) : Result = new Result(items, HashId
 
 let emptyResult = new Result ([], HashIdentity.Structural)
 
-type Dialog = Widget list
+type Dialog (sequence : seq<Widget>) = 
+    interface seq<Widget> with
+        member this.GetEnumerator () =
+            sequence.GetEnumerator ()
+        member this.GetEnumerator () : System.Collections.IEnumerator  =
+            (sequence :> System.Collections.IEnumerable).GetEnumerator ()
+
+    with static member (+) (left : Dialog, right : Dialog) = new Dialog (Seq.append left right)
+
 and Widget = 
     | Title of string
     | Label of string

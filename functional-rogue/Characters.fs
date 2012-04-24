@@ -32,6 +32,8 @@ type Character (characterType: CharacterType, startingHP: int, startingDexterity
     let mutable involvedInFight = false
     let mutable hungerFactor = 0
     let mutable hungerFactorStep = startingHungerFactorStep
+    let mutable sightRadiusMultiplier = 1
+    let mutable canSeeThroughWalls = false
 
     let mutable items : list<Item> = []
 
@@ -64,6 +66,14 @@ type Character (characterType: CharacterType, startingHP: int, startingDexterity
     member this.MaxHP 
         with get() = maxHP
         and set(value) = maxHP <- value
+
+    member this.SightRadiusMultiplier
+        with get() = sightRadiusMultiplier
+        and set(value) = sightRadiusMultiplier <- value
+
+    member this.CanSeeThroughWalls
+        with get() = canSeeThroughWalls
+        and set(value) = canSeeThroughWalls <- value
 
     member this.InvolvedInFight
         with get() = involvedInFight
@@ -112,7 +122,7 @@ type Character (characterType: CharacterType, startingHP: int, startingDexterity
             else { result with Damage = lightWound, heavyWound, heavyWound }
 
     member this.SightRadius  
-        with get() = sightRadius
+        with get() = sightRadius * sightRadiusMultiplier
         and set(value) = sightRadius <- value
 
     abstract Appearance : char with get
@@ -191,6 +201,7 @@ and Type =
     | Hat
     | Corpse
     | OreExtractor of OreExtractorProperties
+    | Drone
 and OreExtractorProperties = { HarvestRate: int }
 
 and MiscProperties = {

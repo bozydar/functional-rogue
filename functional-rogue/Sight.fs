@@ -178,7 +178,7 @@ let private checkQuadrant (visited : (int * int) list byref) startX startY dx dy
             j <- j + 1
         i <- i + 1
 
-let visiblePositions (where : Point) radius board = 
+let visiblePositions (where : Point) radius isSeeThroughWalls board  = 
     let mutable visited = [where.X, where.Y]        
     let result = ref []
 
@@ -188,7 +188,7 @@ let visiblePositions (where : Point) radius board =
     let maxExtentY = Math.Min(boardHeight - where.Y - 1, radius)
     let visitTile = fun (x, y) -> 
         result := new Point(x, y) :: !result
-    let isTileBlocked = fun (x, y) -> Board.isOpticalObstacle board (new Point(x, y))
+    let isTileBlocked = fun (x, y) -> if isSeeThroughWalls then false else Board.isOpticalObstacle board (new Point(x, y))
     do 
         checkQuadrant &visited where.X where.Y 1 1 maxExtentX maxExtentY visitTile isTileBlocked
         checkQuadrant &visited where.X where.Y 1 -1 maxExtentX minExtentY visitTile isTileBlocked
@@ -226,8 +226,9 @@ let canSee (board : Board) (from : Point) (where : Point) : bool =
 
 let setVisibilityStates state  = 
     let playerPosition = getPlayerPosition state.Board
-    let sightRadius = if state.Board.IsMainMap then 1 else state.Player.SightRadius
-    let positions = visiblePositions playerPosition sightRadius state.Board    
+    let sightRadius = if state.Board.IsMainMap then 1 * state.Player.SightRadiusMultiplier else state.Player.SightRadius
+    let isSeeThroughWalls = state.Player.CanSeeThroughWalls
+    let positions = visiblePositions playerPosition sightRadius isSeeThroughWalls state.Board    
     let preResult = Array2D.mapi (fun x y place -> 
         let p = point x y
         if Seq.exists ((=) p) positions then {place with IsSeen = true; WasSeen = true} else {place with IsSeen = false}) state.Board.Places

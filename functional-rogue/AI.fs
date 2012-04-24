@@ -133,7 +133,7 @@ let getPlacesTheMonsterCanSeeByDistance (monsterPlace: (Point*Place)) (filter: M
     let distance = (snd monsterPlace).Character.Value.SightRadius
     let monster = (snd monsterPlace).Character.Value :?> Monster
     let monsterPoint = fst monsterPlace
-    let visiblePoints = visiblePositions monsterPoint monster.SightRadius state.Board
+    let visiblePoints = visiblePositions monsterPoint monster.SightRadius false state.Board
     let result = visiblePoints |> List.map (fun point -> (point,Board.get state.Board point)) |> List.filter (fun item -> (filter monster (snd item))) |> List.map (fun item -> fst item)
     result |> List.sortBy (fun elem -> (max (abs (monsterPoint.X - elem.X)) (abs (monsterPoint.Y - elem.Y))) )
 

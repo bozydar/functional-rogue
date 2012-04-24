@@ -17,6 +17,8 @@ type Settings = {
     HighlightPointsOfInterest : bool
 }
 
+
+
 type State = {
     Board: Board;
     BoardFramePosition: Point;
@@ -28,7 +30,18 @@ type State = {
     AvailableReplicationRecipes : System.Collections.Generic.HashSet<string>
     MainMapDetails : MainMapTileDetails[,]
     Settings : Settings
-} 
+    TemporaryModifiers : TemporaryModifier list
+} and
+  TemporaryModifier = {
+    Type : TemporaryModifierType
+    TurnOnOnTurnNr : int
+    TurnOffOnTurnNr : int
+    OnTurningOn : (State -> State)
+    OnEachTurn : (State -> State)
+    OnTurnigOff : (State -> State)
+} and
+ TemporaryModifierType = 
+    | PlayerSightMultiplier of int
 
 type private StateAgentMessage = 
     | Set of AsyncReplyChannel<unit> * Option<State>
@@ -75,6 +88,10 @@ let addMessages (messages : string list) (state : State) =
 
 let addMessage (message : string) (state : State) =
     addMessages [message] state
+
+let addTemporaryModifier modifier delay duration state = 
+    let properModifier = { modifier with TurnOnOnTurnNr = (state.TurnNumber + delay + 1); TurnOffOnTurnNr = (state.TurnNumber + delay + duration + 1) }
+    { state with TemporaryModifiers = state.TemporaryModifiers @ [properModifier] }
 
 let private filePath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + "\\functional-rogue.save";
 
