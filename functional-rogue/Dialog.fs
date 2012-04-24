@@ -27,8 +27,8 @@ type Dialog (sequence : seq<Widget>) =
 and Widget = 
     | Title of string
     | Label of string
-    | Action of char * string * string * string
-    | Option of char * string * string * (OptionItem list)
+    | Action of ConsoleKeyInfo * string * string * string
+    | Option of ConsoleKeyInfo * string * string * (OptionItem list)
     | Subdialog of char * string * Dialog
     | Raw of DecoratedText
     | Textbox of char * string
