@@ -184,23 +184,10 @@ let mainLoop () =
                 loop false
     
 
-    let d1 : Dialog.Dialog = [
-        Dialog.Title("Build Hero");
-        Dialog.Option('a', "Fork", "fork", 
-            [
-                ("X", "Y");
-                ("", "N");
-            ]);
-        Dialog.Option('b', "Knife", "knife", 
-            [
-                ("X", "Y");
-                ("", "N");
-            ]);
-        Dialog.Option('c', "Spoon", "spoon", 
-            [
-                ("X", "Y");
-                ("", "N");
-            ]);
+    let characterOptionsDialog : Dialog.Dialog = [
+        Dialog.Title("Create Hero");
+        Dialog.Option('a', "Class", "class", 
+            [ for item in Predefined.Classes.getClasses -> (item, item)]);
         Dialog.Label("Actions");
         Dialog.Action('1', "[enter]", "result", "1");
         Dialog.Action('0', "[escape]", "result", "0");
@@ -211,50 +198,49 @@ let mainLoop () =
         Dialog.Textbox('n', "name")            
     ]
 
-    let test = showDialog(d1, Dialog.emptyResult) 
-    if test.Item("result") = "1" then
-        //let playerName = (showDialog (d2, Dialog.emptyResult)).Item("name")
-        let thePlayer = new Player("Great Hero", 20, 10, 16, 10, 300)
+    let characterOptions = showDialog(characterOptionsDialog, Dialog.newResult([("class", "Soldier")])) 
+    //let playerName = (showDialog (d2, Dialog.emptyResult)).Item("name")
+    let thePlayer = Predefined.Classes.buildCharacterByPlayerClass characterOptions.["class"]
 
-        //initial maps setup
-        let mainMapBoard, mainMapPoint = generateMainMap
+    //initial maps setup
+    let mainMapBoard, mainMapPoint = generateMainMap
 
-        let startLevel, startLevelPosition = if Config.Settings.TestStartOnEmpty then generateTestStartLocationWithInitialPlayerPositon mainMapPoint else generateStartLocationWithInitialPlayerPositon mainMapPoint
-        let board = startLevel |> Board.moveCharacter thePlayer (startLevelPosition)
+    let startLevel, startLevelPosition = if Config.Settings.TestStartOnEmpty then generateTestStartLocationWithInitialPlayerPositon mainMapPoint else generateStartLocationWithInitialPlayerPositon mainMapPoint
+    let board = startLevel |> Board.moveCharacter thePlayer (startLevelPosition)
 
-        let mainBoardStartPlace = mainMapBoard.Places.[mainMapPoint.X,mainMapPoint.Y]
-        mainMapBoard.Places.[mainMapPoint.X,mainMapPoint.Y] <- { mainBoardStartPlace with TransportTarget = Some({ BoardId = board.Guid; TargetCoordinates = startLevelPosition; TargetLevelType = LevelType.Forest})}
+    let mainBoardStartPlace = mainMapBoard.Places.[mainMapPoint.X,mainMapPoint.Y]
+    mainMapBoard.Places.[mainMapPoint.X,mainMapPoint.Y] <- { mainBoardStartPlace with TransportTarget = Some({ BoardId = board.Guid; TargetCoordinates = startLevelPosition; TargetLevelType = LevelType.Forest})}
     
-        let initialBoards = new System.Collections.Generic.Dictionary<System.Guid,Board>()
-        initialBoards.Add(board.Guid, board)
-        initialBoards.Add(mainMapBoard.Guid, mainMapBoard)
-        //end maps setup
+    let initialBoards = new System.Collections.Generic.Dictionary<System.Guid,Board>()
+    initialBoards.Add(board.Guid, board)
+    initialBoards.Add(mainMapBoard.Guid, mainMapBoard)
+    //end maps setup
 
-        let getInitialReplicationRecipes = 
-            let result = new System.Collections.Generic.HashSet<string>()
-            //ignore (result.Add("Knife"))
-            result
+    let getInitialReplicationRecipes = 
+        let result = new System.Collections.Generic.HashSet<string>()
+        //ignore (result.Add("Knife"))
+        result
 
-        let entryState =
-            try
-                if Config.Settings.LoadSave then loadState () else raise (new FileNotFoundException())
-            with
-                | :? FileNotFoundException ->
-                        {         
-                            Board = board; 
-                            BoardFramePosition = point 0 0;
-                            Player = thePlayer
-                            TurnNumber = 0;
-                            UserMessages = [];
-                            AllBoards = initialBoards;
-                            MainMapGuid = mainMapBoard.Guid;
-                            TemporaryModifiers = [];
+    let entryState =
+        try
+            if Config.Settings.LoadSave then loadState () else raise (new FileNotFoundException())
+        with
+            | :? FileNotFoundException ->
+                    {         
+                        Board = board; 
+                        BoardFramePosition = point 0 0;
+                        Player = thePlayer
+                        TurnNumber = 0;
+                        UserMessages = [];
+                        AllBoards = initialBoards;
+                        MainMapGuid = mainMapBoard.Guid;
+                        TemporaryModifiers = [];
                         AvailableReplicationRecipes = getInitialReplicationRecipes;
                         MainMapDetails = Array2D.init boardWidth boardHeight (fun x y -> if mainMapPoint.X = x && mainMapPoint.Y = y then { PointOfInterest = Some("Your ship's crash site")} else { PointOfInterest = Option.None});
                         Settings = { HighlightPointsOfInterest = false }
-                        }
-        State.set entryState
-        loop true      
+                    }
+    State.set entryState
+    loop true      
 
 let clearCharacterStates state = 
     let characters = 
