@@ -31,9 +31,13 @@ let performUseItemDrone  (item : Item) (state : State)=
             state |> addTemporaryModifier reconDroneModifier 0 2
     | _ -> state
 
+let performUseInjector (item : Item) (state : State)=
+    state |> addMessage (sprintf "The injector does not work.")
+
 let getUseItemFunction (item : Item) =
     match item.Type with
     | Drone -> Some(performUseItemDrone)
+    | Injector -> Some(performUseInjector)
     | _ -> None
 
 let performUseItemAction (item : Item) (state : State)=

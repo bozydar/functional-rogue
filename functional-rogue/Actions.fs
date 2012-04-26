@@ -444,7 +444,7 @@ let useItem (state : State) =
     let choiceResult =
         state.Player.Items 
         |> List.filter (fun item -> (getUseItemFunction item).IsSome)
-        |> chooseListItemThroughPagedDialog "Choose item to use:" (fun (item : Item) -> item.Name)
+        |> chooseListItemThroughPagedDialog "Choose item to use:" (fun (item : Item) -> itemShortDescription item)
     if choiceResult.IsSome then
         state |> (performUseItemAction choiceResult.Value)
     else
