@@ -681,6 +681,7 @@ let generateTestStartLocationWithInitialPlayerPositon (cameFrom:Point) : (Board*
     let result = board |> Predefined.Resources.randomAncientRuins
     result.Places.[33,13] <- { result.Places.[33,13] with Items = List.replicate 15 (Predefined.Items.createRandomNaturalItem 0) }
     result.Places.[33,14] <- { result.Places.[33,14] with Items = [Predefined.Items.reconnaissanceDrone] }
+    result.Places.[33,15] <- { result.Places.[33,14] with Items = [Predefined.Items.createMedicalInjectorWithLiquid LiquidType.Water] }
     (result,(Point(32,12)))
 
 

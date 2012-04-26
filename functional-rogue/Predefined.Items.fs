@@ -25,6 +25,13 @@ let randomRock = Item("Rock", Wearing.HandOnly, Rock, None)
        
 let ironHelmet = Item("Iron Helmet", Wearing.HeadOnly, Type.Hat, Some(fun attacker _ _ -> { Damage = 0, 0, 0; AttackBonus = 0; DefenceBonus = 5}))
 
+let emptyMedicalInjector = Item("Medical Injector", Wearing.NotWearable, Type.Injector, None, Some({ LiquidCapacity = 100.0<ml>; LiquidInside = None }))
+
+let createMedicalInjectorWithLiquid (liquidType : LiquidType) =
+    let injector = emptyMedicalInjector
+    ignore (injector.AddLiquid {Type = liquidType; Amount = 100.0<ml>})
+    injector
+
 (*
 { Id = Guid.NewGuid();
             Name = "Ore Extractor";

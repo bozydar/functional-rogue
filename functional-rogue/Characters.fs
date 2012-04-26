@@ -4,6 +4,8 @@ open System
 
 type damage = (int * int * int)
 
+[<Measure>] type ml
+
 type AttackResult = {
     Damage : damage;
     AttackBonus : int;
@@ -142,9 +144,14 @@ and WornItems = {
     Legs : option<Item>
 } 
 and 
-    Item (name: string, wearing: Wearing, _type: Type, 
-            attack : (Character -> Character -> int -> AttackResult) option ) =    
+    Item (name: string, wearing: Wearing, _type: Type,
+            attack : (Character -> Character -> int -> AttackResult) option,
+            initialContainer : Container option ) =
     let id = Guid.NewGuid()
+    let mutable container = initialContainer
+    
+    new (name: string, wearing: Wearing, _type: Type,
+            attack : (Character -> Character -> int -> AttackResult) option) = Item(name, wearing, _type, attack, None) 
 
     member this.Id
         with get() : Guid = id 
@@ -166,6 +173,42 @@ and
 
     member this.IsEatable
         with get() : bool = this.Type = Type.Corpse
+
+    //container section
+
+    member this.IsLiquidContainer
+        with get() : bool = container.IsSome && container.Value.LiquidCapacity > 0.0<ml>
+
+    member this.Container
+        with get() = container
+
+    member this.AddLiquid (liquid : Liquid) =
+//        let mixLiquids (liquid1 : Liquid option) (liquid2 : Liquid option) =
+//            let ingredients = (liquid1, liquid2)
+//            match ingredients with
+//                | None _ -> _
+
+        if this.IsLiquidContainer then
+            let spaceAvailable = container.Value.LiquidCapacity - (if container.Value.LiquidInside.IsSome then container.Value.LiquidInside.Value.Amount else 0.0<ml>)
+            let newLiquidInsideAmount = (if container.Value.LiquidInside.IsSome then container.Value.LiquidInside.Value.Amount else 0.0<ml>) + (if spaceAvailable < liquid.Amount then spaceAvailable else liquid.Amount)
+            let newLiquidOutsideAmount = if spaceAvailable > liquid.Amount then 0.0<ml> else liquid.Amount - spaceAvailable
+            let newLiquidInsideType = liquid.Type
+            container <- Some( { container.Value with LiquidInside = Some( { Type = newLiquidInsideType; Amount = newLiquidInsideAmount} ) } )
+            if newLiquidOutsideAmount > 0.0<ml> then Some({ Type = liquid.Type; Amount = newLiquidOutsideAmount}) else None
+        else
+            Some(liquid)
+
+    member this.TakeLiquid (amount : float<ml>) =
+        if this.IsLiquidContainer && container.Value.LiquidInside.IsSome then
+            if amount > container.Value.LiquidInside.Value.Amount then
+                let result = container.Value.LiquidInside
+                container <- Some( {container.Value with LiquidInside = None} )
+                result
+            else
+                container.Value.LiquidInside
+        else
+            None
+    //end container section
 
     override this.Equals(other) =
         match other with
@@ -202,10 +245,27 @@ and Type =
     | Corpse
     | OreExtractor of OreExtractorProperties
     | Drone
+    | Injector
 and OreExtractorProperties = { HarvestRate: int }
 
 and MiscProperties = {
     OreExtractionRate : int
+}
+
+and Liquid = {
+    Type : LiquidType
+    Amount : float<ml>
+}
+
+and LiquidType =
+    | Water
+
+and Container = {
+    LiquidCapacity : float<ml>
+    LiquidInside : Liquid option
+    //SubstanceCapacity : int
+    //ItemsCapacity : int
+    //Items : Item list
 }
 
 let defaultMiscProperties = {
@@ -214,5 +274,13 @@ let defaultMiscProperties = {
 
 let itemShortDescription (item: Item)=
     let rest = 
-        item.Name 
+        let liqiudContainerDescription =
+            if item.IsLiquidContainer then 
+                if item.Container.Value.LiquidInside.IsSome then
+                    " (" + item.Container.Value.LiquidInside.Value.Amount.ToString() + "ml of " + (getUnionCaseName item.Container.Value.LiquidInside.Value.Type) + ")"
+                else
+                    "(empty)"
+            else
+                ""
+        item.Name + liqiudContainerDescription
     rest
