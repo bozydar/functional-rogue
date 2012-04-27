@@ -27,11 +27,13 @@ type Dialog (sequence : seq<Widget>) =
 and Widget = 
     | Title of string
     | Label of string
-    | Action of ConsoleKeyInfo * string * string * string
-    | Option of ConsoleKeyInfo * string * string * (OptionItem list)
-    | Subdialog of char * string * Dialog
+    | Action of Input * string * string * string
+    | Option of Input * string * string * (OptionItem list)
+//    | Action of char * string * string * string
+//    | Option of char * string * string * (OptionItem list)
+    | Subdialog of Input * string * Dialog
     | Raw of DecoratedText
-    | Textbox of char * string
+    | Textbox of Input * string
 and OptionItem = string * string
 
 and DecoratedText = {
