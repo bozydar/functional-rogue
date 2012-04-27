@@ -415,31 +415,6 @@ let useItem (state : State) =
 //        else
 //            Option.None
     
-    let chooseListItemThroughPagedDialog (title : string) (mapToName : 'T -> string ) (listItems : 'T list) =
-        let rec chooseFromPage (pageNr : int) (title : string) (mapToName : 'T -> string ) (listItems : 'T list) =
-            let letters = ['a'..'z']
-            let itemsPerPage = 10
-
-            let dialog = new Dialog.Dialog(seq {
-                yield Dialog.Title(title)
-                yield! listItems 
-                    |> Seq.skip (pageNr * itemsPerPage) 
-                    |> Seq.truncate itemsPerPage 
-                    |> Seq.mapi (fun i item -> Dialog.Action(letters.[i], mapToName item, "result", i.ToString()))
-                if pageNr > 0 then yield Dialog.Action('p', "[prev]", "result", "p")
-                if listItems.Length > (pageNr * itemsPerPage + itemsPerPage) then yield Dialog.Action('n', "[next]", "result", "n")
-                yield Dialog.Action('z', "[escape]", "result", "z")
-            })
-            let dialogResult = showDialog(dialog, Dialog.emptyResult)
-            match dialogResult.Item("result") with
-            | "z" -> Option.None
-            | "n" -> listItems |> chooseFromPage (pageNr + 1) title mapToName 
-            | "p" -> listItems |> chooseFromPage (pageNr - 1) title mapToName 
-            | _ -> 
-                let chosenItem = listItems.[Int32.Parse(dialogResult.Item("result")) + (pageNr * itemsPerPage)]
-                Some(chosenItem)
-        listItems |> chooseFromPage 0 title mapToName
-
 
     let choiceResult =
         state.Player.Items 
