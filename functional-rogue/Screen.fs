@@ -561,7 +561,7 @@ let rec showDialog (dialog : Dialog.Dialog, dialogResult : Dialog.Result) : Dial
             | _ -> None)    
     let rec loop dialogResult : Dialog.Result =
         let selectedWidget = 
-            (Console.ReadKey(true).KeyChar, dialog)
+            (Input.Char (Console.ReadKey(true).KeyChar), dialog)
             ||> findMenuItemsInDialog    
         if selectedWidget.IsSome then
             match selectedWidget.Value with

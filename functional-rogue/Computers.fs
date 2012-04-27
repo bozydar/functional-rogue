@@ -180,7 +180,7 @@ let operateComputer (computerPoint: Point option) (electronicMachine: Electronic
                 @ (if content.ReplicationRecipes.Length > 0 then [ComputerNavigation.ReplicationRecipes] else [])
             (
             match keyInfo with
-            | Keys ['1';'2';'3';'4';'5';'6';'7';'8';'9'] ->
+            | Key ['1';'2';'3';'4';'5';'6';'7';'8';'9'] ->
                 let number = (Int32.Parse (keyInfo.KeyChar.ToString())) - 1
                 if number < items.Length then (items.[number],0) else (nav, itemNr)
             | _ -> (nav, itemNr)

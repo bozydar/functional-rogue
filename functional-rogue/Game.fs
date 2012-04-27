@@ -193,17 +193,17 @@ let mainLoop () =
     let characterOptionsDialog = 
         Dialog.Dialog [
             Dialog.Title("Create Hero");
-            Dialog.Option('a', "Class", "class", 
+            Dialog.Option(Input.Char 'a', "Class", "class", 
                 [ for item in Predefined.Classes.getClasses -> (item, item)]);
             Dialog.Label("Actions");
-            Dialog.Action('1', "[enter]", "result", "1");
-            Dialog.Action('0', "[escape]", "result", "0");
+            Dialog.Action(Input.Console ConsoleKey.Enter, "[enter]", "result", "1");
+            Dialog.Action(Input.Console ConsoleKey.Escape, "[escape]", "result", "0");
         ]
 
     let d2 = 
         Dialog.Dialog [
             Dialog.Title("What's your name?" ) ;        
-            Dialog.Textbox('n', "name")            
+            Dialog.Textbox(Input.Char 'n', "name")            
         ]
 
     let characterOptions = showDialog(characterOptionsDialog, Dialog.newResult([("class", "Soldier")])) 

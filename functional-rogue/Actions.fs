@@ -354,7 +354,7 @@ let wear (state : State) =
             for i, item in Seq.mapi (fun i item -> i, item) state.Player.Items do
                 let pos = point 1 i                
                 let char = match findShortCut state.Player.ShortCuts item with Some(value) -> value.ToString() | _ -> ""                
-                yield Dialog.Action (char.[0], (sprintf "(id=%s): %s" (item.Id.ToString()) (itemShortDescription item)), "selected", "aaa")
+                yield Dialog.Action (Input.Char(char.[0]), (sprintf "(id=%s): %s" (item.Id.ToString()) (itemShortDescription item)), "selected", "aaa")
          })
         
     (*
@@ -425,10 +425,10 @@ let useItem (state : State) =
                 yield! listItems 
                     |> Seq.skip (pageNr * itemsPerPage) 
                     |> Seq.truncate itemsPerPage 
-                    |> Seq.mapi (fun i item -> Dialog.Action(letters.[i], mapToName item, "result", i.ToString()))
-                if pageNr > 0 then yield Dialog.Action('p', "[prev]", "result", "p")
-                if listItems.Length > (pageNr * itemsPerPage + itemsPerPage) then yield Dialog.Action('n', "[next]", "result", "n")
-                yield Dialog.Action('z', "[escape]", "result", "z")
+                    |> Seq.mapi (fun i item -> Dialog.Action(Input.Char(letters.[i]), mapToName item, "result", i.ToString()))
+                if pageNr > 0 then yield Dialog.Action(Input.Char 'p', "[prev]", "result", "p")
+                if listItems.Length > (pageNr * itemsPerPage + itemsPerPage) then yield Dialog.Action(Input.Char 'n', "[next]", "result", "n")
+                yield Dialog.Action(Input.Char 'z', "[escape]", "result", "z")
             })
             let dialogResult = showDialog(dialog, Dialog.emptyResult)
             match dialogResult.Item("result") with
