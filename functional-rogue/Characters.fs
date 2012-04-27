@@ -205,7 +205,10 @@ and
                 container <- Some( {container.Value with LiquidInside = None} )
                 result
             else
-                container.Value.LiquidInside
+                let resultLiquid = { Type = container.Value.LiquidInside.Value.Type; Amount = amount }
+                let liquidLeft = { Type = container.Value.LiquidInside.Value.Type; Amount = container.Value.LiquidInside.Value.Amount - amount }
+                container <- Some( {container.Value with LiquidInside = if liquidLeft.Amount > 0.0<ml> then Some(liquidLeft) else None } )
+                Some(resultLiquid)
         else
             None
     //end container section
@@ -259,6 +262,7 @@ and Liquid = {
 
 and LiquidType =
     | Water
+    | HealingSolution
 
 and Container = {
     LiquidCapacity : float<ml>

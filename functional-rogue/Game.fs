@@ -270,7 +270,7 @@ let evaluateTemporaryModifiers (state : State) =
                 evaluateAllModifiers {( state |> head.OnTurningOn  ) with TemporaryModifiers = tail}
             else if head.TurnOffOnTurnNr = state.TurnNumber then
                 evaluateAllModifiers { (state |> head.OnTurnigOff) with TemporaryModifiers = tail}
-            else if (head.TurnOnOnTurnNr > state.TurnNumber && head.TurnOffOnTurnNr < state.TurnNumber) then
+            else if (head.TurnOnOnTurnNr < state.TurnNumber && head.TurnOffOnTurnNr > state.TurnNumber) then
                 evaluateAllModifiers { (state |> head.OnEachTurn) with TemporaryModifiers = tail}
             else
                 evaluateAllModifiers { state with TemporaryModifiers = tail}
