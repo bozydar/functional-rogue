@@ -4,6 +4,7 @@ open Characters
 open State
 open Predefined.Items
 open System
+open Screen
 
 let performUseItemDrone  (item : Item) (state : State)=
     match item.Name with
@@ -32,7 +33,44 @@ let performUseItemDrone  (item : Item) (state : State)=
     | _ -> state
 
 let performUseInjector (item : Item) (state : State)=
-    state |> addMessage (sprintf "The injector does not work.")
+    let injectionEffectFunction (liquidType : LiquidType) : State -> State =
+        (fun state ->
+            match liquidType with
+            | HealingSolution ->
+               state.Player.CurrentHP <- Math.Min(state.Player.CurrentHP + 1, state.Player.MaxHP)
+               state
+            | _ ->state
+        )
+
+    if not item.IsLiquidContainer then
+        failwith "Wrong argument"
+    else
+        if item.Container.Value.LiquidInside.IsNone then
+            state |> addMessage (sprintf "The injector is empty.")
+        else
+            let injectionAmountOptions = [10.0<ml>..10.0<ml>..item.Container.Value.LiquidInside.Value.Amount]
+            let chosenAmount = chooseListItemThroughPagedDialog "How much do you want to inject?" (fun i -> i.ToString()) injectionAmountOptions
+            if chosenAmount.IsSome then
+                let injectionModifier = {
+                    Type = Default;
+                    TurnOnOnTurnNr = 0;
+                    TurnOffOnTurnNr = 0;
+                    OnTurningOn = (fun state ->
+                        state
+                        |> addMessage (sprintf "You inject " + chosenAmount.Value.ToString() + "ml of " + getUnionCaseName item.Container.Value.LiquidInside.Value.Type + " into your body.")
+                        |> injectionEffectFunction item.Container.Value.LiquidInside.Value.Type
+                        )
+                    OnEachTurn = injectionEffectFunction item.Container.Value.LiquidInside.Value.Type
+                    OnTurnigOff = (fun state ->
+                        state
+                        |> addMessage (sprintf "The effect of " + getUnionCaseName item.Container.Value.LiquidInside.Value.Type + " injection wears off.")
+                        |> injectionEffectFunction item.Container.Value.LiquidInside.Value.Type
+                        )
+                }
+                ignore (item.TakeLiquid chosenAmount.Value)
+                state |> addTemporaryModifier injectionModifier 0 (int(chosenAmount.Value) / 5)
+            else
+                state
 
 let getUseItemFunction (item : Item) =
     match item.Type with

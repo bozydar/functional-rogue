@@ -42,6 +42,7 @@ type State = {
 } and
  TemporaryModifierType = 
     | PlayerSightMultiplier of int
+    | Default
 
 type private StateAgentMessage = 
     | Set of AsyncReplyChannel<unit> * Option<State>
