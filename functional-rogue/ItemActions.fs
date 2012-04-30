@@ -17,17 +17,18 @@ let performUseItemDrone  (item : Item) (state : State)=
                 Type = PlayerSightMultiplier(sightRadiusMultiplier);
                 TurnOnOnTurnNr = 0;
                 TurnOffOnTurnNr = 0;
-                OnTurningOn = (fun state ->
-                    state.Player.SightRadiusMultiplier <- state.Player.SightRadiusMultiplier + sightRadiusMultiplier
-                    state.Player.CanSeeThroughWalls <- true
-                    state |> addMessage (sprintf "The Reconnaissance Drone flies up into the air sending the video recording of the nearby surroundings into your pocket computer.")
-                    )
-                OnEachTurn = (fun state -> state)
-                OnTurnigOff = (fun state ->
-                    state.Player.SightRadiusMultiplier <- Math.Min(1, state.Player.SightRadiusMultiplier - sightRadiusMultiplier)
-                    state.Player.CanSeeThroughWalls <- false
-                    state |> addMessage (sprintf "The Reconnaissance Drone falls down ending its transmission.")
-                    )
+                StateChangeFunction = (fun relativeTurnNr relativeLastTurnNr state ->
+                    match relativeTurnNr with
+                    | 0 ->
+                        state.Player.SightRadiusMultiplier <- state.Player.SightRadiusMultiplier + sightRadiusMultiplier
+                        state.Player.CanSeeThroughWalls <- true
+                        state |> addMessage (sprintf "The Reconnaissance Drone flies up into the air sending the video recording of the nearby surroundings into your pocket computer.")
+                    | var when var = relativeLastTurnNr ->
+                        state.Player.SightRadiusMultiplier <- Math.Min(1, state.Player.SightRadiusMultiplier - sightRadiusMultiplier)
+                        state.Player.CanSeeThroughWalls <- false
+                        state |> addMessage (sprintf "The Reconnaissance Drone falls down ending its transmission.")
+                    | _ -> state
+                )
                 }
             state |> addTemporaryModifier reconDroneModifier 0 2
     | _ -> state
@@ -55,17 +56,19 @@ let performUseInjector (item : Item) (state : State)=
                     Type = Default;
                     TurnOnOnTurnNr = 0;
                     TurnOffOnTurnNr = 0;
-                    OnTurningOn = (fun state ->
-                        state
-                        |> addMessage (sprintf "You inject " + chosenAmount.Value.ToString() + "ml of " + getUnionCaseName item.Container.Value.LiquidInside.Value.Type + " into your body.")
-                        |> injectionEffectFunction item.Container.Value.LiquidInside.Value.Type
-                        )
-                    OnEachTurn = injectionEffectFunction item.Container.Value.LiquidInside.Value.Type
-                    OnTurnigOff = (fun state ->
-                        state
-                        |> addMessage (sprintf "The effect of " + getUnionCaseName item.Container.Value.LiquidInside.Value.Type + " injection wears off.")
-                        |> injectionEffectFunction item.Container.Value.LiquidInside.Value.Type
-                        )
+                    StateChangeFunction = (fun relativeTurnNr relativeLastTurnNr state ->
+                        match relativeTurnNr with
+                        | 0 ->
+                            state
+                            |> addMessage (sprintf "You inject " + chosenAmount.Value.ToString() + "ml of " + getUnionCaseName item.Container.Value.LiquidInside.Value.Type + " into your body.")
+                            |> injectionEffectFunction item.Container.Value.LiquidInside.Value.Type
+                        | var when var = relativeLastTurnNr ->
+                            state
+                            |> addMessage (sprintf "The effect of " + getUnionCaseName item.Container.Value.LiquidInside.Value.Type + " injection wears off.")
+                            |> injectionEffectFunction item.Container.Value.LiquidInside.Value.Type
+                        | _ ->
+                            state |> injectionEffectFunction item.Container.Value.LiquidInside.Value.Type
+                    )
                 }
                 ignore (item.TakeLiquid chosenAmount.Value)
                 state |> addTemporaryModifier injectionModifier 0 (int(chosenAmount.Value) / 5)
