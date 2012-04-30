@@ -266,18 +266,15 @@ let evaluateTemporaryModifiers (state : State) =
         match state.TemporaryModifiers with
         | [] -> state
         | head :: tail ->
-            if head.TurnOnOnTurnNr = state.TurnNumber then
-                evaluateAllModifiers {( state |> head.OnTurningOn  ) with TemporaryModifiers = tail}
-            else if head.TurnOffOnTurnNr = state.TurnNumber then
-                evaluateAllModifiers { (state |> head.OnTurnigOff) with TemporaryModifiers = tail}
-            else if (head.TurnOnOnTurnNr < state.TurnNumber && head.TurnOffOnTurnNr > state.TurnNumber) then
-                evaluateAllModifiers { (state |> head.OnEachTurn) with TemporaryModifiers = tail}
+            if head.TurnOnOnTurnNr <= state.TurnNumber && head.TurnOffOnTurnNr >= state.TurnNumber then
+                let currentEffectTurn = state.TurnNumber - head.TurnOnOnTurnNr
+                let relativeLastEffectTurn = head.TurnOffOnTurnNr - head.TurnOnOnTurnNr
+                evaluateAllModifiers {( state |> head.StateChangeFunction currentEffectTurn relativeLastEffectTurn  ) with TemporaryModifiers = tail}
             else
                 evaluateAllModifiers { state with TemporaryModifiers = tail}
     let modifiedState = state |> evaluateAllModifiers
     {modifiedState with TemporaryModifiers = stillActiveModifiers}
     
-
 let subscribeHandlers () =
     Turn.subscribe handleMonsters
     Turn.subscribe clearCharacterStates
