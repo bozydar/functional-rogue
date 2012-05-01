@@ -94,7 +94,7 @@ let private evalDefendMeleeDamage (attacker : Character) (defender : Character) 
 let killCharacter (victim: Character) (state: State) =
     let allBoardPlaces = places (state.Board)
     let victimPlace = Seq.find (fun x -> (snd x).Character = Some(victim)) allBoardPlaces
-    let corpseItem = corpse victim.Name
+    let corpseItem = createCorpse victim.Name
     { state with 
         Board = state.Board
         |> modify (fst victimPlace) (fun place -> { place with Character = option.None })
