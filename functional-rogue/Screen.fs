@@ -606,15 +606,15 @@ let chooseListItemThroughPagedDialog (title : string) (mapToName : 'T -> string 
                 |> Seq.skip (pageNr * itemsPerPage) 
                 |> Seq.truncate itemsPerPage 
                 |> Seq.mapi (fun i item -> Dialog.Action(letters.[i], mapToName item, "result", i.ToString()))
-            if pageNr > 0 then yield Dialog.Action('p', "[prev]", "result", "p")
-            if listItems.Length > (pageNr * itemsPerPage + itemsPerPage) then yield Dialog.Action('n', "[next]", "result", "n")
-            yield Dialog.Action('z', "[escape]", "result", "z")
+            if pageNr > 0 then yield Dialog.Action('-', "[prev]", "result", "-")
+            if listItems.Length > (pageNr * itemsPerPage + itemsPerPage) then yield Dialog.Action('+', "[next]", "result", "+")
+            yield Dialog.Action('*', "[escape]", "result", "*")
         })
         let dialogResult = showDialog(dialog, Dialog.emptyResult)
         match dialogResult.Item("result") with
-        | "z" -> Option.None
-        | "n" -> listItems |> chooseFromPage (pageNr + 1) title mapToName 
-        | "p" -> listItems |> chooseFromPage (pageNr - 1) title mapToName 
+        | "*" -> Option.None
+        | "+" -> listItems |> chooseFromPage (pageNr + 1) title mapToName 
+        | "-" -> listItems |> chooseFromPage (pageNr - 1) title mapToName 
         | _ -> 
             let chosenItem = listItems.[Int32.Parse(dialogResult.Item("result")) + (pageNr * itemsPerPage)]
             Some(chosenItem)
