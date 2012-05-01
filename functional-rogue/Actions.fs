@@ -42,6 +42,7 @@ type Command =
     | ToggleSettingsMainMapHighlightPointsOfInterest
     | Eat
     | PourLiquid
+    | Help
 
 let private commandToSize command = 
     match command with
@@ -261,7 +262,15 @@ let performTakeAction state =
     {state1 with Board = board1}
 
 let performDropAction state =
-    raise (new NotImplementedException("Not implemented yet"))
+    let itemToDrop = state.Player.Items |> chooseListItemThroughPagedDialog "Choose item to drop:" (fun item -> itemShortDescription item)
+    if itemToDrop.IsSome then
+        state.Player.Items <- state.Player.Items |> List.filter (fun item -> item.Id <> itemToDrop.Value.Id)
+        let playerPosition = getPlayerPosition state.Board
+        let place = get state.Board playerPosition
+        let newBoard = state.Board |> set playerPosition {place with Items = itemToDrop.Value :: place.Items}
+        { state with Board = newBoard }
+    else
+        state
 
 let performHarvest state = 
     let playerPosition = getPlayerPosition state.Board

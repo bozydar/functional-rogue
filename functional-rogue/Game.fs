@@ -84,11 +84,13 @@ let mainLoop () =
                 | Key 'T' -> TakeOff
                 | Key '>' -> GoDownEnter
                 | Key '<' -> GoUp
+                | Key 'd' -> Drop
                 | Key 'l' when not isMainMap -> Look
                 | Key 'U' when not isMainMap -> UseObject   // objects are anything not in your inventory
                 | Key 'u' -> UseItem    // items are things in your inventory
                 | Key 'O' -> ToggleSettingsMainMapHighlightPointsOfInterest
                 | Keys [ConsoleKey.P] when isCtrl -> PourLiquid
+                | Key '?' -> Help
                 | _ -> Unknown                        
         
             match command with
@@ -198,7 +200,10 @@ let mainLoop () =
                 |> Turn.next
                 Screen.showBoard ()
                 loop false
-    
+            | Help ->
+                showItems ()
+                Screen.showBoard ()
+                loop false
 
     let characterOptionsDialog = 
         Dialog.Dialog [
