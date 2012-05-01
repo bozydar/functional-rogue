@@ -183,12 +183,7 @@ and
         with get() = container
 
     member this.AddLiquid (liquid : Liquid) =
-//        let mixLiquids (liquid1 : Liquid option) (liquid2 : Liquid option) =
-//            let ingredients = (liquid1, liquid2)
-//            match ingredients with
-//                | None _ -> _
-
-        if this.IsLiquidContainer then
+        if this.IsLiquidContainer && (this.Container.Value.LiquidInside.IsNone || this.Container.Value.LiquidInside.Value.Type = liquid.Type) then
             let spaceAvailable = container.Value.LiquidCapacity - (if container.Value.LiquidInside.IsSome then container.Value.LiquidInside.Value.Amount else 0.0<ml>)
             let newLiquidInsideAmount = (if container.Value.LiquidInside.IsSome then container.Value.LiquidInside.Value.Amount else 0.0<ml>) + (if spaceAvailable < liquid.Amount then spaceAvailable else liquid.Amount)
             let newLiquidOutsideAmount = if spaceAvailable > liquid.Amount then 0.0<ml> else liquid.Amount - spaceAvailable
@@ -249,6 +244,7 @@ and Type =
     | OreExtractor of OreExtractorProperties
     | Drone
     | Injector
+    | SimpleContainer
 and OreExtractorProperties = { HarvestRate: int }
 
 and MiscProperties = {

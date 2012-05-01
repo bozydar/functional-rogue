@@ -56,6 +56,7 @@ let toTextel item (highlighOption : ConsoleColor option) =
                         | OreExtractor(_) -> {Char = '['; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
                         | Drone -> {Char = '^'; FGColor = ConsoleColor.Cyan; BGColor = ConsoleColor.Black}
                         | Injector -> {Char = '!'; FGColor = ConsoleColor.Red; BGColor = ConsoleColor.Black}
+                        | SimpleContainer -> {Char = 'u'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
                 | _ -> 
                     match item.Ore with
                     | Iron(_) -> {Char = '$'; FGColor = ConsoleColor.Black; BGColor = ConsoleColor.Gray}
