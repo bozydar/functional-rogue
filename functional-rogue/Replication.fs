@@ -11,6 +11,6 @@ let defaultRequiredResources = {
 }
 
 let allRecipes =
-    [{ Name = "Knife"; ResultItem = knife; RequiredResources = { defaultRequiredResources with Iron = 2 } }]
-    @[{ Name = "Iron Helmet"; ResultItem = ironHelmet; RequiredResources = { defaultRequiredResources with Iron = 4 } } ]
-    @[{ Name = "Reconnaissance Drone"; ResultItem = reconnaissanceDrone; RequiredResources = { defaultRequiredResources with Iron = 4 } } ]
+    [{ Name = "Knife"; ResultItem = createKnife(); RequiredResources = { defaultRequiredResources with Iron = 2 } }]
+    @[{ Name = "Iron Helmet"; ResultItem = createIronHelmet(); RequiredResources = { defaultRequiredResources with Iron = 4 } } ]
+    @[{ Name = "Reconnaissance Drone"; ResultItem = createReconnaissanceDrone(); RequiredResources = { defaultRequiredResources with Iron = 4 } } ]

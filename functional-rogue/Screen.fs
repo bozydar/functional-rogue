@@ -55,6 +55,8 @@ let toTextel item (highlighOption : ConsoleColor option) =
                         | Corpse -> {Char = '%'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
                         | OreExtractor(_) -> {Char = '['; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
                         | Drone -> {Char = '^'; FGColor = ConsoleColor.Cyan; BGColor = ConsoleColor.Black}
+                        | Injector -> {Char = '!'; FGColor = ConsoleColor.Red; BGColor = ConsoleColor.Black}
+                        | SimpleContainer -> {Char = 'u'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
                 | _ -> 
                     match item.Ore with
                     | Iron(_) -> {Char = '$'; FGColor = ConsoleColor.Black; BGColor = ConsoleColor.Gray}
@@ -75,7 +77,7 @@ let toTextel item (highlighOption : ConsoleColor option) =
                         | Bush -> {Char = '&'; FGColor = ConsoleColor.DarkGreen; BGColor = ConsoleColor.Black}
                         | Glass -> {Char = '#'; FGColor = ConsoleColor.Blue; BGColor = ConsoleColor.Black}
                         | Sand -> {Char = '.'; FGColor = ConsoleColor.Yellow; BGColor = ConsoleColor.Black}
-                        | Water -> {Char = '~'; FGColor = ConsoleColor.Blue; BGColor = ConsoleColor.Black}
+                        | Tile.Water -> {Char = '~'; FGColor = ConsoleColor.Blue; BGColor = ConsoleColor.Black}
                         | StairsDown -> {Char = '>'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
                         | StairsUp -> {Char = '<'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
                         | Computer -> {Char = '#'; FGColor = ConsoleColor.Red; BGColor = ConsoleColor.Black}
@@ -604,15 +606,15 @@ let chooseListItemThroughPagedDialog (title : string) (mapToName : 'T -> string 
                 |> Seq.skip (pageNr * itemsPerPage) 
                 |> Seq.truncate itemsPerPage 
                 |> Seq.mapi (fun i item -> Dialog.Action(letters.[i], mapToName item, "result", i.ToString()))
-            if pageNr > 0 then yield Dialog.Action('p', "[prev]", "result", "p")
-            if listItems.Length > (pageNr * itemsPerPage + itemsPerPage) then yield Dialog.Action('n', "[next]", "result", "n")
-            yield Dialog.Action('z', "[escape]", "result", "z")
+            if pageNr > 0 then yield Dialog.Action('-', "[prev]", "result", "-")
+            if listItems.Length > (pageNr * itemsPerPage + itemsPerPage) then yield Dialog.Action('+', "[next]", "result", "+")
+            yield Dialog.Action('*', "[escape]", "result", "*")
         })
         let dialogResult = showDialog(dialog, Dialog.emptyResult)
         match dialogResult.Item("result") with
-        | "z" -> Option.None
-        | "n" -> listItems |> chooseFromPage (pageNr + 1) title mapToName 
-        | "p" -> listItems |> chooseFromPage (pageNr - 1) title mapToName 
+        | "*" -> Option.None
+        | "+" -> listItems |> chooseFromPage (pageNr + 1) title mapToName 
+        | "-" -> listItems |> chooseFromPage (pageNr - 1) title mapToName 
         | _ -> 
             let chosenItem = listItems.[Int32.Parse(dialogResult.Item("result")) + (pageNr * itemsPerPage)]
             Some(chosenItem)
