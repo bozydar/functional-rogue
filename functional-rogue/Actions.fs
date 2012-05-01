@@ -41,6 +41,7 @@ type Command =
     | UseItem
     | ToggleSettingsMainMapHighlightPointsOfInterest
     | Eat
+    | PourLiquid
 
 let private commandToSize command = 
     match command with
@@ -336,7 +337,36 @@ let chooseOption (options : list<char * string>)  =
     refreshScreen
     loop ()
     
-
+let pourLiquid (state : State) =
+    let liquidContainerItems = state.Player.Items |> List.filter (fun item -> item.IsLiquidContainer)
+    let pourFromItem = liquidContainerItems |> chooseListItemThroughPagedDialog "Choose a container to pour from:" (fun (item : Item) -> itemShortDescription item)
+    if pourFromItem.IsSome then
+        let pourIntoOptions = liquidContainerItems |> List.filter (fun item -> item.Id <> pourFromItem.Value.Id) |> List.map (fun item -> (item.Id, itemShortDescription item))
+        let pourIntoChoice = pourIntoOptions @ [(Guid.Empty, "Pour on the ground (get rid of the liquid permanently)")] |> chooseListItemThroughPagedDialog "Choose a container to pour into:" (fun targetOption -> snd targetOption)
+        if pourIntoChoice.IsSome then
+            let pourIntoItem = liquidContainerItems |> List.tryFind (fun item -> item.Id = (fst pourIntoChoice.Value))
+            let pourAmountOptions = [100.0<ml>..100.0<ml>..pourFromItem.Value.Container.Value.LiquidInside.Value.Amount]
+            let chosenAmount = chooseListItemThroughPagedDialog "How much do you want to pour?" (fun i -> i.ToString()) pourAmountOptions
+            if chosenAmount.IsSome then
+                let liquid = pourFromItem.Value.TakeLiquid chosenAmount.Value
+                if liquid.IsSome then
+                    if pourIntoItem.IsSome then
+                        let leftOvers = pourIntoItem.Value.AddLiquid (liquid.Value)
+                        if leftOvers.IsSome then
+                            ignore (pourFromItem.Value.AddLiquid leftOvers.Value)
+                            state |> addMessage "You pour some liquid into the other container but there's too little space to hold all."
+                        else
+                            state |> addMessage "You pour some liquid into the other container."
+                    else
+                        state |> addMessage "You pour some liquid on the ground."
+                else
+                    state
+            else
+                state
+        else
+            state
+    else 
+        state
 
 let wear (state : State) = 
     let alreadyWorn =     
@@ -402,20 +432,6 @@ let wear (state : State) =
     loop ()
 
 let useItem (state : State) =
-//    let chooseListItemThroughDialog (title : string) (mapToName : 'T -> string ) (listItems : 'T list) =
-//        let letters = ['a'..'z']
-//        let dialog : Dialog.Dialog =
-//            [ Dialog.Title(title) ]
-//            @ (listItems |> List.mapi (fun i item -> Dialog.Action(letters.[i], item |> mapToName, "result", i.ToString())))
-//            @ [Dialog.Action('z', "[escape]", "result", "z")]
-//        let dialogResult = showDialog(dialog, Dialog.emptyResult)
-//        if dialogResult.Item("result") <> "z" then
-//            let chosenItem = listItems.[Int32.Parse(dialogResult.Item("result"))]
-//            Some(chosenItem)
-//        else
-//            Option.None
-    
-
     let choiceResult =
         state.Player.Items 
         |> List.filter (fun item -> (getUseItemFunction item).IsSome)

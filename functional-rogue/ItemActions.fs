@@ -8,7 +8,7 @@ open Screen
 
 let performUseItemDrone  (item : Item) (state : State)=
     match item.Name with
-    | name when name = reconnaissanceDrone.Name ->
+    | name when name = createReconnaissanceDrone().Name ->
         if state.Board.Level < 0 then
             state |> addMessage (sprintf "You cannot use this item under ground.")
         else

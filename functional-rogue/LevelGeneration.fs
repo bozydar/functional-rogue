@@ -9,6 +9,7 @@ open Config
 open Quantity
 open State
 open Predefined
+open Predefined.Items
 
 // predefined parts
 
@@ -680,8 +681,11 @@ let generateTestStartLocationWithInitialPlayerPositon (cameFrom:Point) : (Board*
     let board, startpoint = generateEmpty
     let result = board |> Predefined.Resources.randomAncientRuins
     result.Places.[33,13] <- { result.Places.[33,13] with Items = List.replicate 15 (Predefined.Items.createRandomNaturalItem 0) }
-    result.Places.[33,14] <- { result.Places.[33,14] with Items = [Predefined.Items.reconnaissanceDrone] }
-    result.Places.[33,15] <- { result.Places.[33,14] with Items = [Predefined.Items.createMedicalInjectorWithLiquid LiquidType.Water] }
+    result.Places.[33,14] <- { result.Places.[33,14] with Items = [createReconnaissanceDrone()] }
+    let injectorWithSolution = createEmptyMedicalInjector() |> fillContainerWithLiquid LiquidType.HealingSolution
+    result.Places.[33,15] <- { result.Places.[33,15] with Items = [injectorWithSolution] }
+    let emptyInjector = createEmptyMedicalInjector()
+    result.Places.[33,16] <- { result.Places.[33,16] with Items = [createEmptyCanteen() |> fillContainerWithLiquid LiquidType.Water; emptyInjector] }
     (result,(Point(32,12)))
 
 

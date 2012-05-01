@@ -57,7 +57,10 @@ let mainLoop () =
             ()
         else
             let consoleKeyInfo = if printAll then new ConsoleKeyInfo('5', ConsoleKey.NumPad5, false, false, false) else System.Console.ReadKey(true)
-            let isMainMap = (State.get ()).Board.IsMainMap                        
+            let isMainMap = (State.get ()).Board.IsMainMap  
+            let isCtrl = (consoleKeyInfo.Modifiers &&& ConsoleModifiers.Control) = (ConsoleModifiers.Control)
+            let boolTrue (value : bool) =
+                value                  
             let command = 
                 match consoleKeyInfo with 
                 | Keys [ConsoleKey.UpArrow; '8'] -> Up            
@@ -85,6 +88,7 @@ let mainLoop () =
                 | Key 'U' when not isMainMap -> UseObject   // objects are anything not in your inventory
                 | Key 'u' -> UseItem    // items are things in your inventory
                 | Key 'O' -> ToggleSettingsMainMapHighlightPointsOfInterest
+                | Keys [ConsoleKey.P] when isCtrl -> PourLiquid
                 | _ -> Unknown                        
         
             match command with
@@ -185,6 +189,12 @@ let mainLoop () =
             | TakeOff ->
                 State.get ()
                 |> takeOff
+                |> Turn.next
+                Screen.showBoard ()
+                loop false
+            | PourLiquid ->
+                State.get ()
+                |> pourLiquid
                 |> Turn.next
                 Screen.showBoard ()
                 loop false
