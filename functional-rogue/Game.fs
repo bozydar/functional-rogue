@@ -201,7 +201,7 @@ let mainLoop () =
                 Screen.showBoard ()
                 loop false
             | Help ->
-                showItems ()
+                showHelpKeyCommands ()
                 Screen.showBoard ()
                 loop false
 

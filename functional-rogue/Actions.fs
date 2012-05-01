@@ -162,6 +162,10 @@ let private operateDoor command state =
 let performCloseOpenAction command state =
     { state with Board = operateDoor command state } 
 
+let showHelpKeyCommands () =
+    let commands = Microsoft.FSharp.Reflection.FSharpType.GetUnionCases typeof<Command>
+    ()
+
 let performToggleSettingsMainMapHighlightPointsOfInterest command state =
     let updatedSettings = {state.Settings with HighlightPointsOfInterest = not state.Settings.HighlightPointsOfInterest }
     { state with Settings = updatedSettings}
