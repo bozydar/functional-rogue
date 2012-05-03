@@ -6,17 +6,20 @@ open System
 type Input = 
     | Char of char
     | Console of ConsoleKey
+    | ModifiedConsole of ConsoleKey * ConsoleModifiers
     | Many of list<Input>
     with override this.ToString() = 
             match this with
             | Char(item) -> item.ToString()
             | Console(item) -> item.ToString()
+            | ModifiedConsole(item, modifier) -> item.ToString() + " " + modifier.ToString()
             | Many(items) -> Seq.fold (fun acc item -> acc + ", " + item.ToString()) "" items
 
 let rec (|Input|_|) (charOrConsoleKey : Input) (input : ConsoleKeyInfo) =
     match charOrConsoleKey with
     | Char(item) when item = input.KeyChar -> Some()
     | Console(item) when item = input.Key -> Some()
+    | ModifiedConsole(item, modifier) when item = input.Key && modifier = input.Modifiers -> Some()
     | Many(items) when items |> Seq.exists (fun item -> 
         match input with 
         | Input(item) -> true
