@@ -402,7 +402,6 @@ let private screenWritter () =
                     let dt1 = Dialog.newDecoratedText (input.ToString() + " - " + text) ConsoleColor.Black ConsoleColor.White 
                     let dt2 = Dialog.newDecoratedText text ConsoleColor.Black ConsoleColor.Gray
                     yield writeDecoratedText (point 0 i) dt1
-                    yield writeDecoratedText (point 4 i) dt2
                 | Dialog.Subdialog(input, text, _) ->
                     let dt1 = Dialog.newDecoratedText (input.ToString() + " - " + text) ConsoleColor.Black ConsoleColor.White 
                     let dt2 = Dialog.newDecoratedText text ConsoleColor.Black ConsoleColor.Gray
@@ -555,13 +554,13 @@ let rec showDialog (dialog : Dialog.Dialog, dialogResult : Dialog.Result) : Dial
     let findMenuItemsInDialog key dialog : option<Dialog.Widget> = 
         dialog    
         |> Seq.tryPick (function 
-            | Dialog.Action(itemKey, _, _, _) as item when itemKey = key -> Some(item)
-            | Dialog.Subdialog(itemKey, _, innerDialog) as item when itemKey = key -> Some(item)
-            | Dialog.Option(itemKey, _, varName, _) as item when itemKey = key -> Some(item)
+            | Dialog.Action(itemKey, _, _, _) as item when Keyboard.isKeyInput itemKey key -> Some(item)
+            | Dialog.Subdialog(itemKey, _, innerDialog) as item when Keyboard.isKeyInput itemKey key -> Some(item)
+            | Dialog.Option(itemKey, _, varName, _) as item when Keyboard.isKeyInput itemKey key -> Some(item)
             | _ -> None)    
     let rec loop dialogResult : Dialog.Result =
         let selectedWidget = 
-            (Input.Char (Console.ReadKey(true).KeyChar), dialog)
+            (Console.ReadKey(true), dialog)
             ||> findMenuItemsInDialog    
         if selectedWidget.IsSome then
             match selectedWidget.Value with
