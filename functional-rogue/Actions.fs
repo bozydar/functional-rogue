@@ -163,8 +163,19 @@ let performCloseOpenAction command state =
     { state with Board = operateDoor command state } 
 
 let showHelpKeyCommands () =
-    let commands = Microsoft.FSharp.Reflection.FSharpType.GetUnionCases typeof<Command>
-    ()
+    //let commands = Microsoft.FSharp.Reflection.FSharpType.GetUnionCases typeof<Command>
+    let dialog = new Dialog.Dialog(seq {
+        for command, description in Predefined.Help.commands do
+            yield Dialog.Widget.newDecoratedText(command, ConsoleColor.Black, ConsoleColor.Green)
+            yield Dialog.Widget.newDecoratedText(" - ", ConsoleColor.Black, ConsoleColor.Gray)
+            yield Dialog.Widget.newDecoratedText(description, ConsoleColor.Black, ConsoleColor.Gray)
+            yield Dialog.Widget.CR
+        yield Dialog.Action((Keyboard.Console(ConsoleKey.Escape)), "Escape", "exit", "1") 
+    })
+    let rec waitForEscape () =
+        let result = Screen.showDialog(dialog, Dialog.emptyResult) 
+        if result.["exit"] <> "1" then waitForEscape ()
+    waitForEscape ()
 
 let performToggleSettingsMainMapHighlightPointsOfInterest command state =
     let updatedSettings = {state.Settings with HighlightPointsOfInterest = not state.Settings.HighlightPointsOfInterest }
