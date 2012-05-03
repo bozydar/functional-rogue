@@ -189,7 +189,7 @@ type ScreenAgentMessage =
     | SetCursorPositionOnBoard of Point * State
     | DisplayComputerScreen of ScreenContentBuilder * State
     | ShowFinishScreen of State
-    | ShowDialog of Dialog.Dialog * Dialog.Result * AsyncReplyChannel<unit>
+    | ShowDialog of Dialog.Dialog * Dialog.Result * Rectangle * AsyncReplyChannel<unit>
 
 and MainMenuReply = {
     Name: String
@@ -232,24 +232,19 @@ let private screenWritter () =
                 screen.[x, y] <- toTextel board.Places.[virtualX, virtualY] (getHighlightForTile board virtualX virtualY)
         screen      
         
-    let writeString (position: Point) (text: String) (screen: screen) = 
-        let x = position.X
-        let y = position.Y
-        let length = min (screenSize.Width - x) text.Length
-        text.Substring(0, length)
-        |> String.iteri (fun i char -> 
-            screen.[x + i, y] <- {empty with Char = char})
-        screen
-
     let writeDecoratedText (position: Point) (decoratedText: Dialog.DecoratedText) (screen: screen) = 
         let x = position.X
         let y = position.Y
-        let text = decoratedText.Text
-        let length = min (screenSize.Width - x) text.Length
-        text.Substring(0, length)
-        |> String.iteri (fun i char -> 
-            screen.[x + i, y] <- {BGColor = decoratedText.BGColor; FGColor = decoratedText.FGColor; Char = char})
+        if isInBoundary position.Y 0 (screen.GetLength(1) - 1) then
+            let text = decoratedText.Text
+            let length = min (max 0 (screen.GetLength(0) - x)) text.Length
+            text.Substring(0, length)
+            |> String.iteri (fun i char -> 
+                screen.[x + i, y] <- {BGColor = decoratedText.BGColor; FGColor = decoratedText.FGColor; Char = char})
         screen
+
+    let writeString (position: Point) (text: String) (screen: screen) = 
+        writeDecoratedText position { Text = text; FGColor = empty.FGColor; BGColor = empty.BGColor } screen
 
     let writeStrings (position: Point) (lines: String list) (fgcolor: ConsoleColor) (screen: screen) =
         let brokenLines = lines |> List.fold (fun (acc: string list) line -> acc @ (line |> breakStringIfTooLong boardFrameSize.Width)) []
@@ -390,7 +385,8 @@ let private screenWritter () =
         )
         Console.SetCursorPosition(screenSize.Width, screenSize.Height)
 
-    let showDialog (dialog : Dialog.Dialog, dialogResult : Dialog.Result) screen =        
+    let showDialog (dialog : Dialog.Dialog, dialogResult : Dialog.Result, region : Rectangle) screen =        
+        let yOffset = region.Top
         let rec sequence (lastPosition : Point) (dialog : List<Dialog.Widget>) = seq {  
             match dialog with
             | [] -> ()
@@ -430,10 +426,10 @@ let private screenWritter () =
                             yield! sequence (lastPosition + Size(dt1.Text.Length, 1)) tail
                 | Dialog.Textbox(input, _) ->
                     //yield Dialog.newDecoratedText "                           " ConsoleColor.Gray ConsoleColor.Black |> writeDecoratedText (point 0 i) 
-                    raise (new NotImplementedException())
-                                    
+                    raise (new NotImplementedException())             
         }
-        screen |>> sequence (point 0 0) (Seq.toList dialog)
+        screen |>> sequence (point 0 -yOffset) (Seq.toList dialog) 
+
 
     MailboxProcessor<ScreenAgentMessage>.Start(fun inbox ->
         let rec loop screen = async {
@@ -526,12 +522,12 @@ let private screenWritter () =
                     |> writeFinishScreen(state)                    
                 refreshScreen screen newScreen
                 return! loop newScreen
-            | ShowDialog(dialog, values, reply) ->
+            | ShowDialog(dialog, values, viewRange, reply) ->
                 let newScreen =
                     screen
                     |> Array2D.copy
                     |> cleanScreen
-                    |> showDialog(dialog, values)                    
+                    |> showDialog(dialog, values, viewRange)                    
                 refreshScreen screen newScreen
                 reply.Reply ()
                 return! loop newScreen                
@@ -562,7 +558,8 @@ let showMessages () = agent.Post (ShowMessages(State.get ()))
 let showOptions options  = agent.Post(ShowOptions(options))
 let showFinishScreen state  = agent.Post(ShowFinishScreen(state))
 let rec showDialog (dialog : Dialog.Dialog, dialogResult : Dialog.Result) : Dialog.Result = 
-    agent.PostAndReply (fun reply -> ShowDialog(dialog, dialogResult, reply))
+    let startingPosition = new Rectangle(0, 0, screenSize.Width, screenSize.Height)
+    agent.PostAndReply (fun reply -> ShowDialog(dialog, dialogResult, startingPosition, reply))
     let findMenuItemsInDialog key dialog : option<Dialog.Widget> = 
         dialog    
         |> Seq.tryPick (function 
@@ -570,9 +567,11 @@ let rec showDialog (dialog : Dialog.Dialog, dialogResult : Dialog.Result) : Dial
             | Dialog.Subdialog(itemKey, _, innerDialog) as item when Keyboard.isKeyInput itemKey key -> Some(item)
             | Dialog.Option(itemKey, _, varName, _) as item when Keyboard.isKeyInput itemKey key -> Some(item)
             | _ -> None)    
-    let rec loop dialogResult : Dialog.Result =
+    let rec loop dialogResult position : Dialog.Result =
+        agent.PostAndReply (fun reply -> ShowDialog(dialog, dialogResult, position, reply))
+        let key = Console.ReadKey(true)
         let selectedWidget = 
-            (Console.ReadKey(true), dialog)
+            (key, dialog)
             ||> findMenuItemsInDialog    
         if selectedWidget.IsSome then
             match selectedWidget.Value with
@@ -580,8 +579,8 @@ let rec showDialog (dialog : Dialog.Dialog, dialogResult : Dialog.Result) : Dial
                     Dialog.replaceWith (dialogResult, Dialog.newResult [(varName, value)])
                 | Dialog.Subdialog(_, _, subdialog) -> 
                     let result = showDialog (subdialog, dialogResult)
-                    agent.PostAndReply (fun reply -> ShowDialog(dialog, result, reply))
-                    Dialog.replaceWith (result, loop dialogResult)
+                    agent.PostAndReply (fun reply -> ShowDialog(dialog, result, position, reply))
+                    Dialog.replaceWith (result, loop dialogResult position)
                 | Dialog.Option(_, _, varName, optionItems) ->        
                     let foundValueIndex =
                         if dialogResult.ContainsKey(varName) then
@@ -596,12 +595,19 @@ let rec showDialog (dialog : Dialog.Dialog, dialogResult : Dialog.Result) : Dial
                     let newIndex = (index + 1) % (List.length optionItems)
                     let _, newValue = optionItems.[newIndex]
                     let result = Dialog.replaceWith (dialogResult, Dialog.newResult ([(varName, newValue)]))
-                    agent.PostAndReply (fun reply -> ShowDialog(dialog, result, reply))
-                    loop result
-                | _ -> loop dialogResult
+                    
+                    loop result position
+                | _ -> loop dialogResult position
         else
-            loop dialogResult
-    loop dialogResult
+            let newPosition = 
+                match key with // moving in X axi is not possible right now
+                | Key ConsoleKey.UpArrow -> new Rectangle(position.X, position.Y - 1, position.Width, position.Height)
+                | Key ConsoleKey.DownArrow -> new Rectangle(position.X, position.Y + 1, position.Width, position.Height)
+                | Key ConsoleKey.PageUp -> new Rectangle(position.X, position.Y - screenSize.Height, position.Width, position.Height)
+                | Key ConsoleKey.PageDown -> new Rectangle(position.X, position.Y + screenSize.Height, position.Width, position.Height)
+                | _ -> position
+            loop dialogResult newPosition
+    loop dialogResult startingPosition
     
 
 let chooseListItemThroughPagedDialog (title : string) (mapToName : 'T -> string ) (listItems : 'T list) =
