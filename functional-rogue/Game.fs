@@ -89,7 +89,7 @@ let mainLoop () =
                 | Key 'U' when not isMainMap -> UseObject   // objects are anything not in your inventory
                 | Key 'u' -> UseItem    // items are things in your inventory
                 | Key 'O' -> ToggleSettingsMainMapHighlightPointsOfInterest
-                | Keys [ConsoleKey.P] when isCtrl -> PourLiquid
+                | Input (Input.ModifiedConsole(ConsoleKey.P, ConsoleModifiers.Control)) when isCtrl -> PourLiquid
                 | Key '?' -> Help
                 | _ -> Unknown                        
         
