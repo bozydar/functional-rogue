@@ -398,6 +398,8 @@ let private screenWritter () =
                 let i = lastPosition.Y
                 let nextLine = point 0 (i)
                 match item with
+                | Dialog.CR ->
+                    yield! sequence (point 0  (i + 1)) tail
                 | Dialog.Title(text) -> 
                     yield writeDecoratedText nextLine (Dialog.newDecoratedText text  ConsoleColor.White ConsoleColor.Black)
                     yield! sequence (lastPosition + Size(text.Length, 1)) tail
@@ -405,7 +407,7 @@ let private screenWritter () =
                     yield writeDecoratedText nextLine (Dialog.newDecoratedText text  ConsoleColor.Black ConsoleColor.Gray)
                     yield! sequence (lastPosition + Size(text.Length, 1)) tail
                 | Dialog.Raw(decoratedText) ->
-                    yield writeDecoratedText (point 0 i) decoratedText
+                    yield writeDecoratedText lastPosition decoratedText
                     yield! sequence (lastPosition + Size(decoratedText.Text.Length, 0)) tail
                 | Dialog.Action(input, text, _, _) ->
                     let dt1 = Dialog.newDecoratedText (input.ToString() + " - " + text) ConsoleColor.Black ConsoleColor.White 
@@ -431,7 +433,7 @@ let private screenWritter () =
                     raise (new NotImplementedException())
                                     
         }
-        screen |>> sequence (point 1 0) (Seq.toList dialog)
+        screen |>> sequence (point 0 0) (Seq.toList dialog)
 
     MailboxProcessor<ScreenAgentMessage>.Start(fun inbox ->
         let rec loop screen = async {
