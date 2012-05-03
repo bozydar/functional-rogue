@@ -164,6 +164,10 @@ let performCloseOpenAction command state =
 
 let showHelpKeyCommands () =
     let commands = Microsoft.FSharp.Reflection.FSharpType.GetUnionCases typeof<Command>
+//    let dialog = new Dialog.Dialog(seq {
+//        for line in Predefined.Help.commands do
+//            yield Dialog.newDecoratedText 
+//    })
     ()
 
 let performToggleSettingsMainMapHighlightPointsOfInterest command state =
