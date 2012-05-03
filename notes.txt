@@ -12,7 +12,7 @@
 3. Zobaczyc procentowy FOV (stopieni widzialnosci a nie bool)
 3. Rozwinac pierwsza plansze
 4. Jezeli potwor zchodzi z lini wzroku malowac jego ostatnia pozycje
-3. Dodac napierdalanie (Kuba):
+3. Dodac walke (Kuba):
    1. Melee
    2. Strzelanie
 4. Dodac do wspolczynnikow sile, ktora bedzie mowic o obrazeniach zadanych w walce bronia biala
@@ -59,6 +59,6 @@
 9. 
 	
 - W poczatkach zabawy gracz musi sie zajac przezyciem, a zatem jego glownym celem jest dobranie sie do schematow i znalezienia materialow do budowania pulapek i podsawowej broni, zeby na przyklad
-upierdolil szczura. Jezeli polezie za daleko powinien zginac. Pozniej musi skonstruwac lodowke podreczna (albo znalez schemat tworzenia pigulek pokarmowych (albo bron do za pomoca, ktorego ubija bosa)) po to zeby zapuscic sie dalej.
+zabil szczura. Jezeli polezie za daleko powinien zginac. Pozniej musi skonstruwac lodowke podreczna (albo znalez schemat tworzenia pigulek pokarmowych (albo bron do za pomoca, ktorego ubija bosa)) po to zeby zapuscic sie dalej.
 - Moze schowac sie we wraku ladownika przed zagrozeniami z poczatku gry.
 - Fast forward do pewnej godziny ze wzgledu na cykl dobowy.
