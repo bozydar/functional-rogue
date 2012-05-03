@@ -57,7 +57,10 @@ let mainLoop () =
             ()
         else
             let consoleKeyInfo = if printAll then new ConsoleKeyInfo('5', ConsoleKey.NumPad5, false, false, false) else System.Console.ReadKey(true)
-            let isMainMap = (State.get ()).Board.IsMainMap                        
+            let isMainMap = (State.get ()).Board.IsMainMap  
+            let isCtrl = (consoleKeyInfo.Modifiers &&& ConsoleModifiers.Control) = (ConsoleModifiers.Control)
+            let boolTrue (value : bool) =
+                value                  
             let command = 
                 match consoleKeyInfo with 
                 | Keys [ConsoleKey.UpArrow; '8'] -> Up            
@@ -81,10 +84,13 @@ let mainLoop () =
                 | Key 'T' -> TakeOff
                 | Key '>' -> GoDownEnter
                 | Key '<' -> GoUp
+                | Key 'd' -> Drop
                 | Key 'l' when not isMainMap -> Look
                 | Key 'U' when not isMainMap -> UseObject   // objects are anything not in your inventory
                 | Key 'u' -> UseItem    // items are things in your inventory
                 | Key 'O' -> ToggleSettingsMainMapHighlightPointsOfInterest
+                | Keys [ConsoleKey.P] when isCtrl -> PourLiquid
+                | Key '?' -> Help
                 | _ -> Unknown                        
         
             match command with
@@ -188,7 +194,16 @@ let mainLoop () =
                 |> Turn.next
                 Screen.showBoard ()
                 loop false
-    
+            | PourLiquid ->
+                State.get ()
+                |> pourLiquid
+                |> Turn.next
+                Screen.showBoard ()
+                loop false
+            | Help ->
+                showHelpKeyCommands ()
+                Screen.showBoard ()
+                loop false
 
     let characterOptionsDialog = 
         Dialog.Dialog [
@@ -266,18 +281,15 @@ let evaluateTemporaryModifiers (state : State) =
         match state.TemporaryModifiers with
         | [] -> state
         | head :: tail ->
-            if head.TurnOnOnTurnNr = state.TurnNumber then
-                evaluateAllModifiers {( state |> head.OnTurningOn  ) with TemporaryModifiers = tail}
-            else if head.TurnOffOnTurnNr = state.TurnNumber then
-                evaluateAllModifiers { (state |> head.OnTurnigOff) with TemporaryModifiers = tail}
-            else if (head.TurnOnOnTurnNr > state.TurnNumber && head.TurnOffOnTurnNr < state.TurnNumber) then
-                evaluateAllModifiers { (state |> head.OnEachTurn) with TemporaryModifiers = tail}
+            if head.TurnOnOnTurnNr <= state.TurnNumber && head.TurnOffOnTurnNr >= state.TurnNumber then
+                let currentEffectTurn = state.TurnNumber - head.TurnOnOnTurnNr
+                let relativeLastEffectTurn = head.TurnOffOnTurnNr - head.TurnOnOnTurnNr
+                evaluateAllModifiers {( state |> head.StateChangeFunction currentEffectTurn relativeLastEffectTurn  ) with TemporaryModifiers = tail}
             else
                 evaluateAllModifiers { state with TemporaryModifiers = tail}
     let modifiedState = state |> evaluateAllModifiers
     {modifiedState with TemporaryModifiers = stillActiveModifiers}
     
-
 let subscribeHandlers () =
     Turn.subscribe handleMonsters
     Turn.subscribe clearCharacterStates
