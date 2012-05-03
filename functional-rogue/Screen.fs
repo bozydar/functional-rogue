@@ -391,39 +391,47 @@ let private screenWritter () =
         Console.SetCursorPosition(screenSize.Width, screenSize.Height)
 
     let showDialog (dialog : Dialog.Dialog, dialogResult : Dialog.Result) screen =        
-        let sequence = seq {            
-            for i, item in dialog |> Seq.mapi (fun i item -> i, item) do
+        let rec sequence (lastPosition : Point) (dialog : List<Dialog.Widget>) = seq {  
+            match dialog with
+            | [] -> ()
+            | item::tail ->
+                let i = lastPosition.Y
+                let nextLine = point 0 (i)
                 match item with
                 | Dialog.Title(text) -> 
-                    yield writeDecoratedText (point 0 i) (Dialog.newDecoratedText text  ConsoleColor.White ConsoleColor.Black)
+                    yield writeDecoratedText nextLine (Dialog.newDecoratedText text  ConsoleColor.White ConsoleColor.Black)
+                    yield! sequence (lastPosition + Size(text.Length, 1)) tail
                 | Dialog.Label(text) ->
-                    yield writeDecoratedText (point 0 i) (Dialog.newDecoratedText text  ConsoleColor.Black ConsoleColor.Gray)
+                    yield writeDecoratedText nextLine (Dialog.newDecoratedText text  ConsoleColor.Black ConsoleColor.Gray)
+                    yield! sequence (lastPosition + Size(text.Length, 1)) tail
                 | Dialog.Raw(decoratedText) ->
                     yield writeDecoratedText (point 0 i) decoratedText
+                    yield! sequence (lastPosition + Size(decoratedText.Text.Length, 0)) tail
                 | Dialog.Action(input, text, _, _) ->
                     let dt1 = Dialog.newDecoratedText (input.ToString() + " - " + text) ConsoleColor.Black ConsoleColor.White 
-                    let dt2 = Dialog.newDecoratedText text ConsoleColor.Black ConsoleColor.Gray
-                    yield writeDecoratedText (point 0 i) dt1
+                    yield writeDecoratedText nextLine dt1
+                    yield! sequence (lastPosition + Size(dt1.Text.Length, 1)) tail
                 | Dialog.Subdialog(input, text, _) ->
                     let dt1 = Dialog.newDecoratedText (input.ToString() + " - " + text) ConsoleColor.Black ConsoleColor.White 
-                    let dt2 = Dialog.newDecoratedText text ConsoleColor.Black ConsoleColor.Gray
-                    yield writeDecoratedText (point 0 i) dt1
-                    yield writeDecoratedText (point 4 i) dt2
+                    yield writeDecoratedText nextLine dt1
+                    yield! sequence (lastPosition + Size(dt1.Text.Length, 1)) tail
                 | Dialog.Option(input, text, varName, optionItems) ->
                     let dt1 = Dialog.newDecoratedText (input.ToString() + " - " + text) ConsoleColor.Black ConsoleColor.White 
-                    let dt2 = Dialog.newDecoratedText text ConsoleColor.Black ConsoleColor.Gray
-                    yield writeDecoratedText (point 0 i) dt1
-                    yield writeDecoratedText (point 4 i) dt2
+                    yield writeDecoratedText nextLine dt1
                     if dialogResult.ContainsKey(varName) then
                         let selectedItem = List.tryFind (fun item -> snd item = dialogResult.[varName]) optionItems
                         if selectedItem.IsSome then
                             let dt3 = Dialog.newDecoratedText (fst selectedItem.Value) ConsoleColor.Black ConsoleColor.Gray
                             yield writeDecoratedText (point (dt1.Text.Length + 2) i) dt3
+                            yield! sequence (lastPosition + Size(dt1.Text.Length + 2 + dt3.Text.Length, 1)) tail
+                        else
+                            yield! sequence (lastPosition + Size(dt1.Text.Length, 1)) tail
                 | Dialog.Textbox(input, _) ->
-                    yield Dialog.newDecoratedText "                           " ConsoleColor.Gray ConsoleColor.Black |> writeDecoratedText (point 0 i) 
+                    //yield Dialog.newDecoratedText "                           " ConsoleColor.Gray ConsoleColor.Black |> writeDecoratedText (point 0 i) 
+                    raise (new NotImplementedException())
                                     
-        }           
-        screen |>> sequence
+        }
+        screen |>> sequence (point 1 0) (Seq.toList dialog)
 
     MailboxProcessor<ScreenAgentMessage>.Start(fun inbox ->
         let rec loop screen = async {
