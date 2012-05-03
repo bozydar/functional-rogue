@@ -29,8 +29,6 @@ and Widget =
     | Label of string
     | Action of Input * string * string * string
     | Option of Input * string * string * (OptionItem list)
-//    | Action of char * string * string * string
-//    | Option of char * string * string * (OptionItem list)
     | Subdialog of Input * string * Dialog
     | Raw of DecoratedText
     | Textbox of Input * string
