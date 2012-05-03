@@ -36,12 +36,14 @@ type State = {
     Type : TemporaryModifierType
     TurnOnOnTurnNr : int
     TurnOffOnTurnNr : int
-    OnTurningOn : (State -> State)
-    OnEachTurn : (State -> State)
-    OnTurnigOff : (State -> State)
+    StateChangeFunction : (int -> int -> State -> State)
+    //OnTurningOn : (State -> State)
+    //OnEachTurn : (State -> State)
+    //OnTurnigOff : (State -> State)
 } and
  TemporaryModifierType = 
     | PlayerSightMultiplier of int
+    | Default
 
 type private StateAgentMessage = 
     | Set of AsyncReplyChannel<unit> * Option<State>

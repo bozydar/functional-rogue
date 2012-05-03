@@ -41,6 +41,8 @@ type Command =
     | UseItem
     | ToggleSettingsMainMapHighlightPointsOfInterest
     | Eat
+    | PourLiquid
+    | Help
 
 let private commandToSize command = 
     match command with
@@ -160,6 +162,10 @@ let private operateDoor command state =
 let performCloseOpenAction command state =
     { state with Board = operateDoor command state } 
 
+let showHelpKeyCommands () =
+    let commands = Microsoft.FSharp.Reflection.FSharpType.GetUnionCases typeof<Command>
+    ()
+
 let performToggleSettingsMainMapHighlightPointsOfInterest command state =
     let updatedSettings = {state.Settings with HighlightPointsOfInterest = not state.Settings.HighlightPointsOfInterest }
     { state with Settings = updatedSettings}
@@ -260,7 +266,15 @@ let performTakeAction state =
     {state1 with Board = board1}
 
 let performDropAction state =
-    raise (new NotImplementedException("Not implemented yet"))
+    let itemToDrop = state.Player.Items |> chooseListItemThroughPagedDialog "Choose item to drop:" (fun item -> itemShortDescription item)
+    if itemToDrop.IsSome then
+        state.Player.Items <- state.Player.Items |> List.filter (fun item -> item.Id <> itemToDrop.Value.Id)
+        let playerPosition = getPlayerPosition state.Board
+        let place = get state.Board playerPosition
+        let newBoard = state.Board |> set playerPosition {place with Items = itemToDrop.Value :: place.Items}
+        { state with Board = newBoard }
+    else
+        state
 
 let performHarvest state = 
     let playerPosition = getPlayerPosition state.Board
@@ -336,7 +350,36 @@ let chooseOption (options : list<char * string>)  =
     refreshScreen
     loop ()
     
-
+let pourLiquid (state : State) =
+    let liquidContainerItems = state.Player.Items |> List.filter (fun item -> item.IsLiquidContainer)
+    let pourFromItem = liquidContainerItems |> chooseListItemThroughPagedDialog "Choose a container to pour from:" (fun (item : Item) -> itemShortDescription item)
+    if pourFromItem.IsSome then
+        let pourIntoOptions = liquidContainerItems |> List.filter (fun item -> item.Id <> pourFromItem.Value.Id) |> List.map (fun item -> (item.Id, itemShortDescription item))
+        let pourIntoChoice = pourIntoOptions @ [(Guid.Empty, "Pour on the ground (get rid of the liquid permanently)")] |> chooseListItemThroughPagedDialog "Choose a container to pour into:" (fun targetOption -> snd targetOption)
+        if pourIntoChoice.IsSome then
+            let pourIntoItem = liquidContainerItems |> List.tryFind (fun item -> item.Id = (fst pourIntoChoice.Value))
+            let pourAmountOptions = [100.0<ml>..100.0<ml>..pourFromItem.Value.Container.Value.LiquidInside.Value.Amount]
+            let chosenAmount = chooseListItemThroughPagedDialog "How much do you want to pour?" (fun i -> i.ToString()) pourAmountOptions
+            if chosenAmount.IsSome then
+                let liquid = pourFromItem.Value.TakeLiquid chosenAmount.Value
+                if liquid.IsSome then
+                    if pourIntoItem.IsSome then
+                        let leftOvers = pourIntoItem.Value.AddLiquid (liquid.Value)
+                        if leftOvers.IsSome then
+                            ignore (pourFromItem.Value.AddLiquid leftOvers.Value)
+                            state |> addMessage "You pour some liquid into the other container but there's too little space to hold all."
+                        else
+                            state |> addMessage "You pour some liquid into the other container."
+                    else
+                        state |> addMessage "You pour some liquid on the ground."
+                else
+                    state
+            else
+                state
+        else
+            state
+    else 
+        state
 
 let wear (state : State) = 
     let alreadyWorn =     
@@ -402,49 +445,10 @@ let wear (state : State) =
     loop ()
 
 let useItem (state : State) =
-//    let chooseListItemThroughDialog (title : string) (mapToName : 'T -> string ) (listItems : 'T list) =
-//        let letters = ['a'..'z']
-//        let dialog : Dialog.Dialog =
-//            [ Dialog.Title(title) ]
-//            @ (listItems |> List.mapi (fun i item -> Dialog.Action(letters.[i], item |> mapToName, "result", i.ToString())))
-//            @ [Dialog.Action('z', "[escape]", "result", "z")]
-//        let dialogResult = showDialog(dialog, Dialog.emptyResult)
-//        if dialogResult.Item("result") <> "z" then
-//            let chosenItem = listItems.[Int32.Parse(dialogResult.Item("result"))]
-//            Some(chosenItem)
-//        else
-//            Option.None
-    
-    let chooseListItemThroughPagedDialog (title : string) (mapToName : 'T -> string ) (listItems : 'T list) =
-        let rec chooseFromPage (pageNr : int) (title : string) (mapToName : 'T -> string ) (listItems : 'T list) =
-            let letters = ['a'..'z']
-            let itemsPerPage = 10
-
-            let dialog = new Dialog.Dialog(seq {
-                yield Dialog.Title(title)
-                yield! listItems 
-                    |> Seq.skip (pageNr * itemsPerPage) 
-                    |> Seq.truncate itemsPerPage 
-                    |> Seq.mapi (fun i item -> Dialog.Action(Input.Char(letters.[i]), mapToName item, "result", i.ToString()))
-                if pageNr > 0 then yield Dialog.Action(Input.Char 'p', "[prev]", "result", "p")
-                if listItems.Length > (pageNr * itemsPerPage + itemsPerPage) then yield Dialog.Action(Input.Char 'n', "[next]", "result", "n")
-                yield Dialog.Action(Input.Char 'z', "[escape]", "result", "z")
-            })
-            let dialogResult = showDialog(dialog, Dialog.emptyResult)
-            match dialogResult.Item("result") with
-            | "z" -> Option.None
-            | "n" -> listItems |> chooseFromPage (pageNr + 1) title mapToName 
-            | "p" -> listItems |> chooseFromPage (pageNr - 1) title mapToName 
-            | _ -> 
-                let chosenItem = listItems.[Int32.Parse(dialogResult.Item("result")) + (pageNr * itemsPerPage)]
-                Some(chosenItem)
-        listItems |> chooseFromPage 0 title mapToName
-
-
     let choiceResult =
         state.Player.Items 
         |> List.filter (fun item -> (getUseItemFunction item).IsSome)
-        |> chooseListItemThroughPagedDialog "Choose item to use:" (fun (item : Item) -> item.Name)
+        |> chooseListItemThroughPagedDialog "Choose item to use:" (fun (item : Item) -> itemShortDescription item)
     if choiceResult.IsSome then
         state |> (performUseItemAction choiceResult.Value)
     else
