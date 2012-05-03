@@ -404,7 +404,6 @@ let private screenWritter () =
                     let dt1 = Dialog.newDecoratedText (input.ToString() + " - " + text) ConsoleColor.Black ConsoleColor.White 
                     let dt2 = Dialog.newDecoratedText text ConsoleColor.Black ConsoleColor.Gray
                     yield writeDecoratedText (point 0 i) dt1
-                    yield writeDecoratedText (point 4 i) dt2
                 | Dialog.Subdialog(input, text, _) ->
                     let dt1 = Dialog.newDecoratedText (input.ToString() + " - " + text) ConsoleColor.Black ConsoleColor.White 
                     let dt2 = Dialog.newDecoratedText text ConsoleColor.Black ConsoleColor.Gray
@@ -557,13 +556,13 @@ let rec showDialog (dialog : Dialog.Dialog, dialogResult : Dialog.Result) : Dial
     let findMenuItemsInDialog key dialog : option<Dialog.Widget> = 
         dialog    
         |> Seq.tryPick (function 
-            | Dialog.Action(itemKey, _, _, _) as item when itemKey = key -> Some(item)
-            | Dialog.Subdialog(itemKey, _, innerDialog) as item when itemKey = key -> Some(item)
-            | Dialog.Option(itemKey, _, varName, _) as item when itemKey = key -> Some(item)
+            | Dialog.Action(itemKey, _, _, _) as item when Keyboard.isKeyInput itemKey key -> Some(item)
+            | Dialog.Subdialog(itemKey, _, innerDialog) as item when Keyboard.isKeyInput itemKey key -> Some(item)
+            | Dialog.Option(itemKey, _, varName, _) as item when Keyboard.isKeyInput itemKey key -> Some(item)
             | _ -> None)    
     let rec loop dialogResult : Dialog.Result =
         let selectedWidget = 
-            (Console.ReadKey(true).KeyChar, dialog)
+            (Console.ReadKey(true), dialog)
             ||> findMenuItemsInDialog    
         if selectedWidget.IsSome then
             match selectedWidget.Value with
@@ -597,7 +596,7 @@ let rec showDialog (dialog : Dialog.Dialog, dialogResult : Dialog.Result) : Dial
 
 let chooseListItemThroughPagedDialog (title : string) (mapToName : 'T -> string ) (listItems : 'T list) =
     let rec chooseFromPage (pageNr : int) (title : string) (mapToName : 'T -> string ) (listItems : 'T list) =
-        let letters = ['a'..'z']
+        let letters = ['a'..'z'] |> List.map( fun item -> Input.Char(item) )
         let itemsPerPage = 10
 
         let dialog = new Dialog.Dialog(seq {
@@ -606,9 +605,9 @@ let chooseListItemThroughPagedDialog (title : string) (mapToName : 'T -> string 
                 |> Seq.skip (pageNr * itemsPerPage) 
                 |> Seq.truncate itemsPerPage 
                 |> Seq.mapi (fun i item -> Dialog.Action(letters.[i], mapToName item, "result", i.ToString()))
-            if pageNr > 0 then yield Dialog.Action('-', "[prev]", "result", "-")
-            if listItems.Length > (pageNr * itemsPerPage + itemsPerPage) then yield Dialog.Action('+', "[next]", "result", "+")
-            yield Dialog.Action('*', "[escape]", "result", "*")
+            if pageNr > 0 then yield Dialog.Action(Input.Char '-', "[prev]", "result", "-")
+            if listItems.Length > (pageNr * itemsPerPage + itemsPerPage) then yield Dialog.Action(Input.Char '+', "[next]", "result", "+")
+            yield Dialog.Action(Input.Char '*', "[escape]", "result", "*")
         })
         let dialogResult = showDialog(dialog, Dialog.emptyResult)
         match dialogResult.Item("result") with
