@@ -78,16 +78,6 @@ let swap (a: _[]) x y =
 let shuffleArray a =
     Array.iteri (fun i _ -> swap a i (r.Next(i, Array.length a))) a
 
-let (|Key|_|) (charOrConsoleKey : obj) (input : ConsoleKeyInfo) =
-    match charOrConsoleKey with
-    | :? char as thisChar when thisChar = input.KeyChar -> Some()
-    | :? ConsoleKey as thisKey when thisKey = input.Key -> Some()
-    | _ -> None
-
-let (|Keys|_|) (charsOrConsoleKeys : list<obj>) (input : ConsoleKeyInfo) =
-    if charsOrConsoleKeys |> List.exists (fun item -> match input with | Key item -> true | _ -> false) then Some() else None
-
-
 module Map =    
     let tryGetItem key (map : Map<_,_>) =
         if map.ContainsKey key then Some(map.[key]) else None
