@@ -24,15 +24,17 @@ let startLocationShip board =
                   @ [('2', fun _ -> { Place.ClosedDoor with ElectronicMachine = Some({ ComputerContent = { ComputerName = "Ship door"; Notes = []; CanOperateDoors = false; CanOperateCameras = false; CanReplicate = false; HasCamera = true; ReplicationRecipes = [] } })})]
                   @ [('3', fun _ -> { Place.Computer with ElectronicMachine = Some(getStartShipComputer)})]
                   @ [('4', fun _ -> { Place.Create Tile.Replicator with ElectronicMachine = Some(getStartShipReplicator)})]
+                  @ [('G', fun _ -> { Place.EmptyPlace with Tile = Grass; Features = [OnFire(1)]})]
+                  @ [('T', fun _ -> { Place.EmptyPlace with Tile = Tree; Features = [OnFire(1)]})]
 
     let where = Point(30, 10)
     board
     |> putPredefinedOnBoard def where
-            "00##g#,,,,,,
-             0g#1.#,,,,,,
-             gg.3.2,,,,>0
-             0g#4.#,,,,,,
-             00##g#,,,,,,"        
+            "00##g#,,,,,,TGT
+             0g#1.#,,,,,,GGG
+             gg.3.2,,,,>0TTG
+             0g#4.#,,,,,,GGG
+             00##g#,,,,,,GGT"        
 
 let randomAncientRuins board =
     

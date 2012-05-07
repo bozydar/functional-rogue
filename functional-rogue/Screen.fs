@@ -73,7 +73,7 @@ let toTextel item (highlighOption : ConsoleColor option) =
                         | ClosedDoor -> {Char = '+'; FGColor = ConsoleColor.DarkGray; BGColor = ConsoleColor.Black}
                         | Grass -> {Char = '.'; FGColor = ConsoleColor.DarkGreen; BGColor = ConsoleColor.Black}
                         | Tree -> {Char = 'T'; FGColor = ConsoleColor.DarkGreen; BGColor = ConsoleColor.Black}
-                        | SmallPlants -> {Char = '*'; FGColor = (if (rnd 2) = 0 then ConsoleColor.DarkGreen else ConsoleColor.Green); BGColor = ConsoleColor.Black}
+                        | SmallPlants -> {Char = '*'; FGColor = ConsoleColor.DarkGreen; BGColor = ConsoleColor.Black}
                         | Bush -> {Char = '&'; FGColor = ConsoleColor.DarkGreen; BGColor = ConsoleColor.Black}
                         | Glass -> {Char = '#'; FGColor = ConsoleColor.Blue; BGColor = ConsoleColor.Black}
                         | Sand -> {Char = '.'; FGColor = ConsoleColor.Yellow; BGColor = ConsoleColor.Black}
@@ -88,7 +88,16 @@ let toTextel item (highlighOption : ConsoleColor option) =
                         | MainMapWater -> {Char = '~'; FGColor = ConsoleColor.Blue; BGColor = mainMapBackground}
                         | MainMapCoast -> {Char = '.'; FGColor = ConsoleColor.Yellow; BGColor = mainMapBackground}
                         | _ -> empty
-        if not item.IsSeen then {result with FGColor = ConsoleColor.DarkGray } else result
+        if not item.IsSeen then {result with FGColor = ConsoleColor.DarkGray }
+        else
+            if item.Features |> List.exists (fun feature -> match feature with | OnFire(value) -> true | _ -> false) then
+                let randomResult = rnd 10
+                match randomResult with
+                | value when value < 3 -> {Char = '&'; FGColor = ConsoleColor.Red; BGColor = ConsoleColor.Black}
+                | value when value < 6 -> {Char = '&'; FGColor = ConsoleColor.Yellow; BGColor = ConsoleColor.Black}
+                | _ -> result
+            else
+                result
     else empty
         
 
