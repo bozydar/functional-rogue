@@ -73,7 +73,7 @@ let toTextel item (highlighOption : ConsoleColor option) =
                         | ClosedDoor -> {Char = '+'; FGColor = ConsoleColor.DarkGray; BGColor = ConsoleColor.Black}
                         | Grass -> {Char = '.'; FGColor = ConsoleColor.DarkGreen; BGColor = ConsoleColor.Black}
                         | Tree -> {Char = 'T'; FGColor = ConsoleColor.DarkGreen; BGColor = ConsoleColor.Black}
-                        | SmallPlants -> {Char = '*'; FGColor = ConsoleColor.DarkGreen; BGColor = ConsoleColor.Black}
+                        | SmallPlants -> {Char = '*'; FGColor = (if (rnd 2) = 0 then ConsoleColor.DarkGreen else ConsoleColor.Green); BGColor = ConsoleColor.Black}
                         | Bush -> {Char = '&'; FGColor = ConsoleColor.DarkGreen; BGColor = ConsoleColor.Black}
                         | Glass -> {Char = '#'; FGColor = ConsoleColor.Blue; BGColor = ConsoleColor.Black}
                         | Sand -> {Char = '.'; FGColor = ConsoleColor.Yellow; BGColor = ConsoleColor.Black}
@@ -433,104 +433,119 @@ let private screenWritter () =
 
     MailboxProcessor<ScreenAgentMessage>.Start(fun inbox ->
         let rec loop screen = async {
-            let! msg = inbox.Receive()
+            if inbox.CurrentQueueLength = 0 then
+                do! (Async.Sleep(100))
+                if State.stateExists() then
+                    let currentState = State.get()
+                    let newScreen = 
+                        screen
+                        |> Array2D.copy
+                        |> writeBoard currentState.Board currentState.BoardFramePosition
+                        |> writeStats currentState
+                        |> writeLastTurnMessageIfAvailable currentState
+                    refreshScreen screen newScreen
+                    return! loop newScreen
+                else
+                    return! loop screen
+            else
+                let! msg = inbox.Receive()
 
-            match msg with
-            | ShowBoard(state) ->                 
-                let newScreen = 
-                    screen
-                    |> Array2D.copy
-                    |> writeBoard state.Board state.BoardFramePosition
-                    |> writeStats state
-                    |> writeLastTurnMessageIfAvailable state
-                refreshScreen screen newScreen
-                return! loop newScreen
-            | ShowMessages(state) ->
-                let newScreen =
-                    screen
-                    |> Array2D.copy
-                    |> cleanScreen
-                    |> writeAllMessages state
-                refreshScreen screen newScreen
-                return! loop newScreen                        
-            | ShowMainMenu(reply) -> 
-                let newScreen = 
-                    screen
-                    |> Array2D.copy
-                    |> cleanScreen
-                    |> writeString (point 1 1) "What is your name?"
-                refreshScreen screen newScreen
-                Console.SetCursorPosition(1, 2)
-                let name = Console.ReadLine()
-                reply.Reply({Name = name})
-                return! loop newScreen  
-            | ShowChooseItemDialog(request) ->                
-                let itemsToShow =
-                    List.filter request.Filter request.State.Player.Items                
-                let newScreen =
-                    screen
-                    |> Array2D.copy
-                    |> cleanScreen
-                    |> if itemsToShow.Length > 0 then 
-                           listAllItems itemsToShow request.State.Player.ShortCuts 
-                       else 
-                           writeString (point 1 1) "No items"
-                refreshScreen screen newScreen
-                return! loop newScreen
-            | ShowEquipmentDialog(request) ->                
-                let newScreen =
-                    screen
-                    |> Array2D.copy
-                    |> cleanScreen
-                    |> listWornItems
-                refreshScreen screen newScreen
-                return! loop newScreen
-            | ShowOptions(request) ->
-                let newScreen =
-                    screen
-                    |> Array2D.copy
-                    |> cleanScreen
-                    |> showOptions request
-                refreshScreen screen newScreen
-                return! loop newScreen
-            | SetCursorPositionOnBoard(point, state) ->
-                let realPosition = (Math.Min(boardFrameSize.Width, Math.Max(0, point.X - state.BoardFramePosition.X)),
-                                    Math.Min(boardFrameSize.Height, Math.Max(0, point.Y - state.BoardFramePosition.Y)))
-                let place = state.Board.Places.[point.X,point.Y]
-                let description = Place.GetDescription place (if state.Board.Type = LevelType.MainMap then getMainMapTileDetails point.X point.Y else String.Empty)
-                let newScreen =
-                    screen
-                    |> Array2D.copy
-                    |> writeTemporalMessage description
-                refreshScreen screen newScreen
-                Console.SetCursorPosition(realPosition)
-                return! loop newScreen
-            | DisplayComputerScreen(content, state) ->
-                let newScreen = 
-                    screen
-                    |> Array2D.copy
-                    |> cleanPartOfScreen (Point(0,0)) boardFrameSize
-                    |> writeFromScreenContentBuilder (Point(0,0)) content ConsoleColor.DarkGreen
-                    |> writeStats state
-                refreshScreen screen newScreen
-                return! loop newScreen
-            | ShowFinishScreen(state) ->
-                let newScreen =
-                    screen
-                    |> Array2D.copy
-                    |> cleanScreen
-                    |> writeFinishScreen(state)                    
-                refreshScreen screen newScreen
-                return! loop newScreen
-            | ShowDialog(dialog, values, viewRange, reply) ->
-                let newScreen =
-                    screen
-                    |> Array2D.copy
-                    |> cleanScreen
-                    |> showDialog(dialog, values, viewRange)                    
-                refreshScreen screen newScreen
-                reply.Reply ()
-                return! loop newScreen                
+                match msg with
+                | ShowBoard(state) ->                 
+                    let newScreen = 
+                        screen
+                        |> Array2D.copy
+                        |> writeBoard state.Board state.BoardFramePosition
+                        |> writeStats state
+                        |> writeLastTurnMessageIfAvailable state
+                    refreshScreen screen newScreen
+                    return! loop newScreen
+                | ShowMessages(state) ->
+                    let newScreen =
+                        screen
+                        |> Array2D.copy
+                        |> cleanScreen
+                        |> writeAllMessages state
+                    refreshScreen screen newScreen
+                    return! loop newScreen                        
+                | ShowMainMenu(reply) -> 
+                    let newScreen = 
+                        screen
+                        |> Array2D.copy
+                        |> cleanScreen
+                        |> writeString (point 1 1) "What is your name?"
+                    refreshScreen screen newScreen
+                    Console.SetCursorPosition(1, 2)
+                    let name = Console.ReadLine()
+                    reply.Reply({Name = name})
+                    return! loop newScreen  
+                | ShowChooseItemDialog(request) ->                
+                    let itemsToShow =
+                        List.filter request.Filter request.State.Player.Items                
+                    let newScreen =
+                        screen
+                        |> Array2D.copy
+                        |> cleanScreen
+                        |> if itemsToShow.Length > 0 then 
+                               listAllItems itemsToShow request.State.Player.ShortCuts 
+                           else 
+                               writeString (point 1 1) "No items"
+                    refreshScreen screen newScreen
+                    return! loop newScreen
+                | ShowEquipmentDialog(request) ->                
+                    let newScreen =
+                        screen
+                        |> Array2D.copy
+                        |> cleanScreen
+                        |> listWornItems
+                    refreshScreen screen newScreen
+                    return! loop newScreen
+                | ShowOptions(request) ->
+                    let newScreen =
+                        screen
+                        |> Array2D.copy
+                        |> cleanScreen
+                        |> showOptions request
+                    refreshScreen screen newScreen
+                    return! loop newScreen
+                | SetCursorPositionOnBoard(point, state) ->
+                    let realPosition = (Math.Min(boardFrameSize.Width, Math.Max(0, point.X - state.BoardFramePosition.X)),
+                                        Math.Min(boardFrameSize.Height, Math.Max(0, point.Y - state.BoardFramePosition.Y)))
+                    let place = state.Board.Places.[point.X,point.Y]
+                    let description = Place.GetDescription place (if state.Board.Type = LevelType.MainMap then getMainMapTileDetails point.X point.Y else String.Empty)
+                    let newScreen =
+                        screen
+                        |> Array2D.copy
+                        |> writeTemporalMessage description
+                    refreshScreen screen newScreen
+                    Console.SetCursorPosition(realPosition)
+                    return! loop newScreen
+                | DisplayComputerScreen(content, state) ->
+                    let newScreen = 
+                        screen
+                        |> Array2D.copy
+                        |> cleanPartOfScreen (Point(0,0)) boardFrameSize
+                        |> writeFromScreenContentBuilder (Point(0,0)) content ConsoleColor.DarkGreen
+                        |> writeStats state
+                    refreshScreen screen newScreen
+                    return! loop newScreen
+                | ShowFinishScreen(state) ->
+                    let newScreen =
+                        screen
+                        |> Array2D.copy
+                        |> cleanScreen
+                        |> writeFinishScreen(state)                    
+                    refreshScreen screen newScreen
+                    return! loop newScreen
+                | ShowDialog(dialog, values, viewRange, reply) ->
+                    let newScreen =
+                        screen
+                        |> Array2D.copy
+                        |> cleanScreen
+                        |> showDialog(dialog, values, viewRange)                    
+                    refreshScreen screen newScreen
+                    reply.Reply ()
+                    return! loop newScreen                
         }
         loop <| Array2D.create screenSize.Width screenSize.Height empty
     )
