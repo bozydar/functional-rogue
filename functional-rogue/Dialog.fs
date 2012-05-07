@@ -1,5 +1,4 @@
-﻿[<RequireQualifiedAccessAttribute>]
-module Dialog
+﻿module Dialog
 
 open System
 
@@ -21,6 +20,64 @@ type DecoratedText = {
     BGColor : ConsoleColor;
     FGColor : ConsoleColor;
 }
+
+type BG = { Color : ConsoleColor }
+    with 
+        static member Black = { Color = ConsoleColor.Black}
+        static member Blue = { Color = ConsoleColor.Blue}
+        static member Cyan = { Color = ConsoleColor.Cyan}
+        static member DarkBlue = { Color = ConsoleColor.DarkBlue}
+        static member DarkCyan = { Color = ConsoleColor.DarkCyan}
+        static member DarkGreen = { Color = ConsoleColor.DarkGreen}
+        static member DarkMagenta = { Color = ConsoleColor.DarkMagenta}
+        static member DarkRed = { Color = ConsoleColor.DarkRed}
+        static member DarkYellow = { Color = ConsoleColor.DarkYellow}
+        static member Gray = { Color = ConsoleColor.Gray}
+        static member Green = { Color = ConsoleColor.Green}
+        static member Magenta = { Color = ConsoleColor.Magenta}
+        static member Red = { Color = ConsoleColor.Red}
+        static member White = { Color = ConsoleColor.White}
+        static member Yellow = { Color = ConsoleColor.Yellow}
+
+type FG = { Color : ConsoleColor }
+    with 
+        static member Black = { Color = ConsoleColor.Black}
+        static member Blue = { Color = ConsoleColor.Blue}
+        static member Cyan = { Color = ConsoleColor.Cyan}
+        static member DarkBlue = { Color = ConsoleColor.DarkBlue}
+        static member DarkCyan = { Color = ConsoleColor.DarkCyan}
+        static member DarkGreen = { Color = ConsoleColor.DarkGreen}
+        static member DarkMagenta = { Color = ConsoleColor.DarkMagenta}
+        static member DarkRed = { Color = ConsoleColor.DarkRed}
+        static member DarkYellow = { Color = ConsoleColor.DarkYellow}
+        static member Gray = { Color = ConsoleColor.Gray}
+        static member Green = { Color = ConsoleColor.Green}
+        static member Magenta = { Color = ConsoleColor.Magenta}
+        static member Red = { Color = ConsoleColor.Red}
+        static member White = { Color = ConsoleColor.White}
+        static member Yellow = { Color = ConsoleColor.Yellow}
+
+
+
+type DecoratedTextBuilder (text : string, background : BG, foreground : FG) = 
+    member this.Text = text
+    member this.Background = background
+    member this.Foreground = foreground
+
+    new() = DecoratedTextBuilder("", BG.Black, FG.Gray)
+        
+
+    static member (=>) (me : DecoratedTextBuilder, text : string) =
+        DecoratedTextBuilder(text, me.Background, me.Foreground)
+
+    static member (=>) (me : DecoratedTextBuilder, foreground : FG) =
+        DecoratedTextBuilder(me.Text, me.Background, foreground)
+
+    static member (=>) (me : DecoratedTextBuilder, background : BG) =
+        DecoratedTextBuilder(me.Text, background, me.Foreground)
+
+    member this.ToDecoratedText = { Text = this.Text; BGColor = this.Background.Color; FGColor = this.Foreground.Color }
+
 
 let newDecoratedText text bg fg = { Text = text; BGColor = bg; FGColor = fg }
 
