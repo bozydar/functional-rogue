@@ -93,8 +93,8 @@ let toTextel item (highlighOption : ConsoleColor option) =
             if item.Features |> List.exists (fun feature -> match feature with | OnFire(value) -> true | _ -> false) then
                 let randomResult = rnd 10
                 match randomResult with
-                | value when value < 3 -> {Char = '&'; FGColor = ConsoleColor.Red; BGColor = ConsoleColor.Black}
-                | value when value < 6 -> {Char = '&'; FGColor = ConsoleColor.Yellow; BGColor = ConsoleColor.Black}
+                | value when value < 1 -> {Char = '&'; FGColor = ConsoleColor.Red; BGColor = ConsoleColor.Black}
+                | value when value < 2 -> {Char = '&'; FGColor = ConsoleColor.Yellow; BGColor = ConsoleColor.Black}
                 | _ -> result
             else
                 result
@@ -441,21 +441,24 @@ let private screenWritter () =
 
 
     MailboxProcessor<ScreenAgentMessage>.Start(fun inbox ->
-        let rec loop screen = async {
+        let rec loop lastMsg screen = async {
             if inbox.CurrentQueueLength = 0 then
                 do! (Async.Sleep(100))
                 if State.stateExists() then
-                    let currentState = State.get()
-                    let newScreen = 
-                        screen
-                        |> Array2D.copy
-                        |> writeBoard currentState.Board currentState.BoardFramePosition
-                        |> writeStats currentState
-                        |> writeLastTurnMessageIfAvailable currentState
-                    refreshScreen screen newScreen
-                    return! loop newScreen
+                    match lastMsg with
+                    | Some(ShowBoard(state)) ->
+                        let currentState = State.get()
+                        let newScreen = 
+                            screen
+                            |> Array2D.copy
+                            |> writeBoard currentState.Board currentState.BoardFramePosition
+                            |> writeStats currentState
+                            |> writeLastTurnMessageIfAvailable currentState
+                        refreshScreen screen newScreen
+                        return! loop lastMsg newScreen
+                    | _ -> return! loop None screen
                 else
-                    return! loop screen
+                    return! loop None screen
             else
                 let! msg = inbox.Receive()
 
@@ -468,7 +471,7 @@ let private screenWritter () =
                         |> writeStats state
                         |> writeLastTurnMessageIfAvailable state
                     refreshScreen screen newScreen
-                    return! loop newScreen
+                    return! loop (Some(msg)) newScreen
                 | ShowMessages(state) ->
                     let newScreen =
                         screen
@@ -476,7 +479,7 @@ let private screenWritter () =
                         |> cleanScreen
                         |> writeAllMessages state
                     refreshScreen screen newScreen
-                    return! loop newScreen                        
+                    return! loop (Some(msg)) newScreen                        
                 | ShowMainMenu(reply) -> 
                     let newScreen = 
                         screen
@@ -487,7 +490,7 @@ let private screenWritter () =
                     Console.SetCursorPosition(1, 2)
                     let name = Console.ReadLine()
                     reply.Reply({Name = name})
-                    return! loop newScreen  
+                    return! loop (Some(msg)) newScreen  
                 | ShowChooseItemDialog(request) ->                
                     let itemsToShow =
                         List.filter request.Filter request.State.Player.Items                
@@ -500,7 +503,7 @@ let private screenWritter () =
                            else 
                                writeString (point 1 1) "No items"
                     refreshScreen screen newScreen
-                    return! loop newScreen
+                    return! loop (Some(msg)) newScreen
                 | ShowEquipmentDialog(request) ->                
                     let newScreen =
                         screen
@@ -508,7 +511,7 @@ let private screenWritter () =
                         |> cleanScreen
                         |> listWornItems
                     refreshScreen screen newScreen
-                    return! loop newScreen
+                    return! loop (Some(msg)) newScreen
                 | ShowOptions(request) ->
                     let newScreen =
                         screen
@@ -516,7 +519,7 @@ let private screenWritter () =
                         |> cleanScreen
                         |> showOptions request
                     refreshScreen screen newScreen
-                    return! loop newScreen
+                    return! loop (Some(msg)) newScreen
                 | SetCursorPositionOnBoard(point, state) ->
                     let realPosition = (Math.Min(boardFrameSize.Width, Math.Max(0, point.X - state.BoardFramePosition.X)),
                                         Math.Min(boardFrameSize.Height, Math.Max(0, point.Y - state.BoardFramePosition.Y)))
@@ -528,7 +531,7 @@ let private screenWritter () =
                         |> writeTemporalMessage description
                     refreshScreen screen newScreen
                     Console.SetCursorPosition(realPosition)
-                    return! loop newScreen
+                    return! loop (Some(msg)) newScreen
                 | DisplayComputerScreen(content, state) ->
                     let newScreen = 
                         screen
@@ -537,7 +540,7 @@ let private screenWritter () =
                         |> writeFromScreenContentBuilder (Point(0,0)) content ConsoleColor.DarkGreen
                         |> writeStats state
                     refreshScreen screen newScreen
-                    return! loop newScreen
+                    return! loop (Some(msg)) newScreen
                 | ShowFinishScreen(state) ->
                     let newScreen =
                         screen
@@ -545,7 +548,7 @@ let private screenWritter () =
                         |> cleanScreen
                         |> writeFinishScreen(state)                    
                     refreshScreen screen newScreen
-                    return! loop newScreen
+                    return! loop (Some(msg)) newScreen
                 | ShowDialog(dialog, values, viewRange, reply) ->
                     let newScreen =
                         screen
@@ -554,9 +557,9 @@ let private screenWritter () =
                         |> showDialog(dialog, values, viewRange)                    
                     refreshScreen screen newScreen
                     reply.Reply ()
-                    return! loop newScreen                
+                    return! loop (Some(msg)) newScreen                
         }
-        loop <| Array2D.create screenSize.Width screenSize.Height empty
+        loop None <| Array2D.create screenSize.Width screenSize.Height empty
     )
 
 let evaluateBoardFramePosition state = 
