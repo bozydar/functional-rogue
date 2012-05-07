@@ -98,6 +98,9 @@ and ComputerNote = {
     Content : string;
 }
 
+type PlaceFeature =
+    | OnFire of int
+
 type Place = {
     Tile : Tile; 
     Items : Item list;
@@ -106,22 +109,23 @@ type Place = {
     IsSeen : bool;
     WasSeen : bool;
     TransportTarget : TransportTarget option;
-    ElectronicMachine : ElectronicMachine option
+    ElectronicMachine : ElectronicMachine option;
+    Features : PlaceFeature list
 } with
     static member EmptyPlace = 
-            {Tile = Tile.Empty; Items = []; Character = Option.None; IsSeen = false; WasSeen = Settings.EntireLevelSeen; Ore = NoneOre; TransportTarget = None; ElectronicMachine = None}
+            {Tile = Tile.Empty; Items = []; Character = Option.None; IsSeen = false; WasSeen = Settings.EntireLevelSeen; Ore = NoneOre; TransportTarget = None; ElectronicMachine = None; Features = [] }
     static member Wall = 
-            {Tile = Tile.Wall; Items = []; Character = Option.None; IsSeen = false; WasSeen = Settings.EntireLevelSeen; Ore = NoneOre; TransportTarget = None; ElectronicMachine = None }
+            {Tile = Tile.Wall; Items = []; Character = Option.None; IsSeen = false; WasSeen = Settings.EntireLevelSeen; Ore = NoneOre; TransportTarget = None; ElectronicMachine = None; Features = [] }
     static member Floor = 
-            {Tile = Tile.Floor; Items = []; Character = Option.None; IsSeen = false; WasSeen = Settings.EntireLevelSeen; Ore = NoneOre; TransportTarget = None; ElectronicMachine = None }
+            {Tile = Tile.Floor; Items = []; Character = Option.None; IsSeen = false; WasSeen = Settings.EntireLevelSeen; Ore = NoneOre; TransportTarget = None; ElectronicMachine = None; Features = [] }
     static member StairsDown = 
-            {Tile = Tile.StairsDown; Items = []; Character = Option.None; IsSeen = false; WasSeen = Settings.EntireLevelSeen; Ore = NoneOre; TransportTarget = None; ElectronicMachine = None }
+            {Tile = Tile.StairsDown; Items = []; Character = Option.None; IsSeen = false; WasSeen = Settings.EntireLevelSeen; Ore = NoneOre; TransportTarget = None; ElectronicMachine = None; Features = [] }
     static member ClosedDoor =
-            {Tile = Tile.ClosedDoor; Items = []; Character = Option.None; IsSeen = false; WasSeen = Settings.EntireLevelSeen; Ore = NoneOre; TransportTarget = None; ElectronicMachine = None }
+            {Tile = Tile.ClosedDoor; Items = []; Character = Option.None; IsSeen = false; WasSeen = Settings.EntireLevelSeen; Ore = NoneOre; TransportTarget = None; ElectronicMachine = None; Features = [] }
     static member Computer =
-            {Tile = Tile.Computer; Items = []; Character = Option.None; IsSeen = false; WasSeen = Settings.EntireLevelSeen; Ore = NoneOre; TransportTarget = None; ElectronicMachine = None }
+            {Tile = Tile.Computer; Items = []; Character = Option.None; IsSeen = false; WasSeen = Settings.EntireLevelSeen; Ore = NoneOre; TransportTarget = None; ElectronicMachine = None; Features = [] }
     static member Create tile =
-        {Tile = tile; Items = []; Character = Option.None; IsSeen = false; WasSeen = Settings.EntireLevelSeen; Ore = NoneOre; TransportTarget = None; ElectronicMachine = None }
+        {Tile = tile; Items = []; Character = Option.None; IsSeen = false; WasSeen = Settings.EntireLevelSeen; Ore = NoneOre; TransportTarget = None; ElectronicMachine = None; Features = [] }
     static member GetDescription (place: Place) additionalDescription =
         let tileDescription = 
             match place.Tile with
