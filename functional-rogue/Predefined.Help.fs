@@ -1,4 +1,8 @@
-﻿module Predefined.Help
+﻿[<RequireQualifiedAccessAttribute>]
+module Predefined.Help
+
+open System.Text.RegularExpressions
+open Dialog
 
 let commands = [
         "Up, 8", "Go north";
@@ -28,6 +32,27 @@ let commands = [
         "O", "???";
         "Ctrl-P", "Pour liquid";
         "?", "This help";
-
     ]
 
+let _commands = new DecoratedTextBuilder() => BG.Blue => FG.Red => "Up, 8"
+
+(*
+let _commands = BG.Red => FG.Black => "Up, 8" |> 
+
+
+let private expression = new Regex(@"\[(?<command>.*?)\]\{(?<content>.*[^\\]?)\}", RegexOptions.Multiline ||| RegexOptions.Compiled)
+
+let parseCommand (command : string) = 
+    if command.StartsWith("#") then
+        let hex = command.Substring(1)
+        let fg = hex
+
+let parse (text : string) = seq {
+    for line in text.Split("\n") do
+        for item in expression.Matches(text) do
+            item.Groups.["command"]
+    }
+
+let text = ["[#AA]{Up, 8} [#BB]{ - } Go north"]
+let text = ["[#AA]{Up, 8} [#BB]{ - } Go north"]
+*)
