@@ -426,7 +426,9 @@ let private screenWritter () =
                             yield! sequence (lastPosition + Size(dt1.Text.Length, 1)) tail
                 | Dialog.Textbox(input, _) ->
                     //yield Dialog.newDecoratedText "                           " ConsoleColor.Gray ConsoleColor.Black |> writeDecoratedText (point 0 i) 
-                    raise (new NotImplementedException())             
+                    raise (new NotImplementedException())    
+                | Dialog.Nothing ->      
+                    yield! sequence lastPosition tail  
         }
         screen |>> sequence (point 0 -yOffset) (Seq.toList dialog) 
 
