@@ -31,6 +31,18 @@ let breakStringIfTooLong (maxWidth: int) (text: string) =
         else
             [text]
 
+let itemToTextel (item : Item) =
+    match item.Type with
+    | Stick -> {Char = '|'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
+    | Rock  -> {Char = '*'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
+    | Sword | Knife -> {Char = '/'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
+    | Hat -> {Char = ']'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
+    | Corpse -> {Char = '%'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
+    | OreExtractor(_) -> {Char = '['; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
+    | Drone -> {Char = '^'; FGColor = ConsoleColor.Cyan; BGColor = ConsoleColor.Black}
+    | Injector -> {Char = '!'; FGColor = ConsoleColor.Red; BGColor = ConsoleColor.Black}
+    | SimpleContainer -> {Char = 'u'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
+
 let toTextel item (highlighOption : ConsoleColor option) =  
     if item.WasSeen then
         let result = 
@@ -47,16 +59,7 @@ let toTextel item (highlighOption : ConsoleColor option) =
             else
                 match item.Items with
                 | h::_ when not <| Set.contains item.Tile obstacles -> 
-                        match h.Type with 
-                        | Stick -> {Char = '|'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
-                        | Rock  -> {Char = '*'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
-                        | Sword | Knife -> {Char = '/'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
-                        | Hat -> {Char = ']'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
-                        | Corpse -> {Char = '%'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
-                        | OreExtractor(_) -> {Char = '['; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
-                        | Drone -> {Char = '^'; FGColor = ConsoleColor.Cyan; BGColor = ConsoleColor.Black}
-                        | Injector -> {Char = '!'; FGColor = ConsoleColor.Red; BGColor = ConsoleColor.Black}
-                        | SimpleContainer -> {Char = 'u'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
+                        itemToTextel h
                 | _ -> 
                     match item.Ore with
                     | Iron(_) -> {Char = '$'; FGColor = ConsoleColor.Black; BGColor = ConsoleColor.Gray}
@@ -199,6 +202,7 @@ type ScreenAgentMessage =
     | DisplayComputerScreen of ScreenContentBuilder * State
     | ShowFinishScreen of State
     | ShowDialog of Dialog.Dialog * Dialog.Result * Rectangle * AsyncReplyChannel<unit>
+    | ShowBoardAnimationFromFrame of State * int * (int -> textel[,] -> textel[,] option)
 
 and MainMenuReply = {
     Name: String
@@ -456,6 +460,20 @@ let private screenWritter () =
                             |> writeLastTurnMessageIfAvailable currentState
                         refreshScreen screen newScreen
                         return! loop lastMsg newScreen
+                    | Some(ShowBoardAnimationFromFrame(state, frame, animationFunction)) ->
+                        let newScreen = 
+                            screen
+                            |> Array2D.copy
+                            |> writeBoard state.Board state.BoardFramePosition
+                            |> writeStats state
+                            |> writeLastTurnMessageIfAvailable state
+                        let newAnimationScreenFrame = newScreen |> animationFunction frame
+                        if newAnimationScreenFrame.IsSome then
+                            refreshScreen screen newAnimationScreenFrame.Value
+                            return! loop (Some(ShowBoardAnimationFromFrame(state, frame + 1, animationFunction))) newScreen
+                        else
+                            refreshScreen screen newScreen
+                            return! loop (Some(ShowBoard(state))) newScreen
                     | _ -> return! loop None screen
                 else
                     return! loop None screen
@@ -472,6 +490,20 @@ let private screenWritter () =
                         |> writeLastTurnMessageIfAvailable state
                     refreshScreen screen newScreen
                     return! loop (Some(msg)) newScreen
+                | ShowBoardAnimationFromFrame(state, frame, animationFunction) ->
+                    let newScreen = 
+                        screen
+                        |> Array2D.copy
+                        |> writeBoard state.Board state.BoardFramePosition
+                        |> writeStats state
+                        |> writeLastTurnMessageIfAvailable state
+                    let newAnimationScreenFrame = newScreen |> animationFunction frame
+                    if newAnimationScreenFrame.IsSome then
+                        refreshScreen screen newAnimationScreenFrame.Value
+                        return! loop (Some(ShowBoardAnimationFromFrame(state, frame + 1, animationFunction))) newScreen
+                    else
+                        refreshScreen screen newScreen
+                        return! loop (Some(ShowBoard(state))) newScreen
                 | ShowMessages(state) ->
                     let newScreen =
                         screen
@@ -576,6 +608,7 @@ let evaluateBoardFramePosition state =
 let private agent = screenWritter ()
 
 let showBoard () = agent.Post (ShowBoard(State.get ()))
+let showAnimation animationFunction = agent.Post (ShowBoardAnimationFromFrame(State.get (), 0, animationFunction))
 //let showMainMenu () = agent.PostAndReply(fun reply -> ShowMainMenu(reply))
 let showChooseItemDialog items = agent.Post(ShowChooseItemDialog(items))
 let showEquipmentItemDialog items = agent.Post(ShowEquipmentDialog(items))

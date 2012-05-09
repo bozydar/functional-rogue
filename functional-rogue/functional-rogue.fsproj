@@ -72,6 +72,7 @@
     <Compile Include="Predefined.Help.fs" />
     <Compile Include="LevelGeneration.fs" />
     <Compile Include="Screen.fs" />
+    <Compile Include="Animation.fs" />
     <Compile Include="Computers.fs" />
     <Compile Include="ItemActions.fs" />
     <Compile Include="Actions.fs" />

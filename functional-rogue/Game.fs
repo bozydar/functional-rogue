@@ -91,6 +91,7 @@ let mainLoop () =
                 | Key 'O' -> ToggleSettingsMainMapHighlightPointsOfInterest
                 | Input (Input.ModifiedConsole(ConsoleKey.P, ConsoleModifiers.Control)) when isCtrl -> PourLiquid
                 | Key '?' -> Help
+                | Key 't' -> Throw
                 | _ -> Unknown                        
         
             match command with
@@ -132,6 +133,12 @@ let mainLoop () =
                 |> Actions.performDropAction
                 |> Turn.next
                 Screen.showBoard ()
+                loop false
+            | Throw ->
+                let oldState = State.get ()
+                let newState, animationFunction = oldState |> Actions.performThrowAction
+                if animationFunction.IsSome then Screen.showAnimation animationFunction.Value
+                newState |> Turn.next
                 loop false
             | OpenCloseDoor ->
                 State.get () 
