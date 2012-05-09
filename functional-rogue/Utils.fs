@@ -78,6 +78,31 @@ let swap (a: _[]) x y =
 let shuffleArray a =
     Array.iteri (fun i _ -> swap a i (r.Next(i, Array.length a))) a
 
+let getBresenhamLinePoints (fromPoint : Point) (toPoint : Point) =
+    let dx = Math.Abs(toPoint.X - fromPoint.X)
+    let dy = Math.Abs(toPoint.Y - fromPoint.Y)
+    let sx = if fromPoint.X < toPoint.X then 1 else -1
+    let sy = if fromPoint.Y < toPoint.Y then 1 else -1
+    let err = dx - dy
+    let rec loop (currentPoint : Point) toPoint dx dy sx sy err =
+        seq {
+            if currentPoint = toPoint then
+                yield currentPoint
+            else
+                yield currentPoint
+                let e2 = 2 * err
+                let nextCurrentX = if e2 > -dy then (currentPoint.X + sx) else currentPoint.X
+                let nextCurrentY = if e2 < dx then currentPoint.Y + sy else currentPoint.Y
+                let nextErr =
+                    match e2 with
+                    | value when value > -dy && value < dx -> err - dy + dx
+                    | value when value > -dy -> err - dy
+                    | value when value < dx -> err + dx
+                    | _ -> err
+                yield! loop (Point(nextCurrentX, nextCurrentY)) toPoint dx dy sx sy nextErr
+        }
+    loop fromPoint toPoint dx dy sx sy err
+
 module Map =    
     let tryGetItem key (map : Map<_,_>) =
         if map.ContainsKey key then Some(map.[key]) else None
