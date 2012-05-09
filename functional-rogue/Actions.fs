@@ -295,8 +295,8 @@ let performThrowAction state =
         Screen.showBoard ()
         let board = state.Board
         let playerPosition = getPlayerPosition board
-        //TODO: change the sightradius into throw radius or something based on strength
-        let points = visiblePositions playerPosition state.Player.SightRadius false board    
+        let strengthBasedThrowRadius = state.Player.Strength / 3
+        let points = visiblePositions playerPosition strengthBasedThrowRadius false board    
         let targetPoint = selectPlace points state
         if targetPoint.IsSome then
             state.Player.Items <- state.Player.Items |> List.filter (fun item -> item.Id <> itemToThrow.Value.Id)
