@@ -12,6 +12,7 @@ open Player
 open Characters
 open Computers
 open ItemActions
+open Animation
 
 type Command = 
     | Up
@@ -43,6 +44,7 @@ type Command =
     | Eat
     | PourLiquid
     | Help
+    | Throw
 
 let private commandToSize command = 
     match command with
@@ -286,6 +288,28 @@ let performDropAction state =
         { state with Board = newBoard }
     else
         state
+
+let performThrowAction state =
+    let itemToThrow = state.Player.Items |> chooseListItemThroughPagedDialog "Choose item to throw:" (fun item -> itemShortDescription item)
+    if itemToThrow.IsSome then
+        Screen.showBoard ()
+        let board = state.Board
+        let playerPosition = getPlayerPosition board
+        //TODO: change the sightradius into throw radius or something based on strength
+        let points = visiblePositions playerPosition state.Player.SightRadius false board    
+        let targetPoint = selectPlace points state
+        if targetPoint.IsSome then
+            state.Player.Items <- state.Player.Items |> List.filter (fun item -> item.Id <> itemToThrow.Value.Id)
+            let playerPosition = getPlayerPosition state.Board
+            let place = get state.Board targetPoint.Value
+            let newBoard = state.Board |> set targetPoint.Value {place with Items = itemToThrow.Value :: place.Items}
+            let itemTextel = itemToTextel itemToThrow.Value
+            let animationFunction = moveSingleTextelAnimationFunction itemTextel state.BoardFramePosition playerPosition targetPoint.Value
+            ({ state with Board = newBoard }, Some(animationFunction))
+        else
+            (state, Option.None)
+    else
+        (state, Option.None)
 
 let performHarvest state = 
     let playerPosition = getPlayerPosition state.Board
