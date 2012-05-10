@@ -31,8 +31,13 @@ type Dialog (sequence : seq<Widget>) =
         member this.GetEnumerator () : System.Collections.IEnumerator  =
             (sequence :> System.Collections.IEnumerable).GetEnumerator ()
 
-    with static member (+) (left : Dialog, right : Dialog) = new Dialog (Seq.append left right)
+    with 
+        static member (+) (left : Dialog, right : Dialog) = new Dialog (Seq.append left right)
+
+
+
 and Widget = 
+    | Nothing
     | CR
     | Title of string
     | Label of string
@@ -41,6 +46,7 @@ and Widget =
     | Subdialog of Input * string * Dialog
     | Raw of DecoratedText
     | Textbox of Input * string
+   
 with static member newDecoratedText (text, bg, fg) =
         Widget.Raw(newDecoratedText text bg fg)
 and OptionItem = string * string
