@@ -55,6 +55,7 @@
     <Compile Include="Quantity.fs" />
     <Compile Include="Config.fs" />
     <Compile Include="Dialog.fs" />
+    <Compile Include="DialogBuilder.fs" />
     <Compile Include="Log.fs" />
     <Compile Include="Characters.fs" />
     <Compile Include="Monsters.fs" />
