@@ -217,6 +217,10 @@ let mainLoop () =
             Dialog.Title("Create Hero");
             Dialog.Option(Input.Char 'a', "Class", "class", 
                 [ for item in Predefined.Classes.getClasses -> (item, item)]);
+            Dialog.Subdialog(Input.Char 'b', "Subdialog", Dialog.Dialog [
+                Dialog.Title("Submenu");
+                Dialog.Action(Input.Console ConsoleKey.Escape, "[escape]", "sub-result", "0");
+            ]);
             Dialog.Label("Actions");
             Dialog.Action(Input.Console ConsoleKey.Enter, "[enter]", "result", "1");
             Dialog.Action(Input.Console ConsoleKey.Escape, "[escape]", "result", "0");

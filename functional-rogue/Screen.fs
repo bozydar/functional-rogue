@@ -190,8 +190,9 @@ let private screenSize = new Size(79, 24)
 let private leftPanelPos = new Rectangle(61, 0, 19, 24)
 let private letterByInt (int: int) = Convert.ToChar(Convert.ToInt32('a') + int - 1)
 
+    
 
-type ScreenAgentMessage =
+type private ScreenAgentMessage =
     | ShowBoard of State
     | ShowMainMenu of AsyncReplyChannel<MainMenuReply>
     | ShowChooseItemDialog of ShowChooseItemDialogRequest
@@ -201,7 +202,7 @@ type ScreenAgentMessage =
     | SetCursorPositionOnBoard of Point * State
     | DisplayComputerScreen of ScreenContentBuilder * State
     | ShowFinishScreen of State
-    | ShowDialog of Dialog.Dialog * Dialog.Result * Rectangle * AsyncReplyChannel<unit>
+    | ShowDialog of Dialog.Dialog * Dialog.Result * Rectangle * AsyncReplyChannel<ShowDialogReply>
     | ShowBoardAnimationFromFrame of State * int * (int -> textel[,] -> textel[,] option)
 
 and MainMenuReply = {
@@ -222,6 +223,8 @@ and ShowChooseItemDialogRequest = {
     State: State;
     Filter: Item -> bool
 }
+and ShowDialogReply = { TopLinesClipped : int; BottomLinesClipped : int}
+
 
 let getHighlightForTile (board : Board) x y =
     if board.IsMainMap then
@@ -398,52 +401,87 @@ let private screenWritter () =
         )
         Console.SetCursorPosition(screenSize.Width, screenSize.Height)
 
-    let showDialog (dialog : Dialog.Dialog, dialogResult : Dialog.Result, region : Rectangle) screen =        
+    let showDialog (dialog : Dialog.Dialog, dialogResult : Dialog.Result, region : Rectangle) (screen : screen) =
         let yOffset = region.Top
-        let rec sequence (lastPosition : Point) (dialog : List<Dialog.Widget>) = seq {  
+        let rec sequence (position : Point) (dialog : List<Dialog.Widget>)  = seq {  
             match dialog with
             | [] -> ()
             | item::tail ->
-                let i = lastPosition.Y
-                let nextLine = point 0 (i)
+                let lineBeginning = point 0 position.Y
                 match item with
                 | Dialog.CR ->
-                    yield! sequence (point 0  (i + 1)) tail
+                    yield! sequence (point 0  (position.Y + 1)) tail
                 | Dialog.Title(text) -> 
-                    yield writeDecoratedText nextLine (Dialog.newDecoratedText text  ConsoleColor.White ConsoleColor.Black)
-                    yield! sequence (lastPosition + Size(text.Length, 1)) tail
+                    yield lineBeginning, writeDecoratedText lineBeginning (Dialog.newDecoratedText text  ConsoleColor.White ConsoleColor.Black)
+                    yield! sequence (position + Size(text.Length, 1)) tail
                 | Dialog.Label(text) ->
-                    yield writeDecoratedText nextLine (Dialog.newDecoratedText text  ConsoleColor.Black ConsoleColor.Gray)
-                    yield! sequence (lastPosition + Size(text.Length, 1)) tail
+                    yield lineBeginning, writeDecoratedText lineBeginning (Dialog.newDecoratedText text  ConsoleColor.Black ConsoleColor.Gray)
+                    yield! sequence (position + Size(text.Length, 1)) tail
                 | Dialog.Raw(decoratedText) ->
-                    yield writeDecoratedText lastPosition decoratedText
-                    yield! sequence (lastPosition + Size(decoratedText.Text.Length, 0)) tail
+                    yield position, writeDecoratedText position decoratedText
+                    yield! sequence (position + Size(decoratedText.Text.Length, 0)) tail
                 | Dialog.Action(input, text, _, _) ->
                     let dt1 = Dialog.newDecoratedText (input.ToString() + " - " + text) ConsoleColor.Black ConsoleColor.White 
-                    yield writeDecoratedText nextLine dt1
-                    yield! sequence (lastPosition + Size(dt1.Text.Length, 1)) tail
+                    yield lineBeginning, writeDecoratedText lineBeginning dt1
+                    yield! sequence (position + Size(dt1.Text.Length, 1)) tail
                 | Dialog.Subdialog(input, text, _) ->
                     let dt1 = Dialog.newDecoratedText (input.ToString() + " - " + text) ConsoleColor.Black ConsoleColor.White 
-                    yield writeDecoratedText nextLine dt1
-                    yield! sequence (lastPosition + Size(dt1.Text.Length, 1)) tail
+                    yield lineBeginning, writeDecoratedText lineBeginning dt1
+                    yield! sequence (position + Size(dt1.Text.Length, 1)) tail
                 | Dialog.Option(input, text, varName, optionItems) ->
                     let dt1 = Dialog.newDecoratedText (input.ToString() + " - " + text) ConsoleColor.Black ConsoleColor.White 
-                    yield writeDecoratedText nextLine dt1
+                    yield lineBeginning, writeDecoratedText lineBeginning dt1
                     if dialogResult.ContainsKey(varName) then
                         let selectedItem = List.tryFind (fun item -> snd item = dialogResult.[varName]) optionItems
                         if selectedItem.IsSome then
                             let dt3 = Dialog.newDecoratedText (fst selectedItem.Value) ConsoleColor.Black ConsoleColor.Gray
-                            yield writeDecoratedText (point (dt1.Text.Length + 2) i) dt3
-                            yield! sequence (lastPosition + Size(dt1.Text.Length + 2 + dt3.Text.Length, 1)) tail
+                            let p = point (dt1.Text.Length + 2) position.Y
+                            yield p, writeDecoratedText p dt3
+                            yield! sequence (position + Size(dt1.Text.Length + 2 + dt3.Text.Length, 1)) tail
                         else
-                            yield! sequence (lastPosition + Size(dt1.Text.Length, 1)) tail
+                            yield! sequence (position + Size(dt1.Text.Length, 1)) tail
                 | Dialog.Textbox(input, _) ->
                     //yield Dialog.newDecoratedText "                           " ConsoleColor.Gray ConsoleColor.Black |> writeDecoratedText (point 0 i) 
                     raise (new NotImplementedException())    
                 | Dialog.Nothing ->      
-                    yield! sequence lastPosition tail  
+                    yield! sequence position tail  
         }
-        screen |>> sequence (point 0 -yOffset) (Seq.toList dialog) 
+        let changesAndPoints = sequence (point 0 -yOffset) (Seq.toList dialog)
+
+        let topClipped = changesAndPoints |> Seq.filter (fun (position, func) -> position.Y < 0)
+        let bottomClipped = changesAndPoints |> Seq.filter (fun (position, func) -> position.Y > (screen.GetLength(1) - 1))
+        let toApply = changesAndPoints |> Seq.filter (fun (position, func) -> position.Y > (screen.GetLength(1) - 1))
+        
+        let result = 
+            changesAndPoints 
+            |> Seq.groupBy (fun (position, func) -> 
+                if position.Y < 0 then
+                    -1
+                elif position.Y > (screen.GetLength(1) - 1) then
+                    1
+                else
+                    0)
+        let topClipped = 
+            result
+            |> Seq.filter (fun item -> -1 = fst item )
+            |> Seq.collect (fun item -> snd item)
+            |> Seq.map fst
+            |> Seq.sumBy (fun item -> item.Y)
+
+        let bottomClipped = 
+            result
+            |> Seq.filter (fun item -> 1 = fst item )
+            |> Seq.collect (fun item -> snd item)
+            |> Seq.map fst
+            |> Seq.sumBy (fun item -> item.Y)
+
+        let toApply = 
+            result
+            |> Seq.filter (fun item -> 0 = fst item )
+            |> Seq.collect (fun item -> snd item)
+            |> Seq.map snd
+        
+        screen |>> toApply, { TopLinesClipped = -topClipped; BottomLinesClipped = bottomClipped }
 
 
     MailboxProcessor<ScreenAgentMessage>.Start(fun inbox ->
@@ -584,13 +622,13 @@ let private screenWritter () =
                     refreshScreen screen newScreen
                     return! loop (Some(msg)) newScreen
                 | ShowDialog(dialog, values, viewRange, reply) ->
-                    let newScreen =
+                    let newScreen, showDialogReply =
                         screen
                         |> Array2D.copy
                         |> cleanScreen
                         |> showDialog(dialog, values, viewRange)                    
                     refreshScreen screen newScreen
-                    reply.Reply ()
+                    reply.Reply showDialogReply
                     return! loop (Some(msg)) newScreen                
         }
         loop None <| Array2D.create screenSize.Width screenSize.Height empty
@@ -621,7 +659,6 @@ let showOptions options  = agent.Post(ShowOptions(options))
 let showFinishScreen state  = agent.Post(ShowFinishScreen(state))
 let rec showDialog (dialog : Dialog.Dialog, dialogResult : Dialog.Result) : Dialog.Result = 
     let startingPosition = new Rectangle(0, 0, screenSize.Width, screenSize.Height)
-    agent.PostAndReply (fun reply -> ShowDialog(dialog, dialogResult, startingPosition, reply))
     let findMenuItemsInDialog key dialog : option<Dialog.Widget> = 
         dialog    
         |> Seq.tryPick (function 
@@ -630,7 +667,7 @@ let rec showDialog (dialog : Dialog.Dialog, dialogResult : Dialog.Result) : Dial
             | Dialog.Option(itemKey, _, varName, _) as item when Keyboard.isKeyInput itemKey key -> Some(item)
             | _ -> None)    
     let rec loop dialogResult position : Dialog.Result =
-        agent.PostAndReply (fun reply -> ShowDialog(dialog, dialogResult, position, reply))
+        let showDialogReply = agent.PostAndReply (fun reply -> ShowDialog(dialog, dialogResult, position, reply))
         let key = Console.ReadKey(true)
         let selectedWidget = 
             (key, dialog)
@@ -639,10 +676,10 @@ let rec showDialog (dialog : Dialog.Dialog, dialogResult : Dialog.Result) : Dial
             match selectedWidget.Value with
                 | Dialog.Action(_, _, varName, value) -> 
                     Dialog.replaceWith (dialogResult, Dialog.newResult [(varName, value)])
+                // TODO: Check this!!! I think that should be only one call to agent in whole showDialog fun
                 | Dialog.Subdialog(_, _, subdialog) -> 
-                    let result = showDialog (subdialog, dialogResult)
-                    agent.PostAndReply (fun reply -> ShowDialog(dialog, result, position, reply))
-                    Dialog.replaceWith (result, loop dialogResult position)
+                    let subResult = showDialog (subdialog, dialogResult)
+                    Dialog.replaceWith (subResult, loop dialogResult position)
                 | Dialog.Option(_, _, varName, optionItems) ->        
                     let foundValueIndex =
                         if dialogResult.ContainsKey(varName) then
@@ -663,10 +700,10 @@ let rec showDialog (dialog : Dialog.Dialog, dialogResult : Dialog.Result) : Dial
         else
             let newPosition = 
                 match key with // moving in X axi is not possible right now
-                | Key ConsoleKey.UpArrow -> new Rectangle(position.X, position.Y - 1, position.Width, position.Height)
-                | Key ConsoleKey.DownArrow -> new Rectangle(position.X, position.Y + 1, position.Width, position.Height)
-                | Key ConsoleKey.PageUp -> new Rectangle(position.X, position.Y - screenSize.Height, position.Width, position.Height)
-                | Key ConsoleKey.PageDown -> new Rectangle(position.X, position.Y + screenSize.Height, position.Width, position.Height)
+                | Key ConsoleKey.UpArrow when showDialogReply.TopLinesClipped > 0 -> new Rectangle(position.X, position.Y - 1, position.Width, position.Height)
+                | Key ConsoleKey.DownArrow when showDialogReply.BottomLinesClipped > 0 -> new Rectangle(position.X, position.Y + 1, position.Width, position.Height)
+                | Key ConsoleKey.PageUp when showDialogReply.TopLinesClipped > 0 -> new Rectangle(position.X, position.Y - screenSize.Height, position.Width, position.Height)
+                | Key ConsoleKey.PageDown when showDialogReply.BottomLinesClipped > 0 -> new Rectangle(position.X, position.Y + screenSize.Height, position.Width, position.Height)
                 | _ -> position
             loop dialogResult newPosition
     loop dialogResult startingPosition
