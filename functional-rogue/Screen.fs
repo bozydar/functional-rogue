@@ -403,13 +403,24 @@ let private screenWritter () =
 
     let showDialog (dialog : Dialog.Dialog, dialogResult : Dialog.Result, region : Rectangle) (screen : screen) =
         let yOffset = region.Top
-        let rec sequence (position : Point) (dialog : List<Dialog.Widget>)  = seq {  
+        let rec sequence (position : Point) (dialog : List<Dialog.IWidget>)  = seq {  
             match dialog with
             | [] -> ()
             | item::tail ->
                 let lineBeginning = point 0 position.Y
+                let texts = 
+                    (item :> Dialog.IWidget).Render(dialogResult) 
+                    |> Seq.map (fun text -> text.Text) 
+                    |> Seq.toList
+
+                let newPoint = 
+                    texts
+                    |> Seq.map (fun p item -> p + if item.Text = "\n" then point 0 1 else point (item.Text.Length) 0) position
+
+                yield lineBeginning, writeDecoratedText lineBeginning 
+
                 match item with
-                | Dialog.CR ->
+                | :?> Dialog.CR ->
                     yield! sequence (point 0  (position.Y + 1)) tail
                 | Dialog.Title(text) -> 
                     yield lineBeginning, writeDecoratedText lineBeginning (Dialog.newDecoratedText text  ConsoleColor.White ConsoleColor.Black)
