@@ -52,7 +52,7 @@ type DialogBuilder (background : BG, foreground : FG, ?dialog : Dialog.Dialog) =
     static member (=>) (me : DialogBuilder, text : string) =
         let widget = 
             if text = "\n" then 
-                Dialog.CR
+                Dialog.CR()
             else
                 Dialog.Widget.Raw (Dialog.newDecoratedText text me.Background.Color  me.Foreground.Color)
         DialogBuilder(me.Background, me.Foreground, me.Dialog + Dialog.Dialog([widget]))
