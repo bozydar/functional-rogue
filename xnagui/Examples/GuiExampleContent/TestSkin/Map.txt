@@ -1,0 +1,17 @@
+button = 84 0 5 20 , HorizontalSlidingDoorRenderer , 3 , 2 , 2
+button_hover = 51 34 5 20 , HorizontalSlidingDoorRenderer , 3 , 2 , 2
+button_pushed = 90 0 5 20 , HorizontalSlidingDoorRenderer , 3 , 2 , 2
+checkbox = 17 0 16 16 , IconRenderer
+checkbox_checked = 17 17 16 16 , IconRenderer
+checkbox_hover = 34 0 16 16 , IconRenderer
+checkbox_hover_checked = 34 17 16 16 , IconRenderer
+cursor = 0 52 1 2 , IconRenderer
+panel = 0 0 8 24 , BorderRenderer , 4 , 8
+radio_button = 17 34 16 16 , IconRenderer
+radio_button_checked = 34 34 16 16 , IconRenderer
+radio_button_hover = 51 0 16 16 , IconRenderer
+radio_button_hover_checked = 51 17 16 16 , IconRenderer
+scrollbar_bar = 57 34 2 14 , HorizontalSlidingDoorRenderer , 1 , 1 , 1
+scrollbar_bar_vertical = 0 49 14 2 , VerticalSlidingDoorRenderer , 1 , 1 , 1
+scrollbar_holder = 68 0 15 14 , HorizontalSlidingDoorRenderer , 1 , 14 , 14
+scrollbar_holder_vertical = 68 15 14 15 , VerticalSlidingDoorRenderer , 1 , 14 , 14
