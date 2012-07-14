@@ -90,31 +90,31 @@ namespace Ruminate.GUI {
         #region Events
 
         /// <summary>Event raised when a character has been entered.</summary>		
-        public static event CharEnteredHandler CharEntered;
+        public static CharEnteredHandler CharEntered;
 
         /// <summary>Event raised when a key has been pressed down. May fire multiple times due to keyboard repeat.</summary>		
-        public static event KeyEventHandler KeyDown;
+        public static KeyEventHandler KeyDown;
 
         /// <summary>Event raised when a key has been released.</summary>
-        public static event KeyEventHandler KeyUp;
+        public static KeyEventHandler KeyUp;
 
         /// <summary>Event raised when a mouse button is pressed.</summary>
-        public static event MouseEventHandler MouseDown;
+        public static MouseEventHandler MouseDown;
 
         /// <summary>Event raised when a mouse button is released.</summary>	
-        public static event MouseEventHandler MouseUp;
+        public static MouseEventHandler MouseUp;
 
         /// <summary>Event raised when the mouse changes location.</summary>
-        public static event MouseEventHandler MouseMove;
+        public static MouseEventHandler MouseMove;
 
         /// <summary>Event raised when the mouse has hovered in the same location for a short period of time.</summary>		
-        public static event MouseEventHandler MouseHover;
+        public static MouseEventHandler MouseHover;
 
         /// <summary>Event raised when the mouse wheel has been moved.</summary>	
-        public static event MouseEventHandler MouseWheel;
+        public static MouseEventHandler MouseWheel;
 
         /// <summary>Event raised when a mouse button has been double clicked.</summary>	
-        public static event MouseEventHandler MouseDoubleClick;
+        public static MouseEventHandler MouseDoubleClick;
 
         #endregion
 

@@ -1,11 +1,13 @@
 using System;
 using Ruminate.DataStructures;
 
-namespace Ruminate.GUI.Framework {
+namespace Ruminate.GUI.Framework
+{
 
     // Handles/triggers all of the mouse or keyboard events. State management occurs 
     // asynchronously while triggers are handled synchronously.
-    internal class InputManager {
+    internal class InputManager
+    {
 
         private readonly Root<Widget> _dom;
 
@@ -13,12 +15,16 @@ namespace Ruminate.GUI.Framework {
         // specified by their names. Used to trigger events and by the element
         // class to see what state the element is in. 
         private Widget _hoverElement;
-        internal Widget HoverElement {
-            get {
+        internal Widget HoverElement
+        {
+            get
+            {
                 return _hoverElement;
-            } private set {
+            }
+            private set
+            {
                 if (value == _hoverElement) { return; }
-                if (value != null) { value.EnterHover(); } 
+                if (value != null) { value.EnterHover(); }
                 if (_hoverElement != null) { _hoverElement.ExitHover(); }
                 _hoverElement = value;
             }
@@ -26,10 +32,14 @@ namespace Ruminate.GUI.Framework {
 
         //TODO: Combine into type
         private Widget _pressedElement;
-        internal Widget PressedElement {
-            get {
+        internal Widget PressedElement
+        {
+            get
+            {
                 return _pressedElement;
-            } private set {
+            }
+            private set
+            {
                 if (value == _pressedElement) { return; }
                 if (value != null) { value.EnterPressed(); }
                 if (_pressedElement != null) { _pressedElement.ExitPressed(); }
@@ -38,10 +48,14 @@ namespace Ruminate.GUI.Framework {
         }
 
         private Widget _focusedElement;
-        internal Widget FocusedElement {
-            get {
+        internal Widget FocusedElement
+        {
+            get
+            {
                 return _focusedElement;
-            } private set {
+            }
+            private set
+            {
                 if (value == _focusedElement) { return; }
                 if (value != null) { value.EnterFocus(); }
                 if (_focusedElement != null) { _focusedElement.ExitFocus(); }
@@ -51,129 +65,136 @@ namespace Ruminate.GUI.Framework {
 
         private static InputManager _currentInstance;
 
-        internal InputManager(Root<Widget> dom) {
+        internal InputManager(Root<Widget> dom)
+        {
             _dom = dom;
 
-            /* ## Input Events to Manage Internal State ## */
-            #region Manage Internal State
-
-            InputSystem.MouseMove += delegate {
+            InputSystem.MouseMove = delegate(object sender, MouseEventArgs eventArgs)
+            {
 
                 HoverElement = null;
-                foreach (var child in _dom.Children) { FindHover(child); }
+                foreach (var child in _dom.Children)
+                {
+                    FindHover(child);
+                }
+
                 if (PressedElement == null) { return; }
 
-                if (!PressedElement.AbsoluteInputArea.Contains(InputSystem.MouseLocation)) {
+                if (!PressedElement.AbsoluteInputArea.Contains(InputSystem.MouseLocation))
+                {
                     PressedElement = null;
                 }
-            };
-
-            InputSystem.MouseUp += delegate(Object o, MouseEventArgs e) {
-
-                if (PressedElement != null) {
-                    PressedElement.MouseClick(e);
+                if (FocusedElement != null)
+                {
+                    FocusedElement.MouseMove(eventArgs);
                 }
 
+            };
+
+            InputSystem.MouseUp = delegate(Object o, MouseEventArgs e)
+            {
+
+                if (PressedElement != null)
+                {
+                    PressedElement.MouseClick(e);
+                }
                 PressedElement = null;
+                if (FocusedElement != null)
+                {
+                    FocusedElement.MouseUp(e);
+                }
             };
 
-            InputSystem.MouseDown += delegate {
-
-                if (HoverElement == null) { return; }
+            InputSystem.MouseDown = delegate(Object o, MouseEventArgs e)
+            {
+                if (HoverElement == null)
+                {
+                    return;
+                }
 
                 FocusedElement = HoverElement;
                 PressedElement = HoverElement;
+                FocusedElement.MouseDown(e);
             };
 
-            InputSystem.MouseDoubleClick += delegate {
-
-                if (HoverElement == null) { return; }
+            InputSystem.MouseDoubleClick = delegate(Object o, MouseEventArgs e)
+            {
+                if (HoverElement == null)
+                {
+                    return;
+                }
 
                 FocusedElement = HoverElement;
                 PressedElement = HoverElement;
+                FocusedElement.MouseDoubleClick(e);
             };
-            #endregion
 
-            /* ## Input Events to fire the focused element's event handlers ## */
-            #region Element Triggers
-
-            InputSystem.CharEntered += delegate(Object o, CharacterEventArgs e) {
-                if (FocusedElement != null) {
+            InputSystem.CharEntered = delegate(Object o, CharacterEventArgs e)
+            {
+                if (FocusedElement != null)
+                {
                     FocusedElement.CharEntered(e);
                 }
             };
 
-            InputSystem.KeyDown += delegate(Object o, KeyEventArgs e) {
-                if (FocusedElement != null) {
+            InputSystem.KeyDown = delegate(Object o, KeyEventArgs e)
+            {
+                if (FocusedElement != null)
+                {
                     FocusedElement.KeyDown(e);
                 }
             };
 
-            InputSystem.KeyUp += delegate(Object o, KeyEventArgs e) {
-                if (FocusedElement != null) {
+            InputSystem.KeyUp = delegate(Object o, KeyEventArgs e)
+            {
+                if (FocusedElement != null)
+                {
                     FocusedElement.KeyUp(e);
                 }
             };
 
-            InputSystem.MouseDoubleClick += delegate(Object o, MouseEventArgs e) {
-                if (FocusedElement != null) {
-                    FocusedElement.MouseDoubleClick(e);
-                }
-            };
-
-            InputSystem.MouseDown += delegate(Object o, MouseEventArgs e) {
-                if (FocusedElement != null) {
-                    FocusedElement.MouseDown(e);
-                }
-            };
-
-            InputSystem.MouseHover += delegate(Object o, MouseEventArgs e) {
-                if (FocusedElement != null) {
+            InputSystem.MouseHover = delegate(Object o, MouseEventArgs e)
+            {
+                if (FocusedElement != null)
+                {
                     FocusedElement.MouseHover(e);
                 }
             };
 
-            InputSystem.MouseMove += delegate(Object o, MouseEventArgs e) {
-                if (FocusedElement != null) {
-                    FocusedElement.MouseMove(e);
-                }
-            };
-
-            InputSystem.MouseUp += delegate(Object o, MouseEventArgs e) {
-                if (FocusedElement != null) {
-                    FocusedElement.MouseUp(e);
-                }                
-            };
-
-            InputSystem.MouseWheel += delegate(Object o, MouseEventArgs e) {
-                if (FocusedElement != null) {
+            InputSystem.MouseWheel = delegate(Object o, MouseEventArgs e)
+            {
+                if (FocusedElement != null)
+                {
                     FocusedElement.MouseWheel(e);
                 }
             };
-
-            #endregion
 
             _currentInstance = this;
         }
 
         // Finds the element the mouse is currently being hovered over.
-        private void FindHover(TreeNode<Widget> node) {
+        private void FindHover(TreeNode<Widget> node)
+        {
 
-            if (!node.Data.AbsoluteArea.Contains(InputSystem.MouseLocation)) {
+            if (!node.Data.AbsoluteArea.Contains(InputSystem.MouseLocation))
+            {
                 return;
             }
 
-            if (node.Parent.Data != null && !node.Parent.Data.AbsoluteInputArea.Contains(InputSystem.MouseLocation)) {
+            if (node.Parent.Data != null && !node.Parent.Data.AbsoluteInputArea.Contains(InputSystem.MouseLocation))
+            {
                 return;
             }
 
-            if (!node.Data.Active || !node.Data.Visible) {
+            if (!node.Data.Active || !node.Data.Visible)
+            {
                 return;
             }
 
-            HoverElement = node.Data;            
-           
-            foreach (var child in node.Children) {
+            HoverElement = node.Data;
+
+            foreach (var child in node.Children)
+            {
                 FindHover(child);
             }
         }
