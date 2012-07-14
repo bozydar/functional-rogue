@@ -40,5 +40,9 @@ and public IClient =
 
 and public IServer = interface end
 
-type Server(client : IClient) =
-    interface IServer
+
+type IScreenManager = 
+    abstract member Switch : ScreenManagerState -> unit
+
+type IDispatcher =
+    abstract member Register : obj -> unit

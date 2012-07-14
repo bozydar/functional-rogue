@@ -1,6 +1,10 @@
 ﻿namespace Server
 open Screens
 
+type Server(client : IClient) as this =
+    do Dispatcher.instance.Server <- this
+    interface IServer
+
 module Instance =
     
     [<CompiledNameAttribute("Connect")>]
@@ -14,4 +18,4 @@ module Instance =
 //            result
 
         let server = Server(client)
-        client.Show(new MainMenu(client, server))
+        Dispatcher.instance.ScreenManager.Switch(ScreenManagerState.MainMenu)

@@ -7,28 +7,24 @@ open Ruminate.GUI.Framework
 open Ruminate.GUI.Content
 open Server
 
-type MainMenu(client : IClient, server : IServer) = 
+type MainMenu(client : IClient, server : IServer, screenManager : IScreenManager) = 
     inherit Screen()
-    [<DefaultValue>] val mutable OptionsMenu : OptionsMenu
-    [<DefaultValue>] val mutable BoardScreen : BoardScreen
 
     override this.CreateChildren () =
         this.Gui.Widgets <- [| 
             Button(10, 30, "New Game", 2, this.NewGame)
-            Button(10, 60, "Tralala", 2, this.ShowOptions)
+            Button(10, 60, "Options", 2, this.ShowOptions)
             Button(10, 90, "Exit", 2, this.Exit)
         |]
-        this.OptionsMenu <- OptionsMenu(fun _ -> client.Show(this))
-        this.BoardScreen <- BoardScreen(client, server)
-        
+
     member private this.Exit _ =
         client.Exit()
 
     member private this.ShowOptions _ =
-        client.Show(this.OptionsMenu)
+        screenManager.Switch ScreenManagerState.OptionsMenu
 
     member private this.NewGame _ =
-        client.Show(this.BoardScreen)
+        screenManager.Switch ScreenManagerState.BoardScreen
 
 and OptionsMenu(back) =
     inherit Screen()
