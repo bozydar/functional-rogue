@@ -13,5 +13,5 @@ module Instance =
 //                | MainMenu.Options -> client.Show())
 //            result
 
-        client.Show(new MainMenu(client))
-        Server(client)
+        let server = Server(client)
+        client.Show(new MainMenu(client, server))
