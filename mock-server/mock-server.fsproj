@@ -48,10 +48,13 @@
     <Reference Include="System.Numerics" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="DataStructures.fs" />
     <Compile Include="Interfaces.fs" />
+    <Compile Include="Dispatcher.fs" />
     <Compile Include="BoardScreen.fs" />
     <Compile Include="OptionScreens.fs" />
     <Compile Include="Instance.fs" />
+    <Compile Include="ScreenManager.fs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\xnagui\GuiContent\GuiContent.csproj">
