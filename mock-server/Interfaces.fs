@@ -16,9 +16,12 @@ type Screen () =
     abstract member Init : Game -> Skin -> TextRenderer -> unit 
     default this.Init game skin textRenderer =
         if not this.IsInitialized then
-            this.Gui <- Gui(game, skin, textRenderer)        
+            this.Gui <- Gui(game, skin, textRenderer)    
+            this.Gui.BindInput ()    
             this.CreateChildren ()
             this.IsInitialized <- true
+        else
+            this.Gui.BindInput ()
 
     abstract member CreateChildren : unit -> unit
     abstract member Unload : unit -> unit

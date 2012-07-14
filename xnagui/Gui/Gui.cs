@@ -6,33 +6,22 @@ using Ruminate.DataStructures;
 namespace Ruminate.GUI.Framework {
 
     public class Gui {
-       
-        // Internal System Managers
+
+        private Root<Widget> Dom { get; set; }
         internal InputManager InputManager { get; private set; }
         internal RenderManager RenderManager { get; private set; }
 
-        /*####################################################################*/
-        /*                           Initialization                           */
-        /*####################################################################*/
-
         public Gui(Game game, Skin defaultSkin, TextRenderer defaultTextRenderer) {            
-
             InputSystem.Initialize(game.Window);                        
-
             InitDom();
-
-            InputManager = new InputManager(Dom);
             RenderManager = new RenderManager(game.GraphicsDevice);
-
-            SetDefaultSettings(game, defaultSkin, defaultTextRenderer);            
+            SetDefaultSettings(game, defaultSkin, defaultTextRenderer);
         }
 
-        /*####################################################################*/
-        /*                            Dom Management                          */
-        /*####################################################################*/
-
-        //Dom Management
-        private Root<Widget> Dom { get; set; }
+        public void BindInput()
+        {
+            InputManager = new InputManager(Dom);
+        }
 
         private void InitDom() {
             Dom = new Root<Widget>();
@@ -65,10 +54,6 @@ namespace Ruminate.GUI.Framework {
         public void RemoveWidget(Widget widget) {
             Dom.RemoveChild(widget);
         }
-
-        /*####################################################################*/
-        /*                              Settings                              */
-        /*####################################################################*/
 
         #region Settings
 
@@ -126,12 +111,6 @@ namespace Ruminate.GUI.Framework {
 
         #endregion
 
-        /*####################################################################*/
-        /*                        Event Based Input                           */
-        /*####################################################################*/
-
-        #region Input
-
         public bool HasMouse { get { return InputManager.HoverElement != null; } }
 
         public event CharEnteredHandler CharEntered {
@@ -173,12 +152,6 @@ namespace Ruminate.GUI.Framework {
             add { InputSystem.MouseWheel += value; }
             remove { InputSystem.MouseWheel -= value; }
         }
-
-        #endregion
-
-        /*####################################################################*/
-        /*                             Game Loop                              */
-        /*####################################################################*/
 
         public void Update() {
 
