@@ -1,4 +1,4 @@
-﻿namespace Server
+﻿namespace View
 
 open System.Collections.Generic
 open System
@@ -6,7 +6,6 @@ open Microsoft.FSharp.Metadata
 
 module Dispatcher =
     
-    // load all modules
     let private instantiate name (args : obj[])=
         let asm = System.Reflection.Assembly.GetCallingAssembly()
         let fasm = FSharpAssembly.FromAssembly (asm)
@@ -21,7 +20,7 @@ module Dispatcher =
         do
             this.Client <- client
             this.Server <- server
-            this.ScreenManager <- instantiate "ScreenManager.ScreenManager" [| this.Client; this.Server |] :?> IScreenManager
+            this.ScreenManager <- instantiate "View.ScreenManager" [| this.Client; this.Server |] :?> IScreenManager
        
     let mutable private _instance : option<Dispatcher> = None
     let instance () = _instance.Value

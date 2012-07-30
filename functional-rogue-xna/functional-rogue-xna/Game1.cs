@@ -11,8 +11,7 @@ using Microsoft.Xna.Framework.Input;
 using Microsoft.Xna.Framework.Media;
 using Ruminate.GUI.Content;
 using Ruminate.GUI.Framework;
-using Screens;
-using Server;
+using View;
 
 namespace functional_rogue_xna
 {
