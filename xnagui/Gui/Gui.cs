@@ -55,8 +55,6 @@ namespace Ruminate.GUI.Framework {
             Dom.RemoveChild(widget);
         }
 
-        #region Settings
-
         private void SetDefaultSettings(Game game, Skin defaultSkin, TextRenderer defaultTextRenderer) {
 
             DefaultScrollSpeed = 3;
@@ -109,48 +107,46 @@ namespace Ruminate.GUI.Framework {
             RenderManager.AddTextRenderer(name, renderer);
         }
 
-        #endregion
-
         public bool HasMouse { get { return InputManager.HoverElement != null; } }
 
         public event CharEnteredHandler CharEntered {
-            add { InputSystem.CharEntered += value; }
-            remove { InputSystem.CharEntered -= value; }
+            add { InputManager.CharEntered += value; }
+            remove { InputManager.CharEntered -= value; }
         }
 
         public event KeyEventHandler KeyDown {
-            add { InputSystem.KeyDown += value; }
-            remove { InputSystem.KeyDown -= value; }
+            add { InputManager.KeyDown += value; }
+            remove { InputManager.KeyDown -= value; }
         }
 
         public event KeyEventHandler KeyUp {
-            add { InputSystem.KeyUp += value; }
-            remove { InputSystem.KeyUp -= value; }
+            add { InputManager.KeyUp += value; }
+            remove { InputManager.KeyUp -= value; }
         }
 
         public event MouseEventHandler MouseDoubleClick {
-            add { InputSystem.MouseDoubleClick += value; }
-            remove { InputSystem.MouseDoubleClick -= value; }
+            add { InputManager.MouseDoubleClick += value; }
+            remove { InputManager.MouseDoubleClick -= value; }
         }
 
         public event MouseEventHandler MouseDown {
-            add { InputSystem.MouseDown += value; }
-            remove { InputSystem.MouseDown -= value; }
+            add { InputManager.MouseDown += value; }
+            remove { InputManager.MouseDown -= value; }
         }
 
         public event MouseEventHandler MouseHover {
-            add { InputSystem.MouseHover += value; }
-            remove { InputSystem.MouseHover -= value; }
+            add { InputManager.MouseHover += value; }
+            remove { InputManager.MouseHover -= value; }
         }
 
         public event MouseEventHandler MouseUp {
-            add { InputSystem.MouseUp += value; }
-            remove { InputSystem.MouseUp -= value; }
+            add { InputManager.MouseUp += value; }
+            remove { InputManager.MouseUp -= value; }
         }
 
         public event MouseEventHandler MouseWheel {
-            add { InputSystem.MouseWheel += value; }
-            remove { InputSystem.MouseWheel -= value; }
+            add { InputManager.MouseWheel += value; }
+            remove { InputManager.MouseWheel -= value; }
         }
 
         public void Update() {

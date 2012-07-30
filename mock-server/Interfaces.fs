@@ -5,7 +5,7 @@ open System.Collections.Generic
 open Microsoft.Xna.Framework
 open Ruminate.GUI.Framework
 open Ruminate.GUI.Content
-
+open Ruminate.GUI
 
 [<AbstractClassAttribute>]
 type Screen () =
@@ -17,22 +17,38 @@ type Screen () =
     default this.Init game skin textRenderer =
         if not this.IsInitialized then
             this.Gui <- Gui(game, skin, textRenderer)    
-            this.Gui.BindInput ()    
-            this.CreateChildren ()
+            this.Gui.BindInput ()  
+            this.Gui.Widgets <- this.CreateChildren ()
             this.IsInitialized <- true
         else
             this.Gui.BindInput ()
+        
+        this.Gui.KeyDown.AddHandler(fun sender e -> this.OnKeyDown sender e)
 
-    abstract member CreateChildren : unit -> unit
+    abstract member CreateChildren : unit -> Widget[]
+    default this.CreateChildren () = [| |]
+
+    abstract member OnKeyDown : obj -> KeyEventArgs -> unit
+    default this.OnKeyDown _ e = ()
+    
     abstract member Unload : unit -> unit
     default this.Unload () =
         this.Gui <- null
+
     abstract member Update : unit -> unit
     default this.Update () =
         this.Gui.Update()
+
     abstract member Draw : unit -> unit
     default this.Draw() =
         this.Gui.Draw()
+
+    member this.RegisterKeyEvent key event =
+        this.Gui.KeyDown.AddHandler(
+            fun sender keyEventArgs -> 
+                match keyEventArgs.KeyCode with 
+                | keyCode when keyCode = key -> event sender
+                | _ -> ())
 
 and public IClient = 
     abstract member Show : Screen -> unit
