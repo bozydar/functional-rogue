@@ -6,7 +6,8 @@ type ScreenManager (client, server) as this =
     let boardScreen = new BoardScreen(client, server) 
     
     interface IScreenManager with
-        member this.Switch item = match item with
+        member this.Switch item = 
+            match item with
             | ScreenManagerState.MainMenu -> client.Show(mainMenu)
             | ScreenManagerState.OptionsMenu -> client.Show(optionsMenu)
             | ScreenManagerState.BoardScreen -> client.Show(boardScreen)

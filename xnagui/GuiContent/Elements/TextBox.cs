@@ -12,14 +12,6 @@ namespace Ruminate.GUI.Content {
     /// </summary>
     public class TextBox : WidgetBase<TextBoxRenderRule>, IDisposable {
 
-        /*####################################################################*/
-        /*                               Variables                            */
-        /*####################################################################*/
-
-        #region Variables
-
-        /* ## Local Variables ## */
-
         private readonly Timer _cursorTimer;
         private void ResetTimer() {
 
@@ -30,18 +22,8 @@ namespace Ruminate.GUI.Content {
 
         private bool _isPressed;
 
-        /* ## Exposed Variables ## */
-
         public int MaxCharactors { get; set; }
         public int Padding { get; set; }
-
-        #endregion
-
-        /*####################################################################*/
-        /*                           Initialization                           */
-        /*####################################################################*/
-
-        #region Node Initialization
 
         protected override TextBoxRenderRule BuildRenderRule() {
             return new TextBoxRenderRule(500);
@@ -75,14 +57,6 @@ namespace Ruminate.GUI.Content {
         }
 
         public override void Layout() { }
-
-        #endregion
-
-        /*####################################################################*/
-        /*                                Events                              */
-        /*####################################################################*/
-
-        #region Events
 
         protected override void CharEntered(CharacterEventArgs e) {
 
@@ -230,8 +204,6 @@ namespace Ruminate.GUI.Content {
 
             ResetTimer();
         }
-
-        #endregion
 
         protected override void Update() { }
     }
