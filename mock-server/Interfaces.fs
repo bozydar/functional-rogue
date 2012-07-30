@@ -1,4 +1,4 @@
-﻿namespace Server
+﻿namespace View
 
 open System
 open System.Collections.Generic

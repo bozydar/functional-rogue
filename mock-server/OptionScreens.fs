@@ -1,11 +1,7 @@
-﻿// Learn more about F# at http://fsharp.net
-
-namespace Screens
-open Server
+﻿namespace View
 open Microsoft.Xna.Framework
 open Ruminate.GUI.Framework
 open Ruminate.GUI.Content
-open Server
 
 type MainMenu(client : IClient, server : IServer, screenManager : IScreenManager) = 
     inherit Screen()

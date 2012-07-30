@@ -1,4 +1,4 @@
-﻿namespace Server
+﻿namespace View
 
 type ScreenManagerState =
     | MainMenu

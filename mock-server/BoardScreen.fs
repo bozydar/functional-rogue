@@ -1,12 +1,10 @@
-﻿namespace Screens
+﻿namespace View
 
-open Server
+open View
 open Microsoft.Xna.Framework
 open Microsoft.Xna.Framework.Graphics
 open Ruminate.GUI.Framework
 open Ruminate.GUI.Content
-open Server
-
 
 type BoardScreen(client : IClient, server : IServer) = 
     inherit Screen()
