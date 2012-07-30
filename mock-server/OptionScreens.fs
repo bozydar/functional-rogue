@@ -12,6 +12,11 @@ type MainMenu(client : IClient, server : IServer, screenManager : IScreenManager
             Button(10, 60, "Options", 2, this.ShowOptions)
             Button(10, 90, "Exit", 2, this.Exit)
         |]
+        this.Gui.KeyDown.AddHandler(
+            fun sender keyEventArgs -> 
+                match keyEventArgs.KeyCode with 
+                | Input.Keys.N -> this.NewGame (sender :?> Widget)
+                | _ -> () )
 
     member private this.Exit _ =
         client.Exit()
