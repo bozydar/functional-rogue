@@ -13,7 +13,7 @@ namespace functional_rogue_xna
             using (Game1 game = new Game1())
             {
                 // Force domain to load assembly ued as resource
-                AppDomain.CurrentDomain.Load("GuiContent");
+                AppDomain.CurrentDomain.Load("Xna.Gui.Controls");
                 game.Run();
             }
         }

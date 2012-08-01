@@ -74,13 +74,15 @@
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Numerics" />
-    <ProjectReference Include="..\xnagui\GuiContent\GuiContent.csproj">
-      <Name>GuiContent</Name>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\xnagui\Xna.Gui.Controls\Xna.Gui.Controls.csproj">
+      <Name>Xna.Gui.Controls</Name>
       <Project>{ecc72571-83c8-47e5-a0d4-61ab66ab66f8}</Project>
       <Private>True</Private>
     </ProjectReference>
-    <ProjectReference Include="..\xnagui\Gui\Gui.csproj">
-      <Name>Gui</Name>
+    <ProjectReference Include="..\xnagui\Xna.Gui\Xna.Gui.csproj">
+      <Name>Xna.Gui</Name>
       <Project>{3c3b814a-e1c2-4dd3-b7e4-57358ac7451a}</Project>
       <Private>True</Private>
     </ProjectReference>

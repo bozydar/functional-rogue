@@ -1,7 +1,8 @@
 ﻿namespace View
 open Microsoft.Xna.Framework
-open Ruminate.GUI.Framework
-open Ruminate.GUI.Content
+open Xna.Gui
+open Xna.Gui.Controls
+open Xna.Gui.Controls.Elements
 
 type MainMenu(client : IClient, server : IServer, screenManager : IScreenManager) = 
     inherit Screen()

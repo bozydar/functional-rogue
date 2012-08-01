@@ -3,8 +3,9 @@
 open View
 open Microsoft.Xna.Framework
 open Microsoft.Xna.Framework.Graphics
-open Ruminate.GUI.Framework
-open Ruminate.GUI.Content
+open Xna.Gui
+open Xna.Gui.Controls
+open Xna.Gui.Controls.Elements
 
 type BoardScreen(client : IClient, server : IServer, back) = 
     inherit Screen()
