@@ -5,10 +5,6 @@ namespace Ruminate.GUI.Content {
 
     public sealed class Panel : WidgetBase<PanelRenderRule> {
 
-        /*####################################################################*/
-        /*                           Initialization                           */
-        /*####################################################################*/
-
         public Panel(int x, int y, int width, int height) {
 
             Area = new Rectangle(x, y, width, height);
