@@ -24,72 +24,31 @@ type DecoratedText = {
 
 let newDecoratedText text bg fg = { Text = text; BGColor = bg; FGColor = fg }
 
-type IWidget = interface 
-    abstract member Render : Result -> seq<DecoratedText>
-end
-
-type Dialog (sequence : seq<IWidget>) = 
-    interface seq<IWidget> with
+type Dialog (sequence : seq<Widget>) = 
+    interface seq<Widget> with
         member this.GetEnumerator () =
             sequence.GetEnumerator ()
         member this.GetEnumerator () : System.Collections.IEnumerator  =
             (sequence :> System.Collections.IEnumerable).GetEnumerator ()
+
     with 
         static member (+) (left : Dialog, right : Dialog) = new Dialog (Seq.append left right)
 
-type Nothing () =  
-    interface IWidget with
-        member this.Render (args : Result) : seq<DecoratedText> = seq {
-            yield newDecoratedText "" ConsoleColor.Black ConsoleColor.Black
-            yield newDecoratedText "\n" ConsoleColor.Black ConsoleColor.Black
-        }
 
-type CR () = 
-    interface IWidget with
-        member this.Render (args : Result) : seq<DecoratedText> = seq {
-            yield newDecoratedText "\n" ConsoleColor.Black ConsoleColor.Black
-        }
 
-type Text (text : string, background : ConsoleColor, foreground : ConsoleColor) =
-    interface IWidget with
-        member this.Render (args : Result) : seq<DecoratedText> = seq {
-            yield newDecoratedText text  background foreground
-        }
-
-type Title (text : string) = 
-    interface IWidget with
-        member this.Render (args : Result) : seq<DecoratedText> = seq {
-            yield newDecoratedText text  ConsoleColor.White ConsoleColor.Black
-        }
-
-type Label (text : string) = 
-    interface IWidget with
-        member this.Render (args : Result) : seq<DecoratedText> = seq {
-            yield newDecoratedText text  ConsoleColor.Black ConsoleColor.Gray
-        }
-
-type Action (input : Input, text : string, resultName : string, resultValue : string) =
-    interface IWidget with
-        member this.Render (args : Result) : seq<DecoratedText> = seq {
-            yield newDecoratedText (input.ToString() + " - " + text) ConsoleColor.Black ConsoleColor.White
-        }
-
-type Subdialog (input : Input, text : string, subDialog : Dialog) = 
-    interface IWidget with
-        member this.Render (args : Result) : seq<DecoratedText> = seq {
-            yield newDecoratedText (input.ToString() + " - " + text) ConsoleColor.Black ConsoleColor.White
-        }
-
-type Option (input : Input, text : string, resultName : string, resultValue : string, optionItems : seq<string * string>) =
-    interface IWidget with
-        member this.Render (args : Result) : seq<DecoratedText> = seq {
-            let dt1 = newDecoratedText (input.ToString() + " - " + text) ConsoleColor.Black ConsoleColor.White 
-            yield dt1
-            if args.ContainsKey(resultName) then
-                let selectedItem = Seq.tryFind (fun item -> snd item = args.[resultName]) optionItems
-                if selectedItem.IsSome then
-                    yield newDecoratedText (fst selectedItem.Value) ConsoleColor.Black ConsoleColor.Gray
-        }
-      
+and Widget = 
+    | Nothing
+    | CR
+    | Title of string
+    | Label of string
+    | Action of Input * string * string * string
+    | Option of Input * string * string * (OptionItem list)
+    | Subdialog of Input * string * Dialog
+    | Raw of DecoratedText
+    | Textbox of Input * string
+   
+with static member newDecoratedText (text, bg, fg) =
+        Widget.Raw(newDecoratedText text bg fg)
+and OptionItem = string * string
+    
 type decoratedTexts = DecoratedText list        
-
