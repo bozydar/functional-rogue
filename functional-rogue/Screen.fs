@@ -420,7 +420,7 @@ let private screenWritter () =
                 yield lineBeginning, writeDecoratedText lineBeginning 
 
                 match item with
-                | :?> Dialog.CR ->
+                | :? Dialog.CR ->
                     yield! sequence (point 0  (position.Y + 1)) tail
                 | Dialog.Title(text) -> 
                     yield lineBeginning, writeDecoratedText lineBeginning (Dialog.newDecoratedText text  ConsoleColor.White ConsoleColor.Black)
