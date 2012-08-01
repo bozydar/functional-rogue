@@ -5,11 +5,11 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "functional-rogue-xna", "fun
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "functional-rogue-xnaContent", "functional-rogue-xna\functional-rogue-xnaContent\functional-rogue-xnaContent.contentproj", "{CE970A93-2EC0-4C7E-B12A-01C04224AEEF}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Xna.Gui", "xnagui\Xna.Gui\Xna.Gui.csproj", "{3C3B814A-E1C2-4DD3-B7E4-57358AC7451A}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Xna.Gui", "xnagui\Gui\Xna.Gui.csproj", "{3C3B814A-E1C2-4DD3-B7E4-57358AC7451A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Xna.Gui.Controls", "xnagui\Xna.Gui.Controls\Xna.Gui.Controls.csproj", "{ECC72571-83C8-47E5-A0D4-61AB66AB66F8}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Xna.Gui.Controls", "xnagui\GuiContent\Xna.Gui.Controls.csproj", "{ECC72571-83C8-47E5-A0D4-61AB66AB66F8}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Xna.Utils", "xnagui\Xna.Utils\Xna.Utils.csproj", "{C669EB89-E925-4372-8EA8-FC5A246740A0}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Xna.Utils", "xnagui\Utils\Xna.Utils.csproj", "{C669EB89-E925-4372-8EA8-FC5A246740A0}"
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "mock-server", "mock-server\mock-server.fsproj", "{845AA9F1-E4A3-4549-B854-A4A1C81DB88B}"
 EndProject

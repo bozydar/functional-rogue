@@ -3,9 +3,10 @@
 open System
 open System.Collections.Generic
 open Microsoft.Xna.Framework
-open Ruminate.GUI.Framework
-open Ruminate.GUI.Content
-open Ruminate.GUI
+open Xna.Gui
+open Xna.Gui.Rendering
+open Xna.Gui.Utils
+open Xna.Gui.Controls
 
 [<AbstractClassAttribute>]
 type Screen () =

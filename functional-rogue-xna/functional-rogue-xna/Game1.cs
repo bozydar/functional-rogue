@@ -10,8 +10,8 @@ using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using Microsoft.Xna.Framework.Media;
 using Ruminate.GUI.Content;
-using Ruminate.GUI.Framework;
 using View;
+using Xna.Gui.Rendering;
 
 namespace functional_rogue_xna
 {
