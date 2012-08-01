@@ -94,6 +94,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Elements\Board.cs" />
+    <Compile Include="Elements\Board\Tile.cs" />
     <Compile Include="Elements\Button.cs" />
     <Compile Include="Elements\CheckBox.cs" />
     <Compile Include="Elements\Image.cs" />
