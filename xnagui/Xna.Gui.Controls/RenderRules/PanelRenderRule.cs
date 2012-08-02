@@ -2,19 +2,24 @@ using Microsoft.Xna.Framework;
 using Xna.Gui.Controls.Renderers;
 using Xna.Gui.Layout;
 
-namespace Xna.Gui.Controls.RenderRules {
-
-    public class PanelRenderRule : RenderRule {
+namespace Xna.Gui.Controls.RenderRules
+{
+    public class PanelRenderRule : RenderRule
+    {
+        private BorderRenderer _default;
 
         private Rectangle _area;
-        public override Rectangle Area {
+        public override Rectangle Area
+        {
             get { return _area; }
             set { _area = value; }
         }
 
         public int BorderWidth { get { return _default.BorderWidth; } }
-        public override Rectangle SafeArea {
-            get {
+        public override Rectangle SafeArea
+        {
+            get
+            {
                 return new Rectangle(
                     Area.X + BorderWidth,
                     Area.Y + BorderWidth,
@@ -23,26 +28,25 @@ namespace Xna.Gui.Controls.RenderRules {
             }
         }
 
-        private BorderRenderer _default;
-
-        public override void SetSize(int w, int h) {
+        public override void SetSize(int w, int h)
+        {
             _area.Width = w;
             _area.Height = h;
         }
 
-        public Rectangle BuildChildArea(Point size) {
-
+        public Rectangle BuildChildArea(Point size)
+        {
             return _default.BuildChildArea(size);
         }
 
-        protected override void LoadRenderers() {
-
+        protected override void LoadRenderers()
+        {
             _default = LoadRenderer<BorderRenderer>(Skin, "panel");
         }
 
-        public override void Draw() {
-
-            _default.Render(RenderManager.SpriteBatch, Area);            
+        public override void Draw()
+        {
+            _default.Render(RenderManager.SpriteBatch, Area);
         }
     }
 }

@@ -109,6 +109,7 @@
     <Compile Include="Renderers\IconRenderer.cs" />
     <Compile Include="Renderers\HorizontalScrollBarRenderer.cs" />
     <Compile Include="Renderers\VerticalSlidingDoorRenderer.cs" />
+    <Compile Include="RenderRules\BoardRenderRule.cs" />
     <Compile Include="RenderRules\ButtonRenderRule.cs" />
     <Compile Include="RenderRules\ScrollBarRenderRule.cs" />
     <Compile Include="RenderRules\ScrollBarsRenderRule.cs" />

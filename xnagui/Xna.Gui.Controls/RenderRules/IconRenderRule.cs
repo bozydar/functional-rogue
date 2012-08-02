@@ -35,8 +35,8 @@ namespace Xna.Gui.Controls.RenderRules {
             _area.Width = w; _area.Height = h;
         }
 
-        protected override void LoadRenderers() {
-            int x = 0;
+        protected override void LoadRenderers() 
+        {
         }
 
         public override void Draw() {            
