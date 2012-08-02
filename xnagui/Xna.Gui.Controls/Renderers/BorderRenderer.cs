@@ -2,18 +2,20 @@
 using Microsoft.Xna.Framework.Graphics;
 using Xna.Gui.Rendering;
 
-namespace Xna.Gui.Controls.Renderers {
+namespace Xna.Gui.Controls.Renderers
+{
 
-// ReSharper disable ClassNeverInstantiated.Global
-    public class BorderRenderer : Renderer {
-// ReSharper restore ClassNeverInstantiated.Global
+    public class BorderRenderer : Renderer
+    {
 
         private Rectangle _corner, _edge;
         private readonly Rectangle _background;
 
         public int BorderWidth { get; set; }
 
-        public BorderRenderer(Texture2D imageMap, Rectangle source, int borderWidth, int background) : base(imageMap) {
+        public BorderRenderer(Texture2D imageMap, Rectangle source, int borderWidth, int background)
+            : base(imageMap)
+        {
 
             BorderWidth = borderWidth;
 
@@ -22,65 +24,65 @@ namespace Xna.Gui.Controls.Renderers {
             _background = new Rectangle(source.Left, source.Top + (4 * BorderWidth), background, background);
         }
 
-        public override Rectangle BuildChildArea(Point size) {
+        public override Rectangle BuildChildArea(Point size)
+        {
             return new Rectangle(BorderWidth, BorderWidth, size.X - 2 * BorderWidth, size.Y - 2 * BorderWidth);
         }
 
-        public override void Render(SpriteBatch batch, Rectangle destination) {
+        public override void Render(SpriteBatch batch, Rectangle destination)
+        {
 
-            // ##### Draw Background ##### //
-
+            // Draw Background 
             var drawArea = new Rectangle(
-                destination.Left + BorderWidth, 
-                destination.Top + BorderWidth, 
-                destination.Width - (2 *BorderWidth), 
+                destination.Left + BorderWidth,
+                destination.Top + BorderWidth,
+                destination.Width - (2 * BorderWidth),
                 destination.Height - (2 * BorderWidth));
             batch.Draw(ImageMap, drawArea, _background, Color.White);
 
-            // ##### Draw Corners ##### //
-
+            // Draw Corners 
             drawArea.Width = BorderWidth;
             drawArea.Height = BorderWidth;
 
-            //Top Left
-            drawArea.X = destination.Left; 
-            drawArea.Y = destination.Top;            
-            batch.Draw(ImageMap, drawArea, _corner, Color.White); 
+            // Top Left
+            drawArea.X = destination.Left;
+            drawArea.Y = destination.Top;
+            batch.Draw(ImageMap, drawArea, _corner, Color.White);
 
-            //Top Right
-            drawArea.X = destination.Right - BorderWidth; 
+            // Top Right
+            drawArea.X = destination.Right - BorderWidth;
             drawArea.Y = destination.Top;
             _corner.Y += BorderWidth;
             batch.Draw(ImageMap, drawArea, _corner, Color.White);
 
-            //Bottom Right
+            // Bottom Right
             drawArea.X = destination.Right - BorderWidth;
             drawArea.Y = destination.Bottom - BorderWidth;
             _corner.Y += BorderWidth;
             batch.Draw(ImageMap, drawArea, _corner, Color.White);
 
-            //Bottom Left
+            // Bottom Left
             drawArea.X = destination.Left;
             drawArea.Y = destination.Bottom - BorderWidth;
             _corner.Y += BorderWidth;
-            batch.Draw(ImageMap, drawArea, _corner, Color.White);            
+            batch.Draw(ImageMap, drawArea, _corner, Color.White);
 
             _corner.Y -= (3 * BorderWidth);
 
-            // ##### Draw Edges ##### //
+            // Draw Edges
 
-            //Top Edge
+            // Top Edge
             drawArea.X = destination.Left + BorderWidth;
             drawArea.Y = destination.Top;
             drawArea.Width = destination.Width - (2 * BorderWidth);
             batch.Draw(ImageMap, drawArea, _edge, Color.White);
 
-            //Bottom Edge
+            // Bottom Edge
             drawArea.Y = destination.Bottom - BorderWidth;
             _edge.Y += (2 * BorderWidth);
             batch.Draw(ImageMap, drawArea, _edge, Color.White);
 
-            //Left Edge
+            // Left Edge
             drawArea.X = destination.Left;
             drawArea.Y = destination.Top + BorderWidth;
             drawArea.Width = BorderWidth;
@@ -88,12 +90,12 @@ namespace Xna.Gui.Controls.Renderers {
             _edge.Y -= BorderWidth;
             batch.Draw(ImageMap, drawArea, _edge, Color.White);
 
-            //Right Edge
+            // Right Edge
             drawArea.X = destination.Right - BorderWidth;
             _edge.Y += (2 * BorderWidth);
             batch.Draw(ImageMap, drawArea, _edge, Color.White);
 
             _edge.Y -= (3 * BorderWidth);
-        } 
+        }
     }
 }
