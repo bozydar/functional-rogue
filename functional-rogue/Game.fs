@@ -89,8 +89,9 @@ let mainLoop () =
                 | Key 'U' when not isMainMap -> UseObject   // objects are anything not in your inventory
                 | Key 'u' -> UseItem    // items are things in your inventory
                 | Key 'O' -> ToggleSettingsMainMapHighlightPointsOfInterest
-                | Keys [ConsoleKey.P] when isCtrl -> PourLiquid
+                | Input (Input.ModifiedConsole(ConsoleKey.P, ConsoleModifiers.Control)) when isCtrl -> PourLiquid
                 | Key '?' -> Help
+                | Key 't' -> Throw
                 | _ -> Unknown                        
         
             match command with
@@ -132,6 +133,12 @@ let mainLoop () =
                 |> Actions.performDropAction
                 |> Turn.next
                 Screen.showBoard ()
+                loop false
+            | Throw ->
+                let oldState = State.get ()
+                let newState, animationFunction = oldState |> Actions.performThrowAction
+                if animationFunction.IsSome then Screen.showAnimation animationFunction.Value
+                newState |> Turn.next
                 loop false
             | OpenCloseDoor ->
                 State.get () 
@@ -210,6 +217,10 @@ let mainLoop () =
             Dialog.Title("Create Hero");
             Dialog.Option(Input.Char 'a', "Class", "class", 
                 [ for item in Predefined.Classes.getClasses -> (item, item)]);
+            Dialog.Subdialog(Input.Char 'b', "Subdialog", Dialog.Dialog [
+                Dialog.Title("Submenu");
+                Dialog.Action(Input.Console ConsoleKey.Escape, "[escape]", "sub-result", "0");
+            ]);
             Dialog.Label("Actions");
             Dialog.Action(Input.Console ConsoleKey.Enter, "[enter]", "result", "1");
             Dialog.Action(Input.Console ConsoleKey.Escape, "[escape]", "result", "0");

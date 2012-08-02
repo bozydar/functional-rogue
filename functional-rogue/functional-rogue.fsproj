@@ -55,6 +55,7 @@
     <Compile Include="Quantity.fs" />
     <Compile Include="Config.fs" />
     <Compile Include="Dialog.fs" />
+    <Compile Include="DialogBuilder.fs" />
     <Compile Include="Log.fs" />
     <Compile Include="Characters.fs" />
     <Compile Include="Monsters.fs" />
@@ -69,8 +70,10 @@
     <Compile Include="Replication.fs" />
     <Compile Include="Predefined.Classes.fs" />
     <Compile Include="Predefined.Resources.fs" />
+    <Compile Include="Predefined.Help.fs" />
     <Compile Include="LevelGeneration.fs" />
     <Compile Include="Screen.fs" />
+    <Compile Include="Animation.fs" />
     <Compile Include="Computers.fs" />
     <Compile Include="ItemActions.fs" />
     <Compile Include="Actions.fs" />

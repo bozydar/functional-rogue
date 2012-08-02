@@ -31,6 +31,18 @@ let breakStringIfTooLong (maxWidth: int) (text: string) =
         else
             [text]
 
+let itemToTextel (item : Item) =
+    match item.Type with
+    | Stick -> {Char = '|'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
+    | Rock  -> {Char = '*'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
+    | Sword | Knife -> {Char = '/'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
+    | Hat -> {Char = ']'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
+    | Corpse -> {Char = '%'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
+    | OreExtractor(_) -> {Char = '['; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
+    | Drone -> {Char = '^'; FGColor = ConsoleColor.Cyan; BGColor = ConsoleColor.Black}
+    | Injector -> {Char = '!'; FGColor = ConsoleColor.Red; BGColor = ConsoleColor.Black}
+    | SimpleContainer -> {Char = 'u'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
+
 let toTextel item (highlighOption : ConsoleColor option) =  
     if item.WasSeen then
         let result = 
@@ -47,16 +59,7 @@ let toTextel item (highlighOption : ConsoleColor option) =
             else
                 match item.Items with
                 | h::_ when not <| Set.contains item.Tile obstacles -> 
-                        match h.Type with 
-                        | Stick -> {Char = '|'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
-                        | Rock  -> {Char = '*'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
-                        | Sword | Knife -> {Char = '/'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
-                        | Hat -> {Char = ']'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
-                        | Corpse -> {Char = '%'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
-                        | OreExtractor(_) -> {Char = '['; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
-                        | Drone -> {Char = '^'; FGColor = ConsoleColor.Cyan; BGColor = ConsoleColor.Black}
-                        | Injector -> {Char = '!'; FGColor = ConsoleColor.Red; BGColor = ConsoleColor.Black}
-                        | SimpleContainer -> {Char = 'u'; FGColor = ConsoleColor.White; BGColor = ConsoleColor.Black}
+                        itemToTextel h
                 | _ -> 
                     match item.Ore with
                     | Iron(_) -> {Char = '$'; FGColor = ConsoleColor.Black; BGColor = ConsoleColor.Gray}
@@ -88,7 +91,16 @@ let toTextel item (highlighOption : ConsoleColor option) =
                         | MainMapWater -> {Char = '~'; FGColor = ConsoleColor.Blue; BGColor = mainMapBackground}
                         | MainMapCoast -> {Char = '.'; FGColor = ConsoleColor.Yellow; BGColor = mainMapBackground}
                         | _ -> empty
-        if not item.IsSeen then {result with FGColor = ConsoleColor.DarkGray } else result
+        if not item.IsSeen then {result with FGColor = ConsoleColor.DarkGray }
+        else
+            if item.Features |> List.exists (fun feature -> match feature with | OnFire(value) -> true | _ -> false) then
+                let randomResult = rnd 10
+                match randomResult with
+                | value when value < 1 -> {Char = '&'; FGColor = ConsoleColor.Red; BGColor = ConsoleColor.Black}
+                | value when value < 2 -> {Char = '&'; FGColor = ConsoleColor.Yellow; BGColor = ConsoleColor.Black}
+                | _ -> result
+            else
+                result
     else empty
         
 
@@ -178,8 +190,9 @@ let private screenSize = new Size(79, 24)
 let private leftPanelPos = new Rectangle(61, 0, 19, 24)
 let private letterByInt (int: int) = Convert.ToChar(Convert.ToInt32('a') + int - 1)
 
+    
 
-type ScreenAgentMessage =
+type private ScreenAgentMessage =
     | ShowBoard of State
     | ShowMainMenu of AsyncReplyChannel<MainMenuReply>
     | ShowChooseItemDialog of ShowChooseItemDialogRequest
@@ -189,7 +202,8 @@ type ScreenAgentMessage =
     | SetCursorPositionOnBoard of Point * State
     | DisplayComputerScreen of ScreenContentBuilder * State
     | ShowFinishScreen of State
-    | ShowDialog of Dialog.Dialog * Dialog.Result * AsyncReplyChannel<unit>
+    | ShowDialog of Dialog.Dialog * Dialog.Result * Rectangle * AsyncReplyChannel<ShowDialogReply>
+    | ShowBoardAnimationFromFrame of State * int * (int -> textel[,] -> textel[,] option)
 
 and MainMenuReply = {
     Name: String
@@ -209,6 +223,8 @@ and ShowChooseItemDialogRequest = {
     State: State;
     Filter: Item -> bool
 }
+and ShowDialogReply = { TopLinesClipped : int; BottomLinesClipped : int}
+
 
 let getHighlightForTile (board : Board) x y =
     if board.IsMainMap then
@@ -232,24 +248,19 @@ let private screenWritter () =
                 screen.[x, y] <- toTextel board.Places.[virtualX, virtualY] (getHighlightForTile board virtualX virtualY)
         screen      
         
-    let writeString (position: Point) (text: String) (screen: screen) = 
-        let x = position.X
-        let y = position.Y
-        let length = min (screenSize.Width - x) text.Length
-        text.Substring(0, length)
-        |> String.iteri (fun i char -> 
-            screen.[x + i, y] <- {empty with Char = char})
-        screen
-
     let writeDecoratedText (position: Point) (decoratedText: Dialog.DecoratedText) (screen: screen) = 
         let x = position.X
         let y = position.Y
-        let text = decoratedText.Text
-        let length = min (screenSize.Width - x) text.Length
-        text.Substring(0, length)
-        |> String.iteri (fun i char -> 
-            screen.[x + i, y] <- {BGColor = decoratedText.BGColor; FGColor = decoratedText.FGColor; Char = char})
+        if isInBoundary position.Y 0 (screen.GetLength(1) - 1) then
+            let text = decoratedText.Text
+            let length = min (max 0 (screen.GetLength(0) - x)) text.Length
+            text.Substring(0, length)
+            |> String.iteri (fun i char -> 
+                screen.[x + i, y] <- {BGColor = decoratedText.BGColor; FGColor = decoratedText.FGColor; Char = char})
         screen
+
+    let writeString (position: Point) (text: String) (screen: screen) = 
+        writeDecoratedText position { Text = text; FGColor = empty.FGColor; BGColor = empty.BGColor } screen
 
     let writeStrings (position: Point) (lines: String list) (fgcolor: ConsoleColor) (screen: screen) =
         let brokenLines = lines |> List.fold (fun (acc: string list) line -> acc @ (line |> breakStringIfTooLong boardFrameSize.Width)) []
@@ -390,143 +401,237 @@ let private screenWritter () =
         )
         Console.SetCursorPosition(screenSize.Width, screenSize.Height)
 
-    let showDialog (dialog : Dialog.Dialog, dialogResult : Dialog.Result) screen =        
-        let sequence = seq {            
-            for i, item in dialog |> Seq.mapi (fun i item -> i, item) do
+    let showDialog (dialog : Dialog.Dialog, dialogResult : Dialog.Result, region : Rectangle) (screen : screen) =
+        let yOffset = region.Top
+        let rec sequence (position : Point) (dialog : List<Dialog.Widget>)  = seq {  
+            match dialog with
+            | [] -> ()
+            | item::tail ->
+                let lineBeginning = point 0 position.Y
                 match item with
+                | Dialog.CR ->
+                    yield! sequence (point 0  (position.Y + 1)) tail
                 | Dialog.Title(text) -> 
-                    yield writeDecoratedText (point 0 i) (Dialog.newDecoratedText text  ConsoleColor.White ConsoleColor.Black)
+                    yield lineBeginning, writeDecoratedText lineBeginning (Dialog.newDecoratedText text  ConsoleColor.White ConsoleColor.Black)
+                    yield! sequence (position + Size(text.Length, 1)) tail
                 | Dialog.Label(text) ->
-                    yield writeDecoratedText (point 0 i) (Dialog.newDecoratedText text  ConsoleColor.Black ConsoleColor.Gray)
+                    yield lineBeginning, writeDecoratedText lineBeginning (Dialog.newDecoratedText text  ConsoleColor.Black ConsoleColor.Gray)
+                    yield! sequence (position + Size(text.Length, 1)) tail
                 | Dialog.Raw(decoratedText) ->
-                    yield writeDecoratedText (point 0 i) decoratedText
+                    yield position, writeDecoratedText position decoratedText
+                    yield! sequence (position + Size(decoratedText.Text.Length, 0)) tail
                 | Dialog.Action(input, text, _, _) ->
                     let dt1 = Dialog.newDecoratedText (input.ToString() + " - " + text) ConsoleColor.Black ConsoleColor.White 
-                    let dt2 = Dialog.newDecoratedText text ConsoleColor.Black ConsoleColor.Gray
-                    yield writeDecoratedText (point 0 i) dt1
+                    yield lineBeginning, writeDecoratedText lineBeginning dt1
+                    yield! sequence (position + Size(dt1.Text.Length, 1)) tail
                 | Dialog.Subdialog(input, text, _) ->
                     let dt1 = Dialog.newDecoratedText (input.ToString() + " - " + text) ConsoleColor.Black ConsoleColor.White 
-                    let dt2 = Dialog.newDecoratedText text ConsoleColor.Black ConsoleColor.Gray
-                    yield writeDecoratedText (point 0 i) dt1
-                    yield writeDecoratedText (point 4 i) dt2
+                    yield lineBeginning, writeDecoratedText lineBeginning dt1
+                    yield! sequence (position + Size(dt1.Text.Length, 1)) tail
                 | Dialog.Option(input, text, varName, optionItems) ->
                     let dt1 = Dialog.newDecoratedText (input.ToString() + " - " + text) ConsoleColor.Black ConsoleColor.White 
-                    let dt2 = Dialog.newDecoratedText text ConsoleColor.Black ConsoleColor.Gray
-                    yield writeDecoratedText (point 0 i) dt1
-                    yield writeDecoratedText (point 4 i) dt2
+                    yield lineBeginning, writeDecoratedText lineBeginning dt1
                     if dialogResult.ContainsKey(varName) then
                         let selectedItem = List.tryFind (fun item -> snd item = dialogResult.[varName]) optionItems
                         if selectedItem.IsSome then
                             let dt3 = Dialog.newDecoratedText (fst selectedItem.Value) ConsoleColor.Black ConsoleColor.Gray
-                            yield writeDecoratedText (point (dt1.Text.Length + 2) i) dt3
+                            let p = point (dt1.Text.Length + 2) position.Y
+                            yield p, writeDecoratedText p dt3
+                            yield! sequence (position + Size(dt1.Text.Length + 2 + dt3.Text.Length, 1)) tail
+                        else
+                            yield! sequence (position + Size(dt1.Text.Length, 1)) tail
                 | Dialog.Textbox(input, _) ->
-                    yield Dialog.newDecoratedText "                           " ConsoleColor.Gray ConsoleColor.Black |> writeDecoratedText (point 0 i) 
-                                    
-        }           
-        screen |>> sequence
+                    //yield Dialog.newDecoratedText "                           " ConsoleColor.Gray ConsoleColor.Black |> writeDecoratedText (point 0 i) 
+                    raise (new NotImplementedException())    
+                | Dialog.Nothing ->      
+                    yield! sequence position tail  
+        }
+        let changesAndPoints = sequence (point 0 -yOffset) (Seq.toList dialog)
+
+        let topClipped = changesAndPoints |> Seq.filter (fun (position, func) -> position.Y < 0)
+        let bottomClipped = changesAndPoints |> Seq.filter (fun (position, func) -> position.Y > (screen.GetLength(1) - 1))
+        let toApply = changesAndPoints |> Seq.filter (fun (position, func) -> position.Y > (screen.GetLength(1) - 1))
+        
+        let result = 
+            changesAndPoints 
+            |> Seq.groupBy (fun (position, func) -> 
+                if position.Y < 0 then
+                    -1
+                elif position.Y > (screen.GetLength(1) - 1) then
+                    1
+                else
+                    0)
+        let topClipped = 
+            result
+            |> Seq.filter (fun item -> -1 = fst item )
+            |> Seq.collect (fun item -> snd item)
+            |> Seq.map fst
+            |> Seq.sumBy (fun item -> item.Y)
+
+        let bottomClipped = 
+            result
+            |> Seq.filter (fun item -> 1 = fst item )
+            |> Seq.collect (fun item -> snd item)
+            |> Seq.map fst
+            |> Seq.sumBy (fun item -> item.Y)
+
+        let toApply = 
+            result
+            |> Seq.filter (fun item -> 0 = fst item )
+            |> Seq.collect (fun item -> snd item)
+            |> Seq.map snd
+        
+        screen |>> toApply, { TopLinesClipped = -topClipped; BottomLinesClipped = bottomClipped }
+
 
     MailboxProcessor<ScreenAgentMessage>.Start(fun inbox ->
-        let rec loop screen = async {
-            let! msg = inbox.Receive()
+        let rec loop lastMsg screen = async {
+            if inbox.CurrentQueueLength = 0 then
+                do! (Async.Sleep(100))
+                if State.stateExists() then
+                    match lastMsg with
+                    | Some(ShowBoard(state)) ->
+                        let currentState = State.get()
+                        let newScreen = 
+                            screen
+                            |> Array2D.copy
+                            |> writeBoard currentState.Board currentState.BoardFramePosition
+                            |> writeStats currentState
+                            |> writeLastTurnMessageIfAvailable currentState
+                        refreshScreen screen newScreen
+                        return! loop lastMsg newScreen
+                    | Some(ShowBoardAnimationFromFrame(state, frame, animationFunction)) ->
+                        let newScreen = 
+                            screen
+                            |> Array2D.copy
+                            |> writeBoard state.Board state.BoardFramePosition
+                            |> writeStats state
+                            |> writeLastTurnMessageIfAvailable state
+                        let newAnimationScreenFrame = newScreen |> animationFunction frame
+                        if newAnimationScreenFrame.IsSome then
+                            refreshScreen screen newAnimationScreenFrame.Value
+                            return! loop (Some(ShowBoardAnimationFromFrame(state, frame + 1, animationFunction))) newScreen
+                        else
+                            refreshScreen screen newScreen
+                            return! loop (Some(ShowBoard(state))) newScreen
+                    | _ -> return! loop None screen
+                else
+                    return! loop None screen
+            else
+                let! msg = inbox.Receive()
 
-            match msg with
-            | ShowBoard(state) ->                 
-                let newScreen = 
-                    screen
-                    |> Array2D.copy
-                    |> writeBoard state.Board state.BoardFramePosition
-                    |> writeStats state
-                    |> writeLastTurnMessageIfAvailable state
-                refreshScreen screen newScreen
-                return! loop newScreen
-            | ShowMessages(state) ->
-                let newScreen =
-                    screen
-                    |> Array2D.copy
-                    |> cleanScreen
-                    |> writeAllMessages state
-                refreshScreen screen newScreen
-                return! loop newScreen                        
-            | ShowMainMenu(reply) -> 
-                let newScreen = 
-                    screen
-                    |> Array2D.copy
-                    |> cleanScreen
-                    |> writeString (point 1 1) "What is your name?"
-                refreshScreen screen newScreen
-                Console.SetCursorPosition(1, 2)
-                let name = Console.ReadLine()
-                reply.Reply({Name = name})
-                return! loop newScreen  
-            | ShowChooseItemDialog(request) ->                
-                let itemsToShow =
-                    List.filter request.Filter request.State.Player.Items                
-                let newScreen =
-                    screen
-                    |> Array2D.copy
-                    |> cleanScreen
-                    |> if itemsToShow.Length > 0 then 
-                           listAllItems itemsToShow request.State.Player.ShortCuts 
-                       else 
-                           writeString (point 1 1) "No items"
-                refreshScreen screen newScreen
-                return! loop newScreen
-            | ShowEquipmentDialog(request) ->                
-                let newScreen =
-                    screen
-                    |> Array2D.copy
-                    |> cleanScreen
-                    |> listWornItems
-                refreshScreen screen newScreen
-                return! loop newScreen
-            | ShowOptions(request) ->
-                let newScreen =
-                    screen
-                    |> Array2D.copy
-                    |> cleanScreen
-                    |> showOptions request
-                refreshScreen screen newScreen
-                return! loop newScreen
-            | SetCursorPositionOnBoard(point, state) ->
-                let realPosition = (Math.Min(boardFrameSize.Width, Math.Max(0, point.X - state.BoardFramePosition.X)),
-                                    Math.Min(boardFrameSize.Height, Math.Max(0, point.Y - state.BoardFramePosition.Y)))
-                let place = state.Board.Places.[point.X,point.Y]
-                let description = Place.GetDescription place (if state.Board.Type = LevelType.MainMap then getMainMapTileDetails point.X point.Y else String.Empty)
-                let newScreen =
-                    screen
-                    |> Array2D.copy
-                    |> writeTemporalMessage description
-                refreshScreen screen newScreen
-                Console.SetCursorPosition(realPosition)
-                return! loop newScreen
-            | DisplayComputerScreen(content, state) ->
-                let newScreen = 
-                    screen
-                    |> Array2D.copy
-                    |> cleanPartOfScreen (Point(0,0)) boardFrameSize
-                    |> writeFromScreenContentBuilder (Point(0,0)) content ConsoleColor.DarkGreen
-                    |> writeStats state
-                refreshScreen screen newScreen
-                return! loop newScreen
-            | ShowFinishScreen(state) ->
-                let newScreen =
-                    screen
-                    |> Array2D.copy
-                    |> cleanScreen
-                    |> writeFinishScreen(state)                    
-                refreshScreen screen newScreen
-                return! loop newScreen
-            | ShowDialog(dialog, values, reply) ->
-                let newScreen =
-                    screen
-                    |> Array2D.copy
-                    |> cleanScreen
-                    |> showDialog(dialog, values)                    
-                refreshScreen screen newScreen
-                reply.Reply ()
-                return! loop newScreen                
+                match msg with
+                | ShowBoard(state) ->                 
+                    let newScreen = 
+                        screen
+                        |> Array2D.copy
+                        |> writeBoard state.Board state.BoardFramePosition
+                        |> writeStats state
+                        |> writeLastTurnMessageIfAvailable state
+                    refreshScreen screen newScreen
+                    return! loop (Some(msg)) newScreen
+                | ShowBoardAnimationFromFrame(state, frame, animationFunction) ->
+                    let newScreen = 
+                        screen
+                        |> Array2D.copy
+                        |> writeBoard state.Board state.BoardFramePosition
+                        |> writeStats state
+                        |> writeLastTurnMessageIfAvailable state
+                    let newAnimationScreenFrame = newScreen |> animationFunction frame
+                    if newAnimationScreenFrame.IsSome then
+                        refreshScreen screen newAnimationScreenFrame.Value
+                        return! loop (Some(ShowBoardAnimationFromFrame(state, frame + 1, animationFunction))) newScreen
+                    else
+                        refreshScreen screen newScreen
+                        return! loop (Some(ShowBoard(state))) newScreen
+                | ShowMessages(state) ->
+                    let newScreen =
+                        screen
+                        |> Array2D.copy
+                        |> cleanScreen
+                        |> writeAllMessages state
+                    refreshScreen screen newScreen
+                    return! loop (Some(msg)) newScreen                        
+                | ShowMainMenu(reply) -> 
+                    let newScreen = 
+                        screen
+                        |> Array2D.copy
+                        |> cleanScreen
+                        |> writeString (point 1 1) "What is your name?"
+                    refreshScreen screen newScreen
+                    Console.SetCursorPosition(1, 2)
+                    let name = Console.ReadLine()
+                    reply.Reply({Name = name})
+                    return! loop (Some(msg)) newScreen  
+                | ShowChooseItemDialog(request) ->                
+                    let itemsToShow =
+                        List.filter request.Filter request.State.Player.Items                
+                    let newScreen =
+                        screen
+                        |> Array2D.copy
+                        |> cleanScreen
+                        |> if itemsToShow.Length > 0 then 
+                               listAllItems itemsToShow request.State.Player.ShortCuts 
+                           else 
+                               writeString (point 1 1) "No items"
+                    refreshScreen screen newScreen
+                    return! loop (Some(msg)) newScreen
+                | ShowEquipmentDialog(request) ->                
+                    let newScreen =
+                        screen
+                        |> Array2D.copy
+                        |> cleanScreen
+                        |> listWornItems
+                    refreshScreen screen newScreen
+                    return! loop (Some(msg)) newScreen
+                | ShowOptions(request) ->
+                    let newScreen =
+                        screen
+                        |> Array2D.copy
+                        |> cleanScreen
+                        |> showOptions request
+                    refreshScreen screen newScreen
+                    return! loop (Some(msg)) newScreen
+                | SetCursorPositionOnBoard(point, state) ->
+                    let realPosition = (Math.Min(boardFrameSize.Width, Math.Max(0, point.X - state.BoardFramePosition.X)),
+                                        Math.Min(boardFrameSize.Height, Math.Max(0, point.Y - state.BoardFramePosition.Y)))
+                    let place = state.Board.Places.[point.X,point.Y]
+                    let description = Place.GetDescription place (if state.Board.Type = LevelType.MainMap then getMainMapTileDetails point.X point.Y else String.Empty)
+                    let newScreen =
+                        screen
+                        |> Array2D.copy
+                        |> writeTemporalMessage description
+                    refreshScreen screen newScreen
+                    Console.SetCursorPosition(realPosition)
+                    return! loop (Some(msg)) newScreen
+                | DisplayComputerScreen(content, state) ->
+                    let newScreen = 
+                        screen
+                        |> Array2D.copy
+                        |> cleanPartOfScreen (Point(0,0)) boardFrameSize
+                        |> writeFromScreenContentBuilder (Point(0,0)) content ConsoleColor.DarkGreen
+                        |> writeStats state
+                    refreshScreen screen newScreen
+                    return! loop (Some(msg)) newScreen
+                | ShowFinishScreen(state) ->
+                    let newScreen =
+                        screen
+                        |> Array2D.copy
+                        |> cleanScreen
+                        |> writeFinishScreen(state)                    
+                    refreshScreen screen newScreen
+                    return! loop (Some(msg)) newScreen
+                | ShowDialog(dialog, values, viewRange, reply) ->
+                    let newScreen, showDialogReply =
+                        screen
+                        |> Array2D.copy
+                        |> cleanScreen
+                        |> showDialog(dialog, values, viewRange)                    
+                    refreshScreen screen newScreen
+                    reply.Reply showDialogReply
+                    return! loop (Some(msg)) newScreen                
         }
-        loop <| Array2D.create screenSize.Width screenSize.Height empty
+        loop None <| Array2D.create screenSize.Width screenSize.Height empty
     )
 
 let evaluateBoardFramePosition state = 
@@ -543,6 +648,7 @@ let evaluateBoardFramePosition state =
 let private agent = screenWritter ()
 
 let showBoard () = agent.Post (ShowBoard(State.get ()))
+let showAnimation animationFunction = agent.Post (ShowBoardAnimationFromFrame(State.get (), 0, animationFunction))
 //let showMainMenu () = agent.PostAndReply(fun reply -> ShowMainMenu(reply))
 let showChooseItemDialog items = agent.Post(ShowChooseItemDialog(items))
 let showEquipmentItemDialog items = agent.Post(ShowEquipmentDialog(items))
@@ -552,7 +658,7 @@ let showMessages () = agent.Post (ShowMessages(State.get ()))
 let showOptions options  = agent.Post(ShowOptions(options))
 let showFinishScreen state  = agent.Post(ShowFinishScreen(state))
 let rec showDialog (dialog : Dialog.Dialog, dialogResult : Dialog.Result) : Dialog.Result = 
-    agent.PostAndReply (fun reply -> ShowDialog(dialog, dialogResult, reply))
+    let startingPosition = new Rectangle(0, 0, screenSize.Width, screenSize.Height)
     let findMenuItemsInDialog key dialog : option<Dialog.Widget> = 
         dialog    
         |> Seq.tryPick (function 
@@ -560,18 +666,20 @@ let rec showDialog (dialog : Dialog.Dialog, dialogResult : Dialog.Result) : Dial
             | Dialog.Subdialog(itemKey, _, innerDialog) as item when Keyboard.isKeyInput itemKey key -> Some(item)
             | Dialog.Option(itemKey, _, varName, _) as item when Keyboard.isKeyInput itemKey key -> Some(item)
             | _ -> None)    
-    let rec loop dialogResult : Dialog.Result =
+    let rec loop dialogResult position : Dialog.Result =
+        let showDialogReply = agent.PostAndReply (fun reply -> ShowDialog(dialog, dialogResult, position, reply))
+        let key = Console.ReadKey(true)
         let selectedWidget = 
-            (Console.ReadKey(true), dialog)
+            (key, dialog)
             ||> findMenuItemsInDialog    
         if selectedWidget.IsSome then
             match selectedWidget.Value with
                 | Dialog.Action(_, _, varName, value) -> 
                     Dialog.replaceWith (dialogResult, Dialog.newResult [(varName, value)])
+                // TODO: Check this!!! I think that should be only one call to agent in whole showDialog fun
                 | Dialog.Subdialog(_, _, subdialog) -> 
-                    let result = showDialog (subdialog, dialogResult)
-                    agent.PostAndReply (fun reply -> ShowDialog(dialog, result, reply))
-                    Dialog.replaceWith (result, loop dialogResult)
+                    let subResult = showDialog (subdialog, dialogResult)
+                    Dialog.replaceWith (subResult, loop dialogResult position)
                 | Dialog.Option(_, _, varName, optionItems) ->        
                     let foundValueIndex =
                         if dialogResult.ContainsKey(varName) then
@@ -586,12 +694,19 @@ let rec showDialog (dialog : Dialog.Dialog, dialogResult : Dialog.Result) : Dial
                     let newIndex = (index + 1) % (List.length optionItems)
                     let _, newValue = optionItems.[newIndex]
                     let result = Dialog.replaceWith (dialogResult, Dialog.newResult ([(varName, newValue)]))
-                    agent.PostAndReply (fun reply -> ShowDialog(dialog, result, reply))
-                    loop result
-                | _ -> loop dialogResult
+                    
+                    loop result position
+                | _ -> loop dialogResult position
         else
-            loop dialogResult
-    loop dialogResult
+            let newPosition = 
+                match key with // moving in X axi is not possible right now
+                | Key ConsoleKey.UpArrow when showDialogReply.TopLinesClipped > 0 -> new Rectangle(position.X, position.Y - 1, position.Width, position.Height)
+                | Key ConsoleKey.DownArrow when showDialogReply.BottomLinesClipped > 0 -> new Rectangle(position.X, position.Y + 1, position.Width, position.Height)
+                | Key ConsoleKey.PageUp when showDialogReply.TopLinesClipped > 0 -> new Rectangle(position.X, position.Y - screenSize.Height, position.Width, position.Height)
+                | Key ConsoleKey.PageDown when showDialogReply.BottomLinesClipped > 0 -> new Rectangle(position.X, position.Y + screenSize.Height, position.Width, position.Height)
+                | _ -> position
+            loop dialogResult newPosition
+    loop dialogResult startingPosition
     
 
 let chooseListItemThroughPagedDialog (title : string) (mapToName : 'T -> string ) (listItems : 'T list) =
