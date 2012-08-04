@@ -195,6 +195,7 @@ module Screen =
     
 
     type private ScreenAgentMessage =
+        | ReadKey of AsyncReplyChannel<ReadKeyReply>
         | ShowBoard of State
         | ShowMainMenu of AsyncReplyChannel<MainMenuReply>
         | ShowChooseItemDialog of ShowChooseItemDialogRequest
@@ -226,6 +227,7 @@ module Screen =
         Filter: Item -> bool
     }
     and ShowDialogReply = { TopLinesClipped : int; BottomLinesClipped : int}
+    and ReadKeyReply = { ConsoleKeyInfo : ConsoleKeyInfo }
 
 
     let getHighlightForTile (board : Board) x y =
@@ -631,7 +633,10 @@ module Screen =
                             |> showDialog(dialog, values, viewRange)                    
                         refreshScreen screen newScreen
                         reply.Reply showDialogReply
-                        return! loop (Some(msg)) newScreen                
+                        return! loop (Some(msg)) newScreen         
+                    | ReadKey(reply) ->
+                        reply.Reply { ConsoleKeyInfo = System.Console.ReadKey(true) }
+                        return! loop (Some(msg)) screen
             }
             loop None <| Array2D.create screenSize.Width screenSize.Height empty
         )
@@ -659,6 +664,7 @@ module Screen =
     let showMessages () = agent.Post (ShowMessages(State.get ()))
     let showOptions options  = agent.Post(ShowOptions(options))
     let showFinishScreen state  = agent.Post(ShowFinishScreen(state))
+    let readKey () = (agent.PostAndReply (ReadKey)).ConsoleKeyInfo
     let rec showDialog (dialog : Dialog.Dialog, dialogResult : Dialog.Result) : Dialog.Result = 
         let startingPosition = new Rectangle(0, 0, screenSize.Width, screenSize.Height)
         let findMenuItemsInDialog key dialog : option<Dialog.Widget> = 

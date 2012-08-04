@@ -24,7 +24,7 @@ module Game =
             Screen.showEquipmentItemDialog {Items = items; CanSelect = false}
 
         let rec loop () =
-            let key = System.Console.ReadKey(true).Key        
+            let key = Screen.readKey().Key        
             match key with 
             | ConsoleKey.Escape -> ()
             | _ -> 
@@ -40,7 +40,7 @@ module Game =
             Screen.showChooseItemDialog { State = (State.get ()); Filter = fun _ -> true }
 
         let rec loop () =
-            let key = System.Console.ReadKey(true).Key        
+            let key = Screen.readKey().Key        
             match key with 
             | ConsoleKey.Escape -> ()
             | _ -> 
@@ -58,7 +58,7 @@ module Game =
                 |> Screen.showFinishScreen
                 ()
             else
-                let consoleKeyInfo = if printAll then new ConsoleKeyInfo('5', ConsoleKey.NumPad5, false, false, false) else System.Console.ReadKey(true)
+                let consoleKeyInfo = if printAll then new ConsoleKeyInfo('5', ConsoleKey.NumPad5, false, false, false) else Screen.readKey()
                 let isMainMap = (State.get ()).Board.IsMainMap  
                 let isCtrl = (consoleKeyInfo.Modifiers &&& ConsoleModifiers.Control) = (ConsoleModifiers.Control)
                 let boolTrue (value : bool) =
