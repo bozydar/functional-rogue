@@ -20,7 +20,7 @@ module Dispatcher =
         do
             this.Client <- client
             this.Server <- server
-            this.ScreenManager <- instantiate "View.ScreenManager" [| this.Client; this.Server |] :?> IScreenManager
+            this.ScreenManager <- instantiate "FunctionalRogue.View.ScreenManager" [| this.Client; this.Server |] :?> IScreenManager
        
     let mutable private _instance : option<Dispatcher> = None
     let instance () = _instance.Value

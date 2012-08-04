@@ -15,9 +15,9 @@ Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FunctionalRogue.View", "Fun
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "GuiStuff", "GuiStuff", "{A217A0DE-D0BD-4125-BBFA-81FFAFA6D153}"
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "functional-rogue", "functional-rogue\functional-rogue.fsproj", "{EB3B535D-210E-4E2A-B212-E0A984EE0393}"
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "XnaStuff", "XnaStuff", "{96A029E9-70F8-4C7E-99AE-856F5EE108CC}"
+EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FunctionalRogue", "functional-rogue\FunctionalRogue.fsproj", "{EB3B535D-210E-4E2A-B212-E0A984EE0393}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
