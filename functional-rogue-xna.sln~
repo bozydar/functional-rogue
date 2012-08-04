@@ -11,7 +11,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Xna.Gui.Controls", "xnagui\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Xna.Utils", "xnagui\Xna.Utils\Xna.Utils.csproj", "{C669EB89-E925-4372-8EA8-FC5A246740A0}"
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FunctionalRogue.View", "FunctionalRogue.View\FunctionalRogue.View.fsproj", "{845AA9F1-E4A3-4549-B854-A4A1C81DB88B}"
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FunctionalRogue.View", "mock-server\FunctionalRogue.View.fsproj", "{845AA9F1-E4A3-4549-B854-A4A1C81DB88B}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "GuiStuff", "GuiStuff", "{A217A0DE-D0BD-4125-BBFA-81FFAFA6D153}"
 EndProject

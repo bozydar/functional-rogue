@@ -1,6 +1,5 @@
-﻿namespace View
+﻿namespace FunctionalRogue.View
 
-open View
 open Microsoft.Xna.Framework
 open Microsoft.Xna.Framework.Graphics
 open Xna.Gui

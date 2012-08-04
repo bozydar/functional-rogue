@@ -1,4 +1,4 @@
-﻿namespace View
+﻿namespace FunctionalRogue.View
 
 type Server(client : IClient) =
     interface IServer

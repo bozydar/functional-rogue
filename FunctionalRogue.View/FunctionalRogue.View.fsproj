@@ -8,9 +8,9 @@
     <ProjectGuid>{845aa9f1-e4a3-4549-b854-a4a1c81db88b}</ProjectGuid>
     <OutputType>Library</OutputType>
     <RootNamespace>mock_server</RootNamespace>
-    <AssemblyName>mock_server</AssemblyName>
+    <AssemblyName>FunctionalRogue.View</AssemblyName>
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
-    <Name>mock-server</Name>
+    <Name>FunctionalRogue.View</Name>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -76,6 +76,11 @@
     <Reference Include="System.Numerics" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\functional-rogue\functional-rogue.fsproj">
+      <Name>functional-rogue</Name>
+      <Project>{eb3b535d-210e-4e2a-b212-e0a984ee0393}</Project>
+      <Private>True</Private>
+    </ProjectReference>
     <ProjectReference Include="..\xnagui\Xna.Gui.Controls\Xna.Gui.Controls.csproj">
       <Name>Xna.Gui.Controls</Name>
       <Project>{ecc72571-83c8-47e5-a0d4-61ab66ab66f8}</Project>
