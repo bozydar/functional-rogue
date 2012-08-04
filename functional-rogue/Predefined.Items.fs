@@ -1,81 +1,84 @@
-﻿module Predefined.Items
+﻿namespace FunctionalRogue.Predefined
 
-open System
-open Characters
+module Items =
 
-let createCorpse (name: string) = 
-    new Item(name + " corpse", Wearing.NotWearable, Corpse, Option.None)    
+    open FunctionalRogue
+    open System
+    open Characters
+
+    let createCorpse (name: string) = 
+        new Item(name + " corpse", Wearing.NotWearable, Corpse, Option.None)    
 
 
         
-let createKnuckleDuster () =
-    new Item("Knuckle-Duster", Wearing.HandOnly, Stick, Some(fun attacker _ _ -> 
-            let result = { Damage = 0, 0, 0; AttackBonus = 0; DefenceBonus = 0 }
-            if attacker.Strength < 10 then { result with Damage = scratchWound, lightWound, lightWound }
-            elif attacker.Strength < 14 then { result with Damage = lightWound, lightWound, heavyWound }
-            elif attacker.Strength < 18 then { result with Damage = lightWound, heavyWound, heavyWound }
-            else { result with Damage = lightWound, heavyWound, criticalWound }))
+    let createKnuckleDuster () =
+        new Item("Knuckle-Duster", Wearing.HandOnly, Stick, Some(fun attacker _ _ -> 
+                let result = { Damage = 0, 0, 0; AttackBonus = 0; DefenceBonus = 0 }
+                if attacker.Strength < 10 then { result with Damage = scratchWound, lightWound, lightWound }
+                elif attacker.Strength < 14 then { result with Damage = lightWound, lightWound, heavyWound }
+                elif attacker.Strength < 18 then { result with Damage = lightWound, heavyWound, heavyWound }
+                else { result with Damage = lightWound, heavyWound, criticalWound }))
        
-let createKnife () =
-    new Item("Knife", Wearing.HandOnly, Type.Knife, Some(fun attacker _ _ -> 
-            let result = { Damage = 0, 0, 0; AttackBonus = 1; DefenceBonus = 1 }
-            if attacker.Strength < 10 then { result with Damage = scratchWound, lightWound, lightWound }
-            elif attacker.Strength < 14 then { result with Damage = lightWound, lightWound, heavyWound }
-            else { result with Damage = lightWound, heavyWound, heavyWound }))
+    let createKnife () =
+        new Item("Knife", Wearing.HandOnly, Type.Knife, Some(fun attacker _ _ -> 
+                let result = { Damage = 0, 0, 0; AttackBonus = 1; DefenceBonus = 1 }
+                if attacker.Strength < 10 then { result with Damage = scratchWound, lightWound, lightWound }
+                elif attacker.Strength < 14 then { result with Damage = lightWound, lightWound, heavyWound }
+                else { result with Damage = lightWound, heavyWound, heavyWound }))
 
        
-let createIronHelmet () =
-    new Item("Iron Helmet", Wearing.HeadOnly, Type.Hat, Some(fun attacker _ _ -> { Damage = 0, 0, 0; AttackBonus = 0; DefenceBonus = 5}))
+    let createIronHelmet () =
+        new Item("Iron Helmet", Wearing.HeadOnly, Type.Hat, Some(fun attacker _ _ -> { Damage = 0, 0, 0; AttackBonus = 0; DefenceBonus = 5}))
 
 
 
-(*
-{ Id = Guid.NewGuid();
-            Name = "Ore Extractor";
-            Wearing = Wearing.HandOnly;
-            Type = Tool;
-            MiscProperties = { defaultMiscProperties with OreExtractionRate = 1 };
-            Attack = None
-        }   
-*)
-let createOreExtractor () =
-    new Item("Ore Extractor", Wearing.HandOnly, OreExtractor {HarvestRate = 1}, None)
+    (*
+    { Id = Guid.NewGuid();
+                Name = "Ore Extractor";
+                Wearing = Wearing.HandOnly;
+                Type = Tool;
+                MiscProperties = { defaultMiscProperties with OreExtractionRate = 1 };
+                Attack = None
+            }   
+    *)
+    let createOreExtractor () =
+        new Item("Ore Extractor", Wearing.HandOnly, OreExtractor {HarvestRate = 1}, None)
 
-let stickOfDoom = Item("Stick of doom", Wearing.HandOnly, Stick, Some(fun attacker _ _ -> 
-    { Damage = lightWound, lightWound, lightWound; AttackBonus = 0; DefenceBonus = 0 }))
+    let stickOfDoom = Item("Stick of doom", Wearing.HandOnly, Stick, Some(fun attacker _ _ -> 
+        { Damage = lightWound, lightWound, lightWound; AttackBonus = 0; DefenceBonus = 0 }))
 
 
-// LIQUID CONTAINERS
-let createEmptyMedicalInjector () =
-    new Item("Medical Injector", Wearing.NotWearable, Type.Injector, None, Some({ LiquidCapacity = 100.0<ml>; LiquidInside = None }))
+    // LIQUID CONTAINERS
+    let createEmptyMedicalInjector () =
+        new Item("Medical Injector", Wearing.NotWearable, Type.Injector, None, Some({ LiquidCapacity = 100.0<ml>; LiquidInside = None }))
 
-let createEmptyCanteen () =
-    new Item("Canteen", Wearing.NotWearable, Type.SimpleContainer, None, Some({ LiquidCapacity = 500.0<ml>; LiquidInside = None }))
+    let createEmptyCanteen () =
+        new Item("Canteen", Wearing.NotWearable, Type.SimpleContainer, None, Some({ LiquidCapacity = 500.0<ml>; LiquidInside = None }))
 
-let fillContainerWithLiquid (liquidType : LiquidType) (containerItem : Item) =
-    if containerItem.IsLiquidContainer then
-        ignore (containerItem.AddLiquid {Type = liquidType; Amount = (containerItem.Container.Value.LiquidCapacity)})
-    containerItem
+    let fillContainerWithLiquid (liquidType : LiquidType) (containerItem : Item) =
+        if containerItem.IsLiquidContainer then
+            ignore (containerItem.AddLiquid {Type = liquidType; Amount = (containerItem.Container.Value.LiquidCapacity)})
+        containerItem
 
-// DRONES
+    // DRONES
 
-let createReconnaissanceDrone () =
-    new Item("Reconnaissance Drone", Wearing.NotWearable, Drone, Option.None)
+    let createReconnaissanceDrone () =
+        new Item("Reconnaissance Drone", Wearing.NotWearable, Drone, Option.None)
 
-// NATURAL ITEMS
+    // NATURAL ITEMS
 
-let createRandomRock () =
-    new Item("Rock", Wearing.HandOnly, Rock, None)
+    let createRandomRock () =
+        new Item("Rock", Wearing.HandOnly, Rock, None)
 
-let createStick () =
-    new Item("Stick", Wearing.HandOnly, Stick, Some(fun attacker _ _ -> { Damage = 10, 10, 10; AttackBonus = 0; DefenceBonus = 0 }))
+    let createStick () =
+        new Item("Stick", Wearing.HandOnly, Stick, Some(fun attacker _ _ -> { Damage = 10, 10, 10; AttackBonus = 0; DefenceBonus = 0 }))
 
-let createRandomNaturalItem (playerLevel: int) =
-    //later player level will be used to determine probability of some more powerful/valuable items
-    let randomResult = rnd 2
-    if randomResult < 1 then
-        createRandomRock ()
-    else
-        createStick ()
+    let createRandomNaturalItem (playerLevel: int) =
+        //later player level will be used to determine probability of some more powerful/valuable items
+        let randomResult = rnd 2
+        if randomResult < 1 then
+            createRandomRock ()
+        else
+            createStick ()
 
 

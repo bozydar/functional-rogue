@@ -76,8 +76,8 @@
     <Reference Include="System.Numerics" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\functional-rogue\functional-rogue.fsproj">
-      <Name>functional-rogue</Name>
+    <ProjectReference Include="..\functional-rogue\FunctionalRogue.fsproj">
+      <Name>FunctionalRogue</Name>
       <Project>{eb3b535d-210e-4e2a-b212-e0a984ee0393}</Project>
       <Private>True</Private>
     </ProjectReference>
