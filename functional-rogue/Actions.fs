@@ -126,7 +126,7 @@ module Actions =
 
             let rec loop (current : Point) : Point option =
                 setCursorPositionOnBoard current state
-                let keyInfo = System.Console.ReadKey(true)
+                let keyInfo = Screen.readKey()
                 match keyInfo with 
                 | Keys [ConsoleKey.UpArrow; '8'] -> loop (up current) //Up
                 | Keys [ConsoleKey.DownArrow; '2'] -> loop (down current) //Down        
@@ -355,20 +355,6 @@ module Actions =
                 | NoneOre -> 
                     state
 
-    let chooseItem () =
-        let refreshScreen = 
-            Screen.showChooseItemDialog {State = (State.get ()); Filter = fun _ -> true}
-
-        let rec loop () =
-            let keyInfo = System.Console.ReadKey(true)
-            match keyInfo with 
-            | Key ConsoleKey.Escape -> ()
-            | _ -> 
-                refreshScreen            
-                loop ()
-        refreshScreen
-        loop ()
-
     let chooseOption (options : list<char * string>)  =
         let refreshScreen =         
             Screen.showOptions options
@@ -376,7 +362,7 @@ module Actions =
         let keys = options |> List.map (fun (key, _) -> key :> obj) 
 
         let rec loop () =
-            let keyInfo = System.Console.ReadKey(true)
+            let keyInfo = Screen.readKey()
             match keyInfo with 
             | Keys keys -> keyInfo.KeyChar
             | _ -> 
@@ -449,7 +435,7 @@ module Actions =
         *)
 
         let rec loop () =
-            let keyInfo = System.Console.ReadKey(true)
+            let keyInfo = Screen.readKey()
             match keyInfo with 
             | Key ConsoleKey.Escape -> state
             | _ -> 
@@ -495,7 +481,7 @@ module Actions =
             Screen.showChooseItemDialog {State = state; Filter = (fun item -> item.IsEatable)}
 
         let rec loop () =
-            let keyInfo = System.Console.ReadKey(true)
+            let keyInfo = Screen.readKey()
             match keyInfo with 
             | Key ConsoleKey.Escape -> state
             | _ -> 

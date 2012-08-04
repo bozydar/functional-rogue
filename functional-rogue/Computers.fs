@@ -312,7 +312,7 @@ module Computers =
 
         let rec loop (computerPoint: Point option) (content: ComputerContent) (nav: ComputerNavigation*int) (state : State) =
             displayComputerScreen (createDisplayContent content nav state)
-            let keyInfo = System.Console.ReadKey(true)
+            let keyInfo = Screen.readKey()
             match keyInfo with 
             | Key ConsoleKey.Escape -> state
             | _ ->
