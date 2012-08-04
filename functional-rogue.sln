@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 11.00
 # Visual Studio 2010
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "functional-rogue", "functional-rogue\functional-rogue.fsproj", "{EB3B535D-210E-4E2A-B212-E0A984EE0393}"
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FunctionalRogue", "functional-rogue\FunctionalRogue.fsproj", "{EB3B535D-210E-4E2A-B212-E0A984EE0393}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
