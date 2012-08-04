@@ -8,10 +8,10 @@
     <ProjectGuid>{eb3b535d-210e-4e2a-b212-e0a984ee0393}</ProjectGuid>
     <OutputType>Exe</OutputType>
     <RootNamespace>functional_rogue</RootNamespace>
-    <AssemblyName>functional_rogue</AssemblyName>
+    <AssemblyName>FunctionalRogue</AssemblyName>
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <TargetFrameworkProfile>Client</TargetFrameworkProfile>
-    <Name>functional-rogue</Name>
+    <Name>FunctionalRogue</Name>
     <RunPostBuildEvent>OnBuildSuccess</RunPostBuildEvent>
     <AllowUnsafeBlocks>False</AllowUnsafeBlocks>
     <NoStdLib>False</NoStdLib>
