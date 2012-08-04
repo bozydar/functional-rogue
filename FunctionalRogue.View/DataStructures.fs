@@ -1,4 +1,4 @@
-﻿namespace View
+﻿namespace FunctionalRogue.View
 
 type ScreenManagerState =
     | MainMenu

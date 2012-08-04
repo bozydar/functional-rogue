@@ -1,4 +1,4 @@
-﻿namespace View
+﻿namespace FunctionalRogue.View
 
 open System
 open System.Collections.Generic

@@ -116,9 +116,9 @@
     <Content Include="GameThumbnail.png" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\mock-server\mock-server.fsproj">
+    <ProjectReference Include="..\..\FunctionalRogue.View\FunctionalRogue.View.fsproj">
       <Project>{845AA9F1-E4A3-4549-B854-A4A1C81DB88B}</Project>
-      <Name>mock-server</Name>
+      <Name>FunctionalRogue.View</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\xnagui\Xna.Gui.Controls\Xna.Gui.Controls.csproj">
       <Project>{ECC72571-83C8-47E5-A0D4-61AB66AB66F8}</Project>

@@ -1,4 +1,4 @@
-﻿namespace View
+﻿namespace FunctionalRogue.View
 
 type ScreenManager (client, server) as this =
     let mainMenu = new MainMenu (client, server, this)
