@@ -20,14 +20,11 @@ namespace Xna.Gui.Controls.Elements {
         private DragState State { get; set; }
         private Pin Pin { get; set; }
 
-        protected override ScrollBarsRenderRule BuildRenderRule() {
-            return new ScrollBarsRenderRule();
-        }
-
         public ScrollBars() {
 
             Pin = new Pin();
             State = DragState.None;
+            RenderRule = new ScrollBarsRenderRule();
         }
 
         protected override void Attach() {

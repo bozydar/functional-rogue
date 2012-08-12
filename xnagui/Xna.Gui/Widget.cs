@@ -21,11 +21,6 @@ namespace Xna.Gui {
         public override Rectangle AbsoluteInputArea {
             get { return RenderRule.SafeArea; }
         }        
-
-        protected abstract T BuildRenderRule();
-        protected WidgetBase() {
-            RenderRule = BuildRenderRule();
-        }
         
         protected abstract void Attach();
         internal override void Prepare(Gui gui) {

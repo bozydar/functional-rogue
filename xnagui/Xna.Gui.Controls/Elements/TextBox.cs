@@ -30,10 +30,6 @@ namespace Xna.Gui.Controls.Elements {
         public int MaxCharactors { get; set; }
         public int Padding { get; set; }
 
-        protected override TextBoxRenderRule BuildRenderRule() {
-            return new TextBoxRenderRule(500);
-        }
-
         /// <summary>
         /// Creates a new textbox that automatically fills the parent element.
         /// </summary>
@@ -46,6 +42,7 @@ namespace Xna.Gui.Controls.Elements {
             MaxCharactors = maxChars;
 
             _cursorTimer = new Timer(500);
+            RenderRule = new TextBoxRenderRule(500);
             _cursorTimer.Elapsed += delegate {
                 RenderRule.CursorVisible = !RenderRule.CursorVisible;
             };

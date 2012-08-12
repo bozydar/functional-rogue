@@ -47,16 +47,13 @@ namespace Xna.Gui.Controls.Elements {
             RenderRule.Checked = _innerIsToggled;
         }
 
-        protected override CheckBoxRenderRule BuildRenderRule() {
-            return new CheckBoxRenderRule();
-        }
-
         public CheckBox(int x, int y, string label) {
 
             Area = new Rectangle(x, y, 0, 0);
 
             Label = label;
             _innerIsToggled = false;
+            RenderRule = new CheckBoxRenderRule();
         }        
 
         protected override void Attach() {

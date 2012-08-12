@@ -62,10 +62,7 @@ namespace Ruminate.GUI.Content {
 
             _group = group;
             AddRadioButton(group, this);
-        }
-
-        protected override RadioButtonRenderRule BuildRenderRule() {                      
-            return new RadioButtonRenderRule();
+            RenderRule = new RadioButtonRenderRule();
         }
 
         protected override void Attach() {

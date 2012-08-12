@@ -11,10 +11,11 @@ namespace Xna.Gui.Controls.Elements
         public int TileCountX { get; private set; }
         public int TileCountY { get; private set; }
 
-        public Board(int tileCountX, int tileCountY)
+        public Board(int tileCountX, int tileCountY) : base()
         {
             TileCountX = tileCountX;
             TileCountY = tileCountY;
+            RenderRule = new BoardRenderRule(TileCountX, TileCountY);
         }
 
         public void PutTile(int x, int y, Tile tile)
@@ -41,11 +42,6 @@ namespace Xna.Gui.Controls.Elements
         protected override void Update()
         {
             // pass
-        }
-
-        protected override BoardRenderRule BuildRenderRule()
-        {
-            return new BoardRenderRule(TileCountX, TileCountY);
         }
 
         protected override void Attach()

@@ -12,20 +12,18 @@ namespace Xna.Gui.Controls.Elements {
             set { RenderRule.Image = value; }
         }
 
-        protected override LabelRenderRule BuildRenderRule() {
-            return new LabelRenderRule();
-        }
-
         public Image(int x, int y, Texture2D texture) {
 
             Icon = texture;
             Area = new Rectangle(x, y, texture.Width, texture.Height);
+            RenderRule = new LabelRenderRule();
         }        
 
         public Image(int x, int y, int width, int height, Texture2D texture) {
 
             Icon = texture;
             Area = new Rectangle(x, y, width, height);
+            RenderRule = new LabelRenderRule();
         }        
 
         protected override void Attach() { }

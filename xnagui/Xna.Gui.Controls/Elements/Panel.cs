@@ -7,13 +7,9 @@ namespace Xna.Gui.Controls.Elements {
     public sealed class Panel : WidgetBase<PanelRenderRule> {
 
         public Panel(int x, int y, int width, int height) {
-
             Area = new Rectangle(x, y, width, height);
+            RenderRule = new PanelRenderRule();
         }        
-
-        protected override PanelRenderRule BuildRenderRule() {
-            return new PanelRenderRule();
-        }
 
         protected override void Attach() { }
 

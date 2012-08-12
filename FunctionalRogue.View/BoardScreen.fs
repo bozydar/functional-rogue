@@ -83,8 +83,8 @@ type BoardScreen(client : IClient, server : IServer, back) =
         let chars = ['.'..'Z'] |> List.map (fun item -> item.ToString())
         let charLength = List.length chars
         this.boardWidget <- new Xna.Gui.Controls.Elements.Board(boardFrameSize.Width, boardFrameSize.Height)
-        for x in 0..boardFrameSize.Width do
-            for y in 0..boardFrameSize.Height do
+        for x in 0..boardFrameSize.Width - 1 do
+            for y in 0..boardFrameSize.Height - 1 do
                 let letter = [| chars.[(x + y) % charLength].ToString() |]
                 this.boardWidget.PutTile(x, y, new Xna.Gui.Controls.Elements.BoardItems.Tile(BitmapNames = letter))
         [| this.boardWidget :> Widget |]

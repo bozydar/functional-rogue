@@ -51,13 +51,6 @@ namespace Xna.Gui.Controls.Elements {
         /// </summary>
         public event ElementEvent ClickEvent;
 
-        /*####################################################################*/
-        /*                           Initialization                           */
-        /*####################################################################*/
-
-        protected override ButtonRenderRule BuildRenderRule() {
-            return new ButtonRenderRule();
-        }
 
         /// <summary>
         /// Creates a new button at the location specified. The button defaults to
@@ -68,8 +61,9 @@ namespace Xna.Gui.Controls.Elements {
         /// <param name="label">The label to be rendered on the button.</param>
         /// <param name="padding">If specified the padding on either side of the label.</param>
         /// <param name="buttonEvent">Event fired when the button is clicked.</param>
-        public Button(int x, int y, string label, int padding = 2, ElementEvent buttonEvent = null) {
-
+        public Button(int x, int y, string label, int padding = 2, ElementEvent buttonEvent = null)
+        {
+            RenderRule = new ButtonRenderRule();
             Area = new Rectangle(x, y, 0, 0);
 
             ClickEvent = buttonEvent;
@@ -87,13 +81,14 @@ namespace Xna.Gui.Controls.Elements {
         /// <param name="width">The width of the Button. Ignored if the width is less that the width of the label.</param>
         /// <param name="label">The label to be rendered on the button.</param>
         /// <param name="buttonEvent">Event fired when the button is clicked.</param>
-        public Button(int x, int y, int width, string label, ElementEvent buttonEvent = null) {
-
+        public Button(int x, int y, int width, string label, ElementEvent buttonEvent = null)
+        {
+            RenderRule = new ButtonRenderRule();
             Area = new Rectangle(x, y, 0, 0);
             Width = width;
             ClickEvent = buttonEvent;
             Label = label;
-        }        
+        }
 
         protected override void Attach() {
 

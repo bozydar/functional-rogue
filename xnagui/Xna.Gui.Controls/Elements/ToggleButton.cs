@@ -76,10 +76,6 @@ namespace Xna.Gui.Controls.Elements {
             }
         }
 
-        protected override ButtonRenderRule BuildRenderRule() {
-            return new ButtonRenderRule();
-        }
-
         /// <summary>
         /// Creates a new button at the location specified. The button defaults to
         /// the height of the RenderRule and width of the label.
@@ -91,7 +87,7 @@ namespace Xna.Gui.Controls.Elements {
         public ToggleButton(int x, int y, string label, int padding = 2) {
 
             Area = new Rectangle(x, y, 0, 0);
-
+            RenderRule = new ButtonRenderRule();
             Label = label;
             TextPadding = padding;
         }
