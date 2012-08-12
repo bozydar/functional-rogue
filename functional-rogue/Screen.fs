@@ -16,7 +16,7 @@ module Screen =
         FGColor: ConsoleColor
     } 
     
-    let private empty = {Char = ' '; FGColor = ConsoleColor.Gray; BGColor = ConsoleColor.Black}
+    let empty = {Char = ' '; FGColor = ConsoleColor.Gray; BGColor = ConsoleColor.Black}
 
     type private screen = textel[,]
 

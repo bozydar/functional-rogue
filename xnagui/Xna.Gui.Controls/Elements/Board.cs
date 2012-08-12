@@ -7,6 +7,16 @@ namespace Xna.Gui.Controls.Elements
 {
     public class Board : WidgetBase<BoardRenderRule> 
     {
+    
+        public int TileCountX { get; private set; }
+        public int TileCountY { get; private set; }
+
+        public Board(int tileCountX, int tileCountY)
+        {
+            TileCountX = tileCountX;
+            TileCountY = tileCountY;
+        }
+
         public void PutTile(int x, int y, Tile tile)
         {
             RenderRule.Tiles[x, y] = tile;
@@ -35,7 +45,7 @@ namespace Xna.Gui.Controls.Elements
 
         protected override BoardRenderRule BuildRenderRule()
         {
-            return new BoardRenderRule(30, 30);
+            return new BoardRenderRule(TileCountX, TileCountY);
         }
 
         protected override void Attach()
