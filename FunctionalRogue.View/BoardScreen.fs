@@ -86,7 +86,9 @@ type BoardScreen(client : IClient, server : IServer, back) =
         for x in 0..boardFrameSize.Width - 1 do
             for y in 0..boardFrameSize.Height - 1 do
                 let letter = [| chars.[(x + y) % charLength].ToString() |]
-                this.boardWidget.PutTile(x, y, new Xna.Gui.Controls.Elements.BoardItems.Tile(BitmapNames = letter))
+                this.boardWidget.PutTile(x, y, new Xna.Gui.Controls.Elements.BoardItems.Tile (BitmapNames = letter))
+        // TODO: You need to make this wiser (or not). Although copy mainLoop from the Game module to OnKeyDown (i think so)
+        Screen.agent <- this.MailboxProcessor ()
         [| this.boardWidget :> Widget |]
 
     member this.ShowBoard (board: Board, boardFramePosition: Point) =
@@ -96,15 +98,30 @@ type BoardScreen(client : IClient, server : IServer, back) =
                 let virtualX = x + boardFramePosition.X
                 let virtualY = y + boardFramePosition.Y
                 this.boardWidget.PutTile(x, y, 
-                    new Xna.Gui.Controls.Elements.BoardItems.Tile(
+                    new Xna.Gui.Controls.Elements.BoardItems.Tile (
                         BitmapNames = 
                             [| 
                                 board.Places.[virtualX, virtualY].Character.Value.ToString() 
                             |]))
                 //screen.[x, y] <- toTextel board.Places.[virtualX, virtualY] (getHighlightForTile board virtualX virtualY)
     
+    [<DefaultValue>] val mutable keyBuffer : System.ConsoleKeyInfo
+
     override this.OnKeyDown _ e =
-        match e.KeyCode with 
-        | Input.Keys.Escape -> back ()
-        | _ -> ()
+            match e.KeyCode with 
+            | Input.Keys.Escape -> back ()
+            | _ -> this.keyBuffer <- new System.ConsoleKeyInfo (Convert.ToChar(0), enum (int e.KeyCode), false, false, false)
+
+    member this.MailboxProcessor () : MailboxProcessor<Screen.ScreenAgentMessage> =
+        MailboxProcessor<Screen.ScreenAgentMessage>.Start(fun inbox ->
+            let rec loop () = async {
+                let! msg = inbox.Receive ()
+                match msg with
+                | ShowBoard(state) -> 
+                    this.ShowBoard (state.Board, state.BoardFramePosition)
+                | ReadKey(reply) ->
+                    reply.Reply { ConsoleKeyInfo = this.keyBuffer }
+            }
+            loop ()
+        )
         

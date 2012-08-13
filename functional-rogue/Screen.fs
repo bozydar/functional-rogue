@@ -194,7 +194,7 @@ module Screen =
 
     
 
-    type private ScreenAgentMessage =
+    type ScreenAgentMessage =
         | ReadKey of AsyncReplyChannel<ReadKeyReply>
         | ShowBoard of State
         | ShowMainMenu of AsyncReplyChannel<MainMenuReply>
@@ -652,7 +652,7 @@ module Screen =
 
 
 
-    let private agent = screenWritter ()
+    let mutable agent = screenWritter ()
 
     let showBoard () = agent.Post (ShowBoard(State.get ()))
     let showAnimation animationFunction = agent.Post (ShowBoardAnimationFromFrame(State.get (), 0, animationFunction))
