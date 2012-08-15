@@ -214,31 +214,7 @@ module Game =
                     showHelpKeyCommands ()
                     Screen.showBoard ()
                     loop false
-
-        let characterOptionsDialog = 
-            Dialog.Dialog [
-                Dialog.Title("Create Hero");
-                Dialog.Option(Input.Char 'a', "Class", "class", 
-                    [ for item in Predefined.Classes.getClasses -> (item, item)]);
-                Dialog.Subdialog(Input.Char 'b', "Subdialog", 
-                    Dialog.Dialog [
-                        Dialog.Title("Submenu");
-                        Dialog.Action(Input.Console ConsoleKey.Escape, "[escape]", "sub-result", "0");
-                ]);
-                Dialog.Label("Actions");
-                Dialog.Action(Input.Console ConsoleKey.Enter, "[enter]", "result", "1");
-                Dialog.Action(Input.Console ConsoleKey.Escape, "[escape]", "result", "0");
-            ]
-
-        let d2 = 
-            Dialog.Dialog [
-                Dialog.Title("What's your name?" ) ;        
-                Dialog.Textbox(Input.Char 'n', "name")            
-            ]
-
-        let characterOptions = showDialog(characterOptionsDialog, Dialog.newResult([("class", "Soldier")])) 
-        //let playerName = (showDialog (d2, Dialog.emptyResult)).Item("name")
-        let thePlayer = Predefined.Classes.buildCharacterByPlayerClass characterOptions.["class"]
+        let thePlayer = Predefined.Classes.buildCharacterByPlayerClass "Soldier"
 
         //initial maps setup
         let mainMapBoard, mainMapPoint = generateMainMap

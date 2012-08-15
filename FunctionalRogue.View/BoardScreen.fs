@@ -88,7 +88,9 @@ type BoardScreen(client : IClient, server : IServer, back) =
                 let letter = [| chars.[(x + y) % charLength].ToString() |]
                 this.boardWidget.PutTile(x, y, new Xna.Gui.Controls.Elements.BoardItems.Tile (BitmapNames = letter))
         // TODO: You need to make this wiser (or not). Although copy mainLoop from the Game module to OnKeyDown (i think so)
-        Screen.agent <- this.MailboxProcessor ()
+        Screen.agent.Agent <- this.MailboxProcessor ()
+        // TODO: There is something wrong with it. I think that game main loop should be an Agent which
+        // waits for pressed keyes. It would bypass stealing XNA main thread.
         Game.main [| |] |> ignore
         [| this.boardWidget :> Widget |]
 
@@ -119,9 +121,11 @@ type BoardScreen(client : IClient, server : IServer, back) =
                 match msg with
                 | ShowBoard(state) -> 
                     this.ShowBoard (state.Board, state.BoardFramePosition)
+                    return! loop ()
                 | ReadKey(reply) ->
                     reply.Reply { ConsoleKeyInfo = this.keyBuffer }
-                | _ -> ()
+                    return! loop ()
+                | _ -> return! loop ()
             }
             loop ()
         )
