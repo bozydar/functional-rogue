@@ -89,6 +89,7 @@ type BoardScreen(client : IClient, server : IServer, back) =
                 this.boardWidget.PutTile(x, y, new Xna.Gui.Controls.Elements.BoardItems.Tile (BitmapNames = letter))
         // TODO: You need to make this wiser (or not). Although copy mainLoop from the Game module to OnKeyDown (i think so)
         Screen.agent <- this.MailboxProcessor ()
+        Game.main [| |] |> ignore
         [| this.boardWidget :> Widget |]
 
     member this.ShowBoard (board: Board, boardFramePosition: Point) =
@@ -103,14 +104,13 @@ type BoardScreen(client : IClient, server : IServer, back) =
                             [| 
                                 board.Places.[virtualX, virtualY].Character.Value.ToString() 
                             |]))
-                //screen.[x, y] <- toTextel board.Places.[virtualX, virtualY] (getHighlightForTile board virtualX virtualY)
     
     [<DefaultValue>] val mutable keyBuffer : System.ConsoleKeyInfo
 
     override this.OnKeyDown _ e =
-            match e.KeyCode with 
-            | Input.Keys.Escape -> back ()
-            | _ -> this.keyBuffer <- new System.ConsoleKeyInfo (Convert.ToChar(0), enum (int e.KeyCode), false, false, false)
+        match e.KeyCode with 
+        | Input.Keys.Escape -> back ()
+        | _ -> this.keyBuffer <- new System.ConsoleKeyInfo (Convert.ToChar(0), enum (int e.KeyCode), false, false, false)
 
     member this.MailboxProcessor () : MailboxProcessor<Screen.ScreenAgentMessage> =
         MailboxProcessor<Screen.ScreenAgentMessage>.Start(fun inbox ->
@@ -121,6 +121,7 @@ type BoardScreen(client : IClient, server : IServer, back) =
                     this.ShowBoard (state.Board, state.BoardFramePosition)
                 | ReadKey(reply) ->
                     reply.Reply { ConsoleKeyInfo = this.keyBuffer }
+                | _ -> ()
             }
             loop ()
         )

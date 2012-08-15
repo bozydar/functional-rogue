@@ -111,6 +111,7 @@ module Game =
                 | GoDownEnter ->
                     State.get () 
                     |> performGoDownEnterAction command
+
                     |> Turn.next
                     Screen.showBoard ()
                     loop false
