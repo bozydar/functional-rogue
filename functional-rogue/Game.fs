@@ -49,171 +49,151 @@ module Game =
         refreshScreen
         loop ()
 
+    exception QuitException
+    
+    let makeAction (consoleKeyInfo : ConsoleKeyInfo) =                
 
-    let mainLoop () =
-        let rec loop printAll =                
-
-            if not(State.get().Player.IsAlive) then
-                State.get ()                  
-                |> Screen.showFinishScreen
-                ()
-            else
-                let consoleKeyInfo = if printAll then new ConsoleKeyInfo('5', ConsoleKey.NumPad5, false, false, false) else Screen.readKey()
-                let isMainMap = (State.get ()).Board.IsMainMap  
-                let isCtrl = (consoleKeyInfo.Modifiers &&& ConsoleModifiers.Control) = (ConsoleModifiers.Control)
-                let boolTrue (value : bool) =
-                    value                  
-                let command = 
-                    match consoleKeyInfo with 
-                    | Keys [ConsoleKey.UpArrow; '8'] -> Up            
-                    | Keys [ConsoleKey.DownArrow; '2'] -> Down            
-                    | Keys [ConsoleKey.LeftArrow; '4'] -> Left            
-                    | Keys [ConsoleKey.RightArrow; '6'] -> Right
-                    | Key '7'  -> UpLeft
-                    | Key '9' -> UpRight
-                    | Key '1' -> DownLeft
-                    | Key '3' -> DownRight
-                    | Key '5' -> Wait
-                    | Key ',' when not isMainMap -> Take
-                    | Key 'i' -> ShowItems
-                    | Key ConsoleKey.Escape -> Quit
-                    | Key 'o' when not isMainMap -> OpenCloseDoor
-                    | Key 'e' -> ShowEquipment
-                    | Key 'E' -> Eat
-                    | Key 'm' -> ShowMessages
-                    | Key 'h' when not isMainMap -> Harvest
-                    | Key 'W' -> Wear
-                    | Key 'T' -> TakeOff
-                    | Key '>' -> GoDownEnter
-                    | Key '<' -> GoUp
-                    | Key 'd' -> Drop
-                    | Key 'l' when not isMainMap -> Look
-                    | Key 'U' when not isMainMap -> UseObject   // objects are anything not in your inventory
-                    | Key 'u' -> UseItem    // items are things in your inventory
-                    | Key 'O' -> ToggleSettingsMainMapHighlightPointsOfInterest
-                    | Input (Input.ModifiedConsole(ConsoleKey.P, ConsoleModifiers.Control)) when isCtrl -> PourLiquid
-                    | Key '?' -> Help
-                    | Key 't' -> Throw
-                    | _ -> Unknown                        
+        if not(State.get().Player.IsAlive) then
+            State.get ()                  
+            |> Screen.showFinishScreen
+            ()
+        else
+            let isMainMap = (State.get ()).Board.IsMainMap  
+            let isCtrl = (consoleKeyInfo.Modifiers &&& ConsoleModifiers.Control) = (ConsoleModifiers.Control)
+            let boolTrue (value : bool) =
+                value                  
+            let command = 
+                match consoleKeyInfo with 
+                | Keys [ConsoleKey.UpArrow; '8'] -> Up            
+                | Keys [ConsoleKey.DownArrow; '2'] -> Down            
+                | Keys [ConsoleKey.LeftArrow; '4'] -> Left            
+                | Keys [ConsoleKey.RightArrow; '6'] -> Right
+                | Key '7'  -> UpLeft
+                | Key '9' -> UpRight
+                | Key '1' -> DownLeft
+                | Key '3' -> DownRight
+                | Key '5' -> Wait
+                | Key ',' when not isMainMap -> Take
+                | Key 'i' -> ShowItems
+                | Key ConsoleKey.Escape -> Quit
+                | Key 'o' when not isMainMap -> OpenCloseDoor
+                | Key 'e' -> ShowEquipment
+                | Key 'E' -> Eat
+                | Key 'm' -> ShowMessages
+                | Key 'h' when not isMainMap -> Harvest
+                | Key 'W' -> Wear
+                | Key 'T' -> TakeOff
+                | Key '>' -> GoDownEnter
+                | Key '<' -> GoUp
+                | Key 'd' -> Drop
+                | Key 'l' when not isMainMap -> Look
+                | Key 'U' when not isMainMap -> UseObject   // objects are anything not in your inventory
+                | Key 'u' -> UseItem    // items are things in your inventory
+                | Key 'O' -> ToggleSettingsMainMapHighlightPointsOfInterest
+                | Input (Input.ModifiedConsole(ConsoleKey.P, ConsoleModifiers.Control)) when isCtrl -> PourLiquid
+                | Key '?' -> Help
+                | Key 't' -> Throw
+                | _ -> Unknown                        
         
-                match command with
-                | Quit -> 
-                    State.get ()
-                    |> writeState
-                    ()
-                | Unknown -> loop false
-                | Up | Down | Left | Right | UpLeft | UpRight | DownLeft | DownRight  ->
-                    State.get () 
-                    |> moveAvatar command
-                    |> Turn.next
-                    Screen.showBoard ()
-                    loop false
-                | GoDownEnter ->
-                    State.get () 
-                    |> performGoDownEnterAction command
+            match command with
+            | Quit -> 
+                State.get ()
+                |> writeState
+                raise (QuitException)
+            | Unknown -> ()
+            | Up | Down | Left | Right | UpLeft | UpRight | DownLeft | DownRight  ->
+                State.get () 
+                |> moveAvatar command
+                |> Turn.next
+                Screen.showBoard ()
+            | GoDownEnter ->
+                State.get () 
+                |> performGoDownEnterAction command
 
-                    |> Turn.next
-                    Screen.showBoard ()
-                    loop false
-                | GoUp ->
-                    State.get () 
-                    |> performGoUpAction command
-                    |> Turn.next
-                    Screen.showBoard ()
-                    loop false
-                | Wait ->
-                    State.get () |> Turn.next
-                    Screen.showBoard ()
-                    loop false
-                | Take ->
-                    State.get () 
-                    |> Actions.performTakeAction
-                    |> Turn.next
-                    Screen.showBoard ()
-                    loop false
-                | Drop ->
-                    State.get () 
-                    |> Actions.performDropAction
-                    |> Turn.next
-                    Screen.showBoard ()
-                    loop false
-                | Throw ->
-                    let oldState = State.get ()
-                    let newState, animationFunction = oldState |> Actions.performThrowAction
-                    if animationFunction.IsSome then Screen.showAnimation animationFunction.Value
-                    newState |> Turn.next
-                    loop false
-                | OpenCloseDoor ->
-                    State.get () 
-                    |> Actions.performCloseOpenAction command
-                    |> Turn.next
-                    Screen.showBoard ()
-                    loop false
-                | ToggleSettingsMainMapHighlightPointsOfInterest ->
-                    State.set (State.get() |> Actions.performToggleSettingsMainMapHighlightPointsOfInterest command)
-                    Screen.showBoard ()
-                    loop false
-                | Look ->
-                    Actions.performLookAction command (State.get ())
-                    Screen.showBoard ()
-                    loop false
-                | UseObject ->
-                    State.get ()
-                    |> performUseObjectAction command
-                    |> Turn.next
-                    Screen.showBoard ()
-                    loop false
-                | UseItem ->
-                    State.get ()
-                    |> useItem
-                    |> Turn.next
-                    Screen.showBoard ()
-                    loop false
-                | Harvest -> 
-                    State.get () 
-                    |> Actions.performHarvest
-                    |> Turn.next
-                    Screen.showBoard ()
-                    loop false
-                | ShowItems ->
-                    showItems ()
-                    Screen.showBoard ()
-                    loop false
-                | ShowEquipment ->
-                    showEquipment ()
-                    Screen.showBoard ()
-                    loop false
-                | ShowMessages ->
-                    Screen.showMessages ()
-                    loop false
-                | Wear ->
-                    State.get ()
-                    |> wear
-                    |> Turn.next
-                    Screen.showBoard ()
-                    loop false
-                | Eat ->
-                    State.get ()
-                    |> eat
-                    |> Turn.next
-                    Screen.showBoard ()
-                    loop false
-                | TakeOff ->
-                    State.get ()
-                    |> takeOff
-                    |> Turn.next
-                    Screen.showBoard ()
-                    loop false
-                | PourLiquid ->
-                    State.get ()
-                    |> pourLiquid
-                    |> Turn.next
-                    Screen.showBoard ()
-                    loop false
-                | Help ->
-                    showHelpKeyCommands ()
-                    Screen.showBoard ()
-                    loop false
+                |> Turn.next
+                Screen.showBoard ()
+            | GoUp ->
+                State.get () 
+                |> performGoUpAction command
+                |> Turn.next
+                Screen.showBoard ()
+            | Wait ->
+                State.get () |> Turn.next
+                Screen.showBoard ()
+            | Take ->
+                State.get () 
+                |> Actions.performTakeAction
+                |> Turn.next
+                Screen.showBoard ()
+            | Drop ->
+                State.get () 
+                |> Actions.performDropAction
+                |> Turn.next
+                Screen.showBoard ()
+            | Throw ->
+                let oldState = State.get ()
+                let newState, animationFunction = oldState |> Actions.performThrowAction
+                if animationFunction.IsSome then Screen.showAnimation animationFunction.Value
+                newState |> Turn.next
+            | OpenCloseDoor ->
+                State.get () 
+                |> Actions.performCloseOpenAction command
+                |> Turn.next
+                Screen.showBoard ()
+            | ToggleSettingsMainMapHighlightPointsOfInterest ->
+                State.set (State.get() |> Actions.performToggleSettingsMainMapHighlightPointsOfInterest command)
+                Screen.showBoard ()
+            | Look ->
+                Actions.performLookAction command (State.get ())
+                Screen.showBoard ()
+            | UseObject ->
+                State.get ()
+                |> performUseObjectAction command
+                |> Turn.next
+                Screen.showBoard ()
+            | UseItem ->
+                State.get ()
+                |> useItem
+                |> Turn.next
+                Screen.showBoard ()
+            | Harvest -> 
+                State.get () 
+                |> Actions.performHarvest
+                |> Turn.next
+                Screen.showBoard ()
+            | ShowItems ->
+                showItems ()
+                Screen.showBoard ()
+            | ShowEquipment ->
+                showEquipment ()
+                Screen.showBoard ()
+            | ShowMessages ->
+                Screen.showMessages ()
+            | Wear ->
+                State.get ()
+                |> wear
+                |> Turn.next
+                Screen.showBoard ()
+            | Eat ->
+                State.get ()
+                |> eat
+                |> Turn.next
+                Screen.showBoard ()
+            | TakeOff ->
+                State.get ()
+                |> takeOff
+                |> Turn.next
+                Screen.showBoard ()
+            | PourLiquid ->
+                State.get ()
+                |> pourLiquid
+                |> Turn.next
+                Screen.showBoard ()
+            | Help ->
+                showHelpKeyCommands ()
+                Screen.showBoard ()
+
+    let initialize () =
         let thePlayer = Predefined.Classes.buildCharacterByPlayerClass "Soldier"
 
         //initial maps setup
@@ -253,7 +233,16 @@ module Game =
                             MainMapDetails = Array2D.init boardWidth boardHeight (fun x y -> if mainMapPoint.X = x && mainMapPoint.Y = y then { PointOfInterest = Some("Your ship's crash site")} else { PointOfInterest = Option.None});
                             Settings = { HighlightPointsOfInterest = false }
                         }
+
         State.set entryState
+
+    let mainLoop () =
+        let rec loop printAll =
+            let consoleKeyInfo = if printAll then new ConsoleKeyInfo('5', ConsoleKey.NumPad5, false, false, false) else Screen.readKey()
+            try
+                makeAction consoleKeyInfo
+                loop false
+            with QuitException -> ()
         loop true      
 
     let clearCharacterStates state = 
@@ -295,5 +284,6 @@ module Game =
     [<EntryPoint>]
     let main args =    
         subscribeHandlers ()
+        initialize ()
         mainLoop ()    
         0

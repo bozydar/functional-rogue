@@ -655,8 +655,8 @@ module Screen =
         member this.Post = this.Agent.Post 
         member this.PostAndReply (buildMessage) = this.Agent.PostAndReply (buildMessage)
 
-    // let agent = Facade ()
-    let agent = screenWritter ()
+    let agent = Facade ()
+    (* let agent = screenWritter () *)
 
     let showBoard () = agent.Post (ShowBoard(State.get ()))
     let showAnimation animationFunction = agent.Post (ShowBoardAnimationFromFrame(State.get (), 0, animationFunction))

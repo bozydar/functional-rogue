@@ -80,41 +80,49 @@ type BoardScreen(client : IClient, server : IServer, back) =
         else empty
 
     override this.CreateChildren () =
-        let chars = ['.'..'Z'] |> List.map (fun item -> item.ToString())
-        let charLength = List.length chars
+//        let chars = ['.'..'Z'] |> List.map (fun item -> item.ToString())
+//        let charLength = List.length chars
         this.boardWidget <- new Xna.Gui.Controls.Elements.Board(boardFrameSize.Width, boardFrameSize.Height)
-        for x in 0..boardFrameSize.Width - 1 do
-            for y in 0..boardFrameSize.Height - 1 do
-                let letter = [| chars.[(x + y) % charLength].ToString() |]
-                this.boardWidget.PutTile(x, y, new Xna.Gui.Controls.Elements.BoardItems.Tile (BitmapNames = letter))
+//        for x in 0..boardFrameSize.Width - 1 do
+//            for y in 0..boardFrameSize.Height - 1 do
+//                let letter = [| chars.[(x + y) % charLength].ToString() |]
+//                this.boardWidget.PutTile(x, y, new Xna.Gui.Controls.Elements.BoardItems.Tile (BitmapNames = letter))
         // TODO: You need to make this wiser (or not). Although copy mainLoop from the Game module to OnKeyDown (i think so)
         Screen.agent.Agent <- this.MailboxProcessor ()
-        // TODO: There is something wrong with it. I think that game main loop should be an Agent which
-        // waits for pressed keyes. It would bypass stealing XNA main thread.
-        Game.main [| |] |> ignore
+        Game.subscribeHandlers ()
+        Game.initialize ()
+        //Game.makeAction (System.ConsoleKeyInfo ('5', ConsoleKey.NumPad5, false, false, false))
         [| this.boardWidget :> Widget |]
 
     member this.ShowBoard (board: Board, boardFramePosition: Point) =
+        Console.Beep ()
         for x in 0..boardFrameSize.Width - 1 do
             for y in 0..boardFrameSize.Height - 1 do
                 // move board                                
                 let virtualX = x + boardFramePosition.X
                 let virtualY = y + boardFramePosition.Y
-                this.boardWidget.PutTile(x, y, 
+                let tile = 
                     new Xna.Gui.Controls.Elements.BoardItems.Tile (
                         BitmapNames = 
                             [| 
                                 board.Places.[virtualX, virtualY].Character.Value.ToString() 
-                            |]))
+                            |])
+                Console.Beep ()
+                this.boardWidget.PutTile(x, y, tile)
     
     [<DefaultValue>] val mutable keyBuffer : System.ConsoleKeyInfo
 
     override this.OnKeyDown _ e =
         match e.KeyCode with 
         | Input.Keys.Escape -> back ()
-        | _ -> this.keyBuffer <- new System.ConsoleKeyInfo (Convert.ToChar(0), enum (int e.KeyCode), false, false, false)
+        | _ ->
+            let keyInfo = new System.ConsoleKeyInfo (Convert.ToChar(0), enum (int e.KeyCode), false, false, false)
+            Game.makeAction keyInfo
+            // TODO: This line has to be removed when I remove all ReadKey calls
+            this.keyBuffer <- keyInfo
 
     member this.MailboxProcessor () : MailboxProcessor<Screen.ScreenAgentMessage> =
+        // I don't know why this mailbox is not called although Key are catched and Game is processed.
         MailboxProcessor<Screen.ScreenAgentMessage>.Start(fun inbox ->
             let rec loop () = async {
                 let! msg = inbox.Receive ()

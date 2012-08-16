@@ -55,12 +55,15 @@ namespace Xna.Gui.Controls.RenderRules
             {
                 for (var y = 0; y < Tiles.GetUpperBound(1); y++)
                 {
-                    foreach (var bitmapName in Tiles[x, y].BitmapNames)
+                    if (Tiles[x, y] != null)
                     {
-                        var position = new Rectangle(_area.Left + x * With, _area.Top + y * Height, With, Height);
-                        TextRenderer.Render(RenderManager.SpriteBatch, bitmapName, position,
-                        TextHorizontal.CenterAligned,
-                        TextVertical.CenterAligned);
+                        foreach (var bitmapName in Tiles[x, y].BitmapNames)
+                        {
+                            var position = new Rectangle(_area.Left + x * With, _area.Top + y * Height, With, Height);
+                            TextRenderer.Render(RenderManager.SpriteBatch, bitmapName, position,
+                                                TextHorizontal.CenterAligned,
+                                                TextVertical.CenterAligned);
+                        }
                     }
                 }
             }
