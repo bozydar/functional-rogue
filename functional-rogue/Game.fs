@@ -60,37 +60,38 @@ module Game =
         else
             let isMainMap = (State.get ()).Board.IsMainMap  
             let isCtrl = (consoleKeyInfo.Modifiers &&& ConsoleModifiers.Control) = (ConsoleModifiers.Control)
+            let isShift = (consoleKeyInfo.Modifiers &&& ConsoleModifiers.Control) = (ConsoleModifiers.Shift)
             let boolTrue (value : bool) =
                 value                  
             let command = 
                 match consoleKeyInfo with 
+                | Key ConsoleKey.K -> GoDownEnter
+                | Key ConsoleKey.L -> GoUp
                 | Keys [ConsoleKey.UpArrow; '8'] -> Up            
                 | Keys [ConsoleKey.DownArrow; '2'] -> Down            
                 | Keys [ConsoleKey.LeftArrow; '4'] -> Left            
                 | Keys [ConsoleKey.RightArrow; '6'] -> Right
-                | Key '7'  -> UpLeft
-                | Key '9' -> UpRight
-                | Key '1' -> DownLeft
-                | Key '3' -> DownRight
-                | Key '5' -> Wait
-                | Key ',' when not isMainMap -> Take
-                | Key 'i' -> ShowItems
+                | Key ConsoleKey.NumPad7  -> UpLeft
+                | Key ConsoleKey.NumPad9 -> UpRight
+                | Key ConsoleKey.NumPad1 -> DownLeft
+                | Key ConsoleKey.NumPad3 -> DownRight
+                | Key ConsoleKey.NumPad5 -> Wait
+                | Key ConsoleKey.G when not isMainMap -> Take
+                | Key ConsoleKey.I -> ShowItems
                 | Key ConsoleKey.Escape -> Quit
-                | Key 'o' when not isMainMap -> OpenCloseDoor
-                | Key 'e' -> ShowEquipment
-                | Key 'E' -> Eat
-                | Key 'm' -> ShowMessages
-                | Key 'h' when not isMainMap -> Harvest
-                | Key 'W' -> Wear
-                | Key 'T' -> TakeOff
-                | Key '>' -> GoDownEnter
-                | Key '<' -> GoUp
+                | Key ConsoleKey.O when not isMainMap -> OpenCloseDoor
+                | Key ConsoleKey.E -> ShowEquipment
+                | Key ConsoleKey.E when isShift -> Eat
+                | Key ConsoleKey.M -> ShowMessages
+                | Key ConsoleKey.H when not isMainMap -> Harvest
+                | Key ConsoleKey.W -> Wear
+                | Key ConsoleKey.T -> TakeOff
                 | Key 'd' -> Drop
                 | Key 'l' when not isMainMap -> Look
                 | Key 'U' when not isMainMap -> UseObject   // objects are anything not in your inventory
                 | Key 'u' -> UseItem    // items are things in your inventory
                 | Key 'O' -> ToggleSettingsMainMapHighlightPointsOfInterest
-                | Input (Input.ModifiedConsole(ConsoleKey.P, ConsoleModifiers.Control)) when isCtrl -> PourLiquid
+                | Key ConsoleKey.P when isCtrl -> PourLiquid
                 | Key '?' -> Help
                 | Key 't' -> Throw
                 | _ -> Unknown                        
@@ -109,7 +110,6 @@ module Game =
             | GoDownEnter ->
                 State.get () 
                 |> performGoDownEnterAction command
-
                 |> Turn.next
                 Screen.showBoard ()
             | GoUp ->

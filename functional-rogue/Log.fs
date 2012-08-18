@@ -1,5 +1,6 @@
 ﻿namespace FunctionalRogue
 
+[<AutoOpen>]
 module Log =
 
     open System
@@ -20,7 +21,7 @@ module Log =
 
     let logException logType message ex = 
         use strm = openFile()
-        let message = formatMessage logType message ex
+        let message = formatMessage logType message (Some ex)
         strm.Write(message)    
 
     let log logType message =

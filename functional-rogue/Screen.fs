@@ -652,8 +652,8 @@ module Screen =
     type Facade () as this = 
         [<DefaultValue>] val mutable Agent : MailboxProcessor<ScreenAgentMessage> 
 
-        member this.Post = this.Agent.Post 
-        member this.PostAndReply (buildMessage) = this.Agent.PostAndReply (buildMessage)
+        member this.Post (message) = this.Agent.Post (message)
+        member this.PostAndReply (message) = this.Agent.PostAndReply (message)
 
     let agent = Facade ()
     (* let agent = screenWritter () *)
