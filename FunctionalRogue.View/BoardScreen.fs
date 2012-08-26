@@ -20,17 +20,11 @@ type BoardScreen(client : IClient, server : IServer, back) =
     val mutable boardWidget : Xna.Gui.Controls.Elements.Board
 
     override this.CreateChildren () =
-//        let chars = ['.'..'Z'] |> List.map (fun item -> item.ToString())
-//        let charLength = List.length chars
         this.boardWidget <- new Xna.Gui.Controls.Elements.Board(boardFrameSize.Width, boardFrameSize.Height)
-//        for x in 0..boardFrameSize.Width - 1 do
-//            for y in 0..boardFrameSize.Height - 1 do
-//                let letter = [| chars.[(x + y) % charLength].ToString() |]
-//                this.boardWidget.PutTile(x, y, new Xna.Gui.Controls.Elements.BoardItems.Tile (BitmapNames = letter))
         Screen.agent.Agent <- this.MailboxProcessor ()
         Game.subscribeHandlers ()
         Game.initialize ()
-        //Game.makeAction (System.ConsoleKeyInfo ('5', ConsoleKey.NumPad5, false, false, false))
+        Game.makeAction (System.ConsoleKeyInfo ('5', ConsoleKey.NumPad5, false, false, false))
         [| this.boardWidget :> Widget |]
 
     member this.ShowBoard (board: Board, boardFramePosition: Point) =
