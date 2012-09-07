@@ -4,3 +4,4 @@ type ScreenManagerState =
     | MainMenu
     | OptionsMenu
     | BoardScreen
+    | EquipmentScreen

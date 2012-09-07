@@ -36,18 +36,7 @@ module Game =
         loop ()
 
     let showItems () =
-        let refreshScreen = 
-            Screen.showChooseItemDialog { State = (State.get ()); Filter = fun _ -> true }
-
-        let rec loop () =
-            let key = Screen.readKey().Key        
-            match key with 
-            | ConsoleKey.Escape -> ()
-            | _ -> 
-                refreshScreen            
-                loop ()
-        refreshScreen
-        loop ()
+        Screen.showChooseItemDialog { State = (State.get ()); Filter = fun _ -> true }
 
     exception QuitException
     
@@ -163,7 +152,7 @@ module Game =
                 Screen.showBoard ()
             | ShowItems ->
                 showItems ()
-                Screen.showBoard ()
+                //Screen.showBoard ()
             | ShowEquipment ->
                 showEquipment ()
                 Screen.showBoard ()

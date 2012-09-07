@@ -12,7 +12,7 @@ open FunctionalRogue
 open FunctionalRogue.Board
 open FunctionalRogue.Screen
 
-type BoardScreen(client : IClient, server : IServer, back) = 
+type BoardScreen(client : IClient, server : IServer, screenManager : IScreenManager, back) = 
     inherit Screen()
 
     let boardFrameSize = new Size(60, 23)
@@ -47,11 +47,12 @@ type BoardScreen(client : IClient, server : IServer, back) =
     override this.OnKeyDown _ e =
         match e.KeyCode with 
         | Input.Keys.Escape -> back ()
+        | Input.Keys.I -> screenManager.Switch(ScreenManagerState.EquipmentScreen)
         | _ ->
             let keyInfo = new System.ConsoleKeyInfo (Convert.ToChar(0), enum (int e.KeyCode), false, false, false)
             Game.makeAction keyInfo
             // TODO: This line has to be removed when I remove all ReadKey calls
-            this.keyBuffer <- keyInfo
+            this.keyBuffer <- keyInfo  
 
     member this.MailboxProcessor () : MailboxProcessor<Screen.ScreenAgentMessage> =
         // I don't know why this mailbox is not called although Key are catched and Game is processed.

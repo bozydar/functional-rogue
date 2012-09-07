@@ -18,11 +18,12 @@ namespace functional_rogue_xna
     /// <summary>
     /// This is the main type for your game
     /// </summary>
-    public class Game1 : Microsoft.Xna.Framework.Game, IClient
+    public class Game1 : Game, IClient
     {
         GraphicsDeviceManager graphics;
         SpriteBatch spriteBatch;
         private Screen _screen;
+        private Screen _screenToUpdate;
         public Texture2D DefaultImageMap { get; private set; }
         public string DefaultMap { get; private set; }
         public SpriteFont DefaultSpriteFont { get; private set; }
@@ -35,8 +36,7 @@ namespace functional_rogue_xna
 
         public void Show(Screen screen)
         {
-            _screen = screen;
-            _screen.Init(this, new Skin(DefaultImageMap, DefaultMap), new TextRenderer(DefaultSpriteFont, Color.Black));
+            _screenToUpdate = screen;
         }
 
         protected override void Initialize()
@@ -63,6 +63,12 @@ namespace functional_rogue_xna
 
         protected override void Update(GameTime gameTime)
         {
+            if (_screenToUpdate != null)
+            {
+                _screen = _screenToUpdate;
+                _screen.Init(this, new Skin(DefaultImageMap, DefaultMap), new TextRenderer(DefaultSpriteFont, Color.Black));
+                _screenToUpdate = null;
+            }
             // Allows the game to exit
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed)
                 this.Exit();
