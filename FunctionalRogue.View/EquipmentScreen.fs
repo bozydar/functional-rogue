@@ -16,18 +16,48 @@ type EquipmentScreen(client : IClient, server : IServer, back) =
     inherit Screen()
 
     override this.CreateChildren () =
-        // TODO: Create list of equipment items. Shown items should be filtered by some function
-        // There should be two modes:
-        // 1 - selecting item and executing some action:
-        //     - use
-        //     - drop
-        //     - wear
-        // 2 - select n items and return what items were selected
-        [|  Button(10, 30, "Eq1", 2, fun _ -> () )
-            Button(10, 60, "Eq2", 2, fun _ -> () )
-            Button(10, 90, "Eq3", 2, fun _ -> () ) |]
+        let state = State.get ()
+        state.Player.Items 
+        |> this.BuildEquipmentItems
+        |> Seq.toArray
+        
 
     override this.OnKeyDown _ e =
         match e.KeyCode with 
         | Input.Keys.Escape -> back ()
         | _ -> ()
+
+    member private this.BuildEquipmentItems(equipment) =
+        let itemWidget (item : Characters.Item) = 
+            fun x y -> new Button(x, y, item.Name) :> Widget
+        let emptyLabel = fun x y -> new Label(x, y, "   Empty   ") :> Widget
+
+        let wearable =
+            equipment 
+            |> List.filter(fun item -> item.IsWearable)
+        let eatable =
+            equipment 
+            |> List.filter(fun item -> item.IsEatable)
+        let rest = 
+            equipment
+            |> List.filter(fun item -> not (List.exists((=) item) (wearable @ eatable)))
+
+        let constructors = seq {
+            yield fun x y -> new Label(x, y, "Wearable") :> Widget
+            for item in wearable do 
+                yield itemWidget item
+            if List.length wearable < 1 then yield emptyLabel
+
+            yield fun x y -> new Label(x, y, "Eatable") :> Widget
+            for item in eatable do 
+                yield itemWidget item
+            if List.length eatable < 1 then yield emptyLabel
+
+            yield fun x y -> new Label(x, y, "Rest") :> Widget
+            for item in rest do
+                yield itemWidget item
+            if List.length rest < 1 then yield emptyLabel
+
+        }
+        constructors
+        |> Seq.mapi (fun i item -> item 30 (30 * i))

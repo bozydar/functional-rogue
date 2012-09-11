@@ -34,8 +34,8 @@ namespace Xna.Gui.Controls.Elements {
         public Label(int x, int y, string value) {
 
             Area = new Rectangle(x, y, 0, 0);
-            Value = value;
             RenderRule = new LabelRenderRule();
+            Value = value;
         }
 
         public Label(int x, int y, Texture2D icon, string value, int padding = 0) {
