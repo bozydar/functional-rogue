@@ -19,13 +19,15 @@ type BoardScreen(client : IClient, server : IServer, screenManager : IScreenMana
     [<DefaultValue>]
     val mutable boardWidget : Xna.Gui.Controls.Elements.Board
 
-    override this.CreateChildren () =
-        this.boardWidget <- new Xna.Gui.Controls.Elements.Board(boardFrameSize.Width, boardFrameSize.Height)
+    override this.OnInit () =
         Screen.agent.Agent <- this.MailboxProcessor ()
         Game.subscribeHandlers ()
         Game.initialize ()
+
+    override this.OnShow () =
+        this.boardWidget <- new Xna.Gui.Controls.Elements.Board(boardFrameSize.Width, boardFrameSize.Height)
         Game.makeAction (System.ConsoleKeyInfo ('5', ConsoleKey.NumPad5, false, false, false))
-        [| this.boardWidget :> Widget |]
+        this.Gui.Widgets <- [| this.boardWidget :> Widget |]
 
     member this.ShowBoard (board: Board, boardFramePosition: Point) =
         for x in 0..boardFrameSize.Width - 1 do

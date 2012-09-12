@@ -17,9 +17,10 @@ type UsageScreen(client : IClient, server : IServer, back) =
 
     [<DefaultValue>] val mutable EquipmentItem : Characters.Item
 
-    override this.CreateChildren () =
-        this.ShowEquipment this.EquipmentItem
-        |> Seq.toArray
+    override this.OnShow () =
+        this.Gui.Widgets <- 
+            this.ShowEquipment this.EquipmentItem
+            |> Seq.toArray
 
     member this.ShowEquipment (item : Characters.Item) = 
         seq {

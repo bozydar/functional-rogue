@@ -18,16 +18,18 @@ type Screen () =
     default this.Init game skin textRenderer =
         if not this.IsInitialized then
             this.Gui <- Gui(game, skin, textRenderer)    
-            this.Gui.BindInput ()  
-            this.Gui.Widgets <- this.CreateChildren ()
             this.IsInitialized <- true
-        else
-            this.Gui.BindInput ()
+            this.OnInit ()
         
+        this.Gui.BindInput ()
+        this.OnShow ()
         this.Gui.KeyDown.AddHandler(fun sender e -> this.OnKeyDown sender e)
 
-    abstract member CreateChildren : unit -> Widget[]
-    default this.CreateChildren () = [| |]
+    abstract member OnInit : unit -> unit
+    default this.OnInit () = ()
+
+    abstract member OnShow : unit -> unit
+    default this.OnShow () = () 
 
     abstract member OnKeyDown : obj -> KeyEventArgs -> unit
     default this.OnKeyDown _ e = ()

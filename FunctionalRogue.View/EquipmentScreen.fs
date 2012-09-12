@@ -16,11 +16,12 @@ open FunctionalRogue.Screen
 type EquipmentScreen(client : IClient, server : IServer, screenManager : IScreenManager, back) = 
     inherit Screen()
 
-    override this.CreateChildren () =
+    override this.OnShow () =
         let state = State.get ()
-        state.Player.Items 
-        |> this.BuildEquipmentItems
-        |> Seq.toArray
+        this.Gui.Widgets <-
+            state.Player.Items 
+            |> this.BuildEquipmentItems
+            |> Seq.toArray
         
     override this.OnKeyDown _ e =
         match e.KeyCode with 

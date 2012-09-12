@@ -8,8 +8,8 @@ open Xna.Gui.Controls.Elements
 type MainMenu(client : IClient, server : IServer, screenManager : IScreenManager) = 
     inherit Screen()
 
-    override this.CreateChildren () =
-        [| 
+    override this.OnShow () =
+        this.Gui.Widgets <- [| 
             Button(10, 30, "New Game", 2, this.NewGame)
             Button(10, 60, "Options", 2, this.ShowOptions)
             Button(10, 90, "Exit", 2, this.Exit)
@@ -31,8 +31,8 @@ type MainMenu(client : IClient, server : IServer, screenManager : IScreenManager
 and OptionsMenu(back) =
     inherit Screen()
 
-    override this.CreateChildren () =
-        [| 
+    override this.OnShow () =
+        this.Gui.Widgets <- [| 
             Button(10, 30, "Option 1", 2, (fun (x : Widget) -> (x :?> Button).Label <- "oo 1"))
             Button(10, 60, "Option 2", 2, (fun (x : Widget) -> (x :?> Button).Label <- "oo 2"))
             Button(10, 90, "Option 3", 2, (fun (x : Widget) -> (x :?> Button).Label <- "oo 3"))
