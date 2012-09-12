@@ -19,9 +19,11 @@ type Screen () =
         if not this.IsInitialized then
             this.Gui <- Gui(game, skin, textRenderer)    
             this.IsInitialized <- true
+            this.Gui.BindInput ()
             this.OnInit ()
+        else
+            this.Gui.BindInput ()
         
-        this.Gui.BindInput ()
         this.OnShow ()
         this.Gui.KeyDown.AddHandler(fun sender e -> this.OnKeyDown sender e)
 

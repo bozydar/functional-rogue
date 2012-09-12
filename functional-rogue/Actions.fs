@@ -402,68 +402,7 @@ module Actions =
         else 
             state
 
-    let wear (state : State) = 
-        let alreadyWorn =     
-            [state.Player.WornItems.Hand; state.Player.WornItems.Head; state.Player.WornItems.Legs; state.Player.WornItems.Torso]
-            |> List.filter Option.isSome
-            |> List.map Option.get
-
-        let refreshScreen = 
-            Screen.showChooseItemDialog {State = state; Filter = (fun item -> not <| List.exists ((=) item) alreadyWorn && item.IsWearable ) }
-
-        let wearItemMenu = 
-            Dialog.Dialog [
-                Dialog.Title "Choose item to wear" ]
-             + Dialog.Dialog (seq {
-                for i, item in Seq.mapi (fun i item -> i, item) state.Player.Items do
-                    let pos = point 1 i                
-                    let char = match findShortCut state.Player.ShortCuts item with Some(value) -> value.ToString() | _ -> ""                
-                    yield Dialog.Action (Input.Char(char.[0]), (sprintf "(id=%s): %s" (item.Id.ToString()) (itemShortDescription item)), "selected", "aaa")
-             })
-        
-        (*
-        let listAllItems (items : Item list) (shortCuts : Map<char, Item>) screen = 
-            //let plainItems = items |> Seq.choose (function | Gold(_) -> Option.None | Plain(_, itemProperties) -> Some itemProperties)
-        
-            let writeProperties = seq {
-                for i, item in Seq.mapi (fun i item -> i, item) items do
-                    let pos = point 1 i                
-                    let char = match findShortCut shortCuts item with Some(value) -> value.ToString() | _ -> ""                
-                    yield writeString pos (sprintf "%s (id=%s): %s" char (item.Id.ToString()) (itemShortDescription item))
-            }
-            screen |>> writeProperties
-        *)
-
-        let rec loop () =
-            let keyInfo = Screen.readKey()
-            match keyInfo with 
-            | Key ConsoleKey.Escape -> state
-            | _ -> 
-                let keyChar = keyInfo.KeyChar
-                let item = Map.tryGetItem keyChar state.Player.ShortCuts 
-                if item.IsSome && not <| List.exists ((=) item.Value) alreadyWorn then
-                    let result = 
-                        let options = Seq.toList <| seq {
-                            if item.Value.Wearing.InHand then yield ('g', "Grab")
-                            if item.Value.Wearing.OnHead then yield ('h', "Put on head")
-                            if item.Value.Wearing.OnLegs then yield ('l', "Put on legs")
-                            if item.Value.Wearing.OnTorso then yield ('t', "Put on torso")
-                        }
-                        let chosenOption = chooseOption options                           
-                        
-                        match chosenOption with
-                        | 'g' -> state.Player.WornItems <- {state.Player.WornItems with Hand = item }
-                        | 'h' -> state.Player.WornItems <- {state.Player.WornItems with Head = item }
-                        | 'l' -> state.Player.WornItems <- {state.Player.WornItems with Legs = item }
-                        | 't' -> state.Player.WornItems <- {state.Player.WornItems with Torso = item }                        
-                        | _ -> ()
-
-                    state
-                else
-                    refreshScreen 
-                    loop ()
-        refreshScreen
-        loop ()
+    let wear = self
 
     let useItem (state : State) =
         let choiceResult =

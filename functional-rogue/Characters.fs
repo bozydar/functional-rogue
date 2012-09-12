@@ -107,6 +107,21 @@ module Characters =
         member this.Eat (item : Item) =
             hungerFactor <- Math.Min(0, hungerFactor - if item.IsEatable then -100 else 0)
 
+        member this.Wear (item : Item) =
+            match item.Wearing with
+            | OnHead -> this.WornItems <- {this.WornItems with Head = Some item }
+            | OnLegs -> this.WornItems <- {this.WornItems with Legs = Some item }
+            | OnTorso -> this.WornItems <- {this.WornItems with Torso = Some item }
+            | InHand -> this.WornItems <- {this.WornItems with Hand = Some item }
+            | _ -> ()
+
+        member this.TakeOff (item : Item) = 
+            let item = Some item
+            if item = this.WornItems.Hand then this.WornItems <- {this.WornItems with Hand = None }
+            if item = this.WornItems.Head then this.WornItems <- {this.WornItems with Head = None }
+            if item = this.WornItems.Torso then this.WornItems <- {this.WornItems with Torso = None }
+            if item = this.WornItems.Legs then this.WornItems <- {this.WornItems with Legs = None }
+
         abstract member MeleeAttack : AttackResult with get
         default this.MeleeAttack
             with get() =
@@ -144,7 +159,10 @@ module Characters =
         Hand : option<Item>;    
         Torso : option<Item>;
         Legs : option<Item>
-    } 
+    } with
+        member this.IsWorn(item) =
+           [this.Hand; this.Head; this.Torso; this.Legs] |> List.exists ((=)(Some item))
+            
     and 
         Item (name: string, wearing: Wearing, _type: Type,
                 attack : (Character -> Character -> int -> AttackResult) option,
@@ -224,18 +242,13 @@ module Characters =
                 | :? Item as other -> compare this other
                 | _ -> invalidArg "other" "cannot compare values of different types"        
 
-    and Wearing = {
-        OnHead : bool;
-        InHand : bool;
-        OnTorso : bool;
-        OnLegs : bool;
-    } 
-    with
-        static member NotWearable = { OnHead = false; InHand = false; OnTorso = false; OnLegs = false }
-        static member HeadOnly = { Wearing.NotWearable with OnHead = true }
-        static member HandOnly = { Wearing.NotWearable with InHand = true }
-        static member TorsoOnly = { Wearing.NotWearable with OnTorso = true }
-        static member LegsOnly = { Wearing.NotWearable with OnLegs = true }
+    and Wearing =
+        | NotWearable
+        | OnHead 
+        | InHand 
+        | OnTorso
+        | OnLegs 
+     
     and Type = 
         | Stick
         | Rock

@@ -24,10 +24,35 @@ type UsageScreen(client : IClient, server : IServer, back) =
 
     member this.ShowEquipment (item : Characters.Item) = 
         seq {
-            yield new Label(30, 30, "TODO description here") :> Widget
-            if item.IsEatable then yield new Button(30, 60, "Eat") :> Widget
-            if item.IsWearable then yield new Button(30, 90, "Wear") :> Widget
-        }
+            let state = State.get ()
+            let player = state.Player
+            yield labelBuilder "TODO description here"
+            if item.IsEatable then yield buttonBuilder "Eat" (fun _ -> this.OnEat state item)
 
+            if item.IsWearable then
+                if not (player.WornItems.IsWorn item) then 
+                    yield buttonBuilder "Wear" (fun _ -> this.OnWear state item)
+                else
+                    yield buttonBuilder "Take off" (fun _ -> this.OnTakeOff state item)
+            
+        } |> Seq.mapi (fun i item -> item 30 (30 * i))
 
+    override this.OnKeyDown _ e =
+        match e.KeyCode with 
+        | Input.Keys.Escape -> back ()
+        | _ -> ()
+
+    member this.OnEat state item =
+        state.Player.Eat(item)
+        let indexToRemove = List.findIndex ((=) item) state.Player.Items
+        state.Player.Items <- List.removeAt indexToRemove state.Player.Items
+        back ()
+
+    member this.OnWear state item = 
+        state.Player.Wear(item)
+        back ()
+
+    member this.OnTakeOff state item =
+        state.Player.TakeOff (item)
+        back ()
     

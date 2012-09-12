@@ -12,7 +12,7 @@ open FunctionalRogue
 open FunctionalRogue.Board
 open FunctionalRogue.Screen
 
-// TODO: Doesn't refresh equipment items after first show. CreateChilds should be called every time the screen is shown
+// TODO: Show wich equipment is woren
 type EquipmentScreen(client : IClient, server : IServer, screenManager : IScreenManager, back) = 
     inherit Screen()
 
@@ -32,8 +32,8 @@ type EquipmentScreen(client : IClient, server : IServer, screenManager : IScreen
         let itemWidget (item : Characters.Item) = 
             let onClick _ =
                 screenManager.Switch(ScreenManagerState.UsageScreen(item))
-
             fun x y -> new Button(x, y, item.Name, 2, onClick) :> Widget
+
         let emptyLabel = fun x y -> new Label(x, y, "   Empty   ") :> Widget
 
         let wearable =
