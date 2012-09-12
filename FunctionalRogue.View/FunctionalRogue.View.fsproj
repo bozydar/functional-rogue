@@ -37,6 +37,7 @@
     <Compile Include="DataStructures.fs" />
     <Compile Include="Interfaces.fs" />
     <Compile Include="Dispatcher.fs" />
+    <Compile Include="UsageScreen.fs" />
     <Compile Include="BoardScreen.fs" />
     <Compile Include="OptionScreens.fs" />
     <Compile Include="Instance.fs" />
