@@ -262,10 +262,6 @@ module Characters =
         | SimpleContainer
     and OreExtractorProperties = { HarvestRate: int }
 
-    and MiscProperties = {
-        OreExtractionRate : int
-    }
-
     and Liquid = {
         Type : LiquidType
         Amount : float<ml>
@@ -281,10 +277,6 @@ module Characters =
         //SubstanceCapacity : int
         //ItemsCapacity : int
         //Items : Item list
-    }
-
-    let defaultMiscProperties = {
-        OreExtractionRate = 0
     }
 
     let itemShortDescription (item: Item)=
