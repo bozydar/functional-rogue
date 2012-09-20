@@ -3,6 +3,9 @@
 module Characters =
 
     open System
+    open Quantity
+    open System.Drawing
+    open Config
 
     type damage = (int * int * int)
 
@@ -277,7 +280,156 @@ module Characters =
         //SubstanceCapacity : int
         //ItemsCapacity : int
         //Items : Item list
+    } 
+    and Tile =
+        | Wall 
+        | Floor
+        | Empty
+        | OpenDoor
+        | ClosedDoor
+        | Grass
+        | Tree
+        | SmallPlants
+        | Bush
+        | Glass
+        | Sand
+        | Water
+        | StairsDown
+        | StairsUp
+        | Computer
+        | Replicator
+        | MainMapForest
+        | MainMapGrassland
+        | MainMapWater
+        | MainMapMountains
+        | MainMapCoast
+
+    and LevelType = 
+        | Test
+        | Dungeon
+        | Cave
+        | Forest
+        | Empty
+        | Grassland
+        | Coast
+        | MainMap
+
+    and TransportTarget = {
+        BoardId : Guid;
+        TargetCoordinates : Point
+        TargetLevelType : LevelType
+    }   
+
+    and Ore = 
+        | NoneOre
+        | Iron of Quantity
+        | Gold of Quantity
+        | Uranium of Quantity
+        | CleanWater of Quantity
+        | ContaminatedWater of Quantity 
+        member this.Quantity 
+            with get() = 
+                match this with
+                | Iron(value) -> value
+                | Gold(value) -> value
+                | Uranium(value) -> value
+                | CleanWater(value) -> value
+                | ContaminatedWater(value) -> value
+                | _ -> QuantityValue(0)
+
+    and ReplicationRecipe = {
+        Name : string
+        ResultItem : Item
+        RequiredResources : RequiredResources
     }
+    and RequiredResources = {
+        Iron : int
+        Gold : int
+        Uranium : int
+    }
+    and ElectronicMachine = {
+        ComputerContent : ComputerContent
+    }
+    and ComputerContent = {
+        ComputerName : string;
+        Notes : ComputerNote list;
+        CanOperateDoors : bool;
+        CanOperateCameras : bool;
+        CanReplicate : bool;
+        HasCamera : bool;
+        ReplicationRecipes : ReplicationRecipe list;
+    }
+    and ComputerNote = {
+        Topic : string;
+        Content : string;
+    }
+
+    and PlaceFeature =
+        | OnFire of int
+
+    and Place = {
+        Tile : Tile; 
+        Items : Item list;
+        Ore : Ore
+        Character : Character option;    
+        IsSeen : bool;
+        WasSeen : bool;
+        TransportTarget : TransportTarget option;
+        ElectronicMachine : ElectronicMachine option;
+        Features : PlaceFeature list
+    } with
+        static member EmptyPlace = 
+                {Tile = Tile.Empty; Items = []; Character = Option.None; IsSeen = false; WasSeen = Settings.EntireLevelSeen; Ore = NoneOre; TransportTarget = None; ElectronicMachine = None; Features = [] }
+        static member Wall = 
+                {Tile = Tile.Wall; Items = []; Character = Option.None; IsSeen = false; WasSeen = Settings.EntireLevelSeen; Ore = NoneOre; TransportTarget = None; ElectronicMachine = None; Features = [] }
+        static member Floor = 
+                {Tile = Tile.Floor; Items = []; Character = Option.None; IsSeen = false; WasSeen = Settings.EntireLevelSeen; Ore = NoneOre; TransportTarget = None; ElectronicMachine = None; Features = [] }
+        static member StairsDown = 
+                {Tile = Tile.StairsDown; Items = []; Character = Option.None; IsSeen = false; WasSeen = Settings.EntireLevelSeen; Ore = NoneOre; TransportTarget = None; ElectronicMachine = None; Features = [] }
+        static member ClosedDoor =
+                {Tile = Tile.ClosedDoor; Items = []; Character = Option.None; IsSeen = false; WasSeen = Settings.EntireLevelSeen; Ore = NoneOre; TransportTarget = None; ElectronicMachine = None; Features = [] }
+        static member Computer =
+                {Tile = Tile.Computer; Items = []; Character = Option.None; IsSeen = false; WasSeen = Settings.EntireLevelSeen; Ore = NoneOre; TransportTarget = None; ElectronicMachine = None; Features = [] }
+        static member Create tile =
+            {Tile = tile; Items = []; Character = Option.None; IsSeen = false; WasSeen = Settings.EntireLevelSeen; Ore = NoneOre; TransportTarget = None; ElectronicMachine = None; Features = [] }
+        static member GetDescription (place: Place) additionalDescription =
+            let tileDescription = 
+                match place.Tile with
+                | Tile.Floor -> "Floor."
+                | Tile.Wall -> "Wall."
+                | Tile.Glass -> "Glass."
+                | Tile.Grass -> "Grass."
+                | Tile.Bush -> "Some bushes."
+                | Tile.SmallPlants -> "Some plants."
+                | Tile.Tree -> "Tree."
+                | Tile.Sand -> "Sand."
+                | Tile.Water -> "Water."
+                | Tile.ClosedDoor -> "Closed door."
+                | Tile.OpenDoor -> "Open door."
+                | Tile.StairsDown -> "Stairs leading down."
+                | Tile.StairsUp -> "Stairs leading up."
+                | Tile.Computer -> "Computer."
+                | Tile.Replicator -> "Replicator."
+                | Tile.MainMapForest -> "Forest." + additionalDescription
+                | Tile.MainMapCoast -> "Coast." + additionalDescription
+                | Tile.MainMapGrassland -> "Grassland." + additionalDescription
+                | Tile.MainMapMountains -> "Mountains." + additionalDescription
+                | Tile.MainMapWater -> "Water." + additionalDescription
+                | _ -> ""
+            let characterDescription =
+                if place.Character.IsSome then
+                    " " + place.Character.Value.Name + " is standing here."
+                else
+                    ""
+            let itemsDescription =
+                if place.Items.Length > 1 then
+                    " Some items are lying here."
+                elif place.Items.Length > 0 then
+                    " " + place.Items.Head.Name + " is lying here."
+                else
+                    ""
+            tileDescription + characterDescription + itemsDescription
+
 
     let itemShortDescription (item: Item)=
         let rest = 

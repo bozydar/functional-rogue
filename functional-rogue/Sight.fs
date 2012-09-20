@@ -8,6 +8,7 @@ module Sight =
     open System.Drawing
     open Board
     open State
+    open Characters
 
     type private Line =         
         val mutable XI : int 

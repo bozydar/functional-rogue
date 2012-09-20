@@ -9,6 +9,7 @@ module Computers =
     open Replication
     open System.Drawing
     open Predefined.Items
+    open Characters
 
     type ComputerNavigation =
         | MainMenu

@@ -6,6 +6,7 @@ module Parser =
     open Board
     open System.Drawing
     open System
+    open Characters
     
 
     let def = [
