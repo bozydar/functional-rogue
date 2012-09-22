@@ -371,6 +371,7 @@ module Actions =
         refreshScreen
         loop ()
     
+    // TODO: rewrite to use equipment dialog. Optional: It would be good to add options allowing pour in and from.
     let pourLiquid (state : State) =
         let liquidContainerItems = state.Player.Items |> List.filter (fun item -> item.IsLiquidContainer)
         let pourFromItem = liquidContainerItems |> chooseListItemThroughPagedDialog "Choose a container to pour from:" (fun (item : Item) -> itemShortDescription item)

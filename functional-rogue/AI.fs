@@ -220,7 +220,7 @@ module AI =
                     performRandomMovement monsterPlace newState
         | CharacterAiState.Hunting ->
             let differentSpeciesByDist = getPlacesTheMonsterCanSeeByDistance monsterPlace (fun monster place -> placeContainsDifferentSpeciesThanMonster monster place) state
-            let corpses = getPlacesTheMonsterCanSeeByDistance monsterPlace (fun monster place -> place.Items |> List.exists (fun item -> item.Type = Type.Corpse)) state
+            let corpses = getPlacesTheMonsterCanSeeByDistance monsterPlace (fun monster place -> place.Items |> List.exists (fun item -> match item.Type with | Type.Corpse -> true | _ -> false)) state
             let victims = getDifferentSpeciesTheMonsterCanAttackInMelee monsterPlace state
             state
             |>  if (victims.Length > 0) then
@@ -232,7 +232,7 @@ module AI =
                         monster.State <- CharacterAiState.Lurking
                         monster.HungerFactor <- rnd2 30 60
                         let thisPlace = state.Board.Places.[monsterPoint.X, monsterPoint.Y]
-                        let corpseIndex = thisPlace.Items |> List.findIndex (fun item -> item.Type = Type.Corpse)
+                        let corpseIndex = thisPlace.Items |> List.findIndex (fun item -> match item.Type with | Type.Corpse -> true | _ -> false)
                         let corpseName = thisPlace.Items.[corpseIndex].Name
                         state.Board.Places.[monsterPoint.X, monsterPoint.Y] <- { thisPlace with Items = thisPlace.Items |> List.removeAt corpseIndex }
                         AddMessageIfPlayerCanSeePoint monsterPoint (monster.Name + " has consumed the " + corpseName)

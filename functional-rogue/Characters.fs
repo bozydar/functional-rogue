@@ -128,9 +128,12 @@ module Characters =
         abstract member MeleeAttack : AttackResult with get
         default this.MeleeAttack
             with get() =
-                if this.WornItems.Hand.IsSome && this.WornItems.Hand.Value.Attack.IsSome 
-                then this.WornItems.Hand.Value.Attack.Value this this 1
-                else this.DefaultMeleeAttack
+                if this.WornItems.Hand.IsSome then
+                    match this.WornItems.Hand.Value.Attack with
+                    | Attack(attackFunc) -> attackFunc this this 1
+                    | Cannot -> this.DefaultMeleeAttack
+                else
+                    this.DefaultMeleeAttack
     
         abstract member DefaultMeleeAttack : AttackResult with get
         default this.DefaultMeleeAttack 
@@ -167,20 +170,19 @@ module Characters =
            [this.Hand; this.Head; this.Torso; this.Legs] |> List.exists ((=)(Some item))
             
     and 
-        Item (name: string, wearing: Wearing, _type: Type,
-                attack : (Character -> Character -> int -> AttackResult) option,
+        Item (name: string, image : string, wearing: Wearing, _type: Type,
                 initialContainer : Container option ) =
         let id = Guid.NewGuid()
         let mutable container = initialContainer
-    
-        new (name: string, wearing: Wearing, _type: Type,
-                attack : (Character -> Character -> int -> AttackResult) option) = Item(name, wearing, _type, attack, None) 
 
         member this.Id
             with get() : Guid = id 
    
         member this.Name
             with get() : string = name
+
+        member this.Image
+            with get() : string = image
 
         member this.Wearing 
             with get() : Wearing = wearing
@@ -189,13 +191,19 @@ module Characters =
             with get() : Type = _type
 
         member this.Attack 
-            with get() : (Character -> Character -> int -> AttackResult) option = attack
+            with get() : Attack =
+                match _type with
+                | Weapon(weapon) -> weapon.Attack
+                | _ -> Attack.Cannot
 
         member this.IsWearable
             with get() : bool = this.Wearing <> Wearing.NotWearable
 
         member this.IsEatable
-            with get() : bool = this.Type = Type.Corpse
+            with get() : bool = 
+                match this.Type with
+                | Type.Corpse -> true
+                | _ -> false
 
         //container section
 
@@ -245,6 +253,10 @@ module Characters =
                 | :? Item as other -> compare this other
                 | _ -> invalidArg "other" "cannot compare values of different types"        
 
+    and Attack = 
+        | Attack of (Character -> Character -> int -> AttackResult)
+        | Cannot
+
     and Wearing =
         | NotWearable
         | OnHead 
@@ -253,17 +265,29 @@ module Characters =
         | OnLegs 
      
     and Type = 
-        | Stick
+        | Weapon of Weapon
+        | Armor of Armor
         | Rock
-        | Sword
-        | Knife
-        | Hat
+        | Injector // of Liquid
         | Corpse
         | OreExtractor of OreExtractorProperties
         | Drone
-        | Injector
         | SimpleContainer
+
     and OreExtractorProperties = { HarvestRate: int }
+
+    and Weapon = { 
+        Attack : Attack
+        Type : WeaponType  }
+
+    and WeaponType = 
+        | Stick
+        | Knife
+        | Sword
+    
+    and Armor = { 
+        Defence : Attack (* should be change to it's own type *)
+    }
 
     and Liquid = {
         Type : LiquidType
@@ -277,9 +301,6 @@ module Characters =
     and Container = {
         LiquidCapacity : float<ml>
         LiquidInside : Liquid option
-        //SubstanceCapacity : int
-        //ItemsCapacity : int
-        //Items : Item list
     } 
     and Tile =
         | Wall 
