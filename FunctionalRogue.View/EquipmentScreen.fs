@@ -12,15 +12,15 @@ open FunctionalRogue
 open FunctionalRogue.Board
 open FunctionalRogue.Screen
 
-// TODO: Show wich equipment is woren
 type EquipmentScreen(client : IClient, server : IServer, screenManager : IScreenManager, back) = 
     inherit Screen()
 
+    member private this.State
+        with get() = State.get ()
+
     override this.OnShow () =
-        let state = State.get ()
         this.Gui.Widgets <-
-            state.Player.Items 
-            |> this.BuildEquipmentItems
+            this.BuildEquipmentItems ()
             |> Seq.toArray
         
     override this.OnKeyDown _ e =
@@ -28,11 +28,13 @@ type EquipmentScreen(client : IClient, server : IServer, screenManager : IScreen
         | Input.Keys.Escape -> back ()
         | _ -> ()
 
-    member private this.BuildEquipmentItems(equipment) =
+    member private this.BuildEquipmentItems () =
+        let equipment = this.State.Player.Items
         let itemWidget (item : Characters.Item) = 
             let onClick _ =
                 screenManager.Switch(ScreenManagerState.UsageScreen(item))
-            fun x y -> new Button(x, y, item.Name, 2, onClick) :> Widget
+            let labelText = item.Name + if this.State.Player.WornItems.IsWorn item then " * " else ""
+            fun x y -> new Button(x, y, labelText, 2, onClick) :> Widget
 
         let emptyLabel = fun x y -> new Label(x, y, "   Empty   ") :> Widget
 
@@ -43,8 +45,9 @@ type EquipmentScreen(client : IClient, server : IServer, screenManager : IScreen
             equipment 
             |> List.filter(fun item -> item.IsEatable)
         let rest = 
+            let usable = wearable @ eatable
             equipment
-            |> List.filter(fun item -> not (List.exists((=) item) (wearable @ eatable)))
+            |> List.filter(fun item -> not (List.exists((=) item) usable))
 
         let constructors = seq {
             yield fun x y -> new Label(x, y, "Wearable") :> Widget
