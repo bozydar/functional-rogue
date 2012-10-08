@@ -19,6 +19,23 @@ type BoardScreen(client : IClient, server : IServer, screenManager : IScreenMana
     let boardFrameSize = new Size(30, 23)
     [<DefaultValue>]
     val mutable boardWidget : Xna.Gui.Controls.Elements.Board
+    [<DefaultValue>]
+    val mutable hpIndicator  : Xna.Gui.Controls.Elements.Label
+    [<DefaultValue>]
+    val mutable ironIndicator  : Xna.Gui.Controls.Elements.Label
+    [<DefaultValue>]
+    val mutable goldIndicator  : Xna.Gui.Controls.Elements.Label
+    [<DefaultValue>]
+    val mutable uraniumIndicator  : Xna.Gui.Controls.Elements.Label
+    [<DefaultValue>]
+    val mutable waterIndicator  : Xna.Gui.Controls.Elements.Label
+    [<DefaultValue>]
+    val mutable turnIndicator  : Xna.Gui.Controls.Elements.Label
+    [<DefaultValue>]
+    val mutable mapLevelIndicator  : Xna.Gui.Controls.Elements.Label
+
+    // TODO: Fix it
+    let panelPosition = new Point(600, 20) 
 
     member private this.EvaluateBoardFramePosition (state : State) = 
         let playerPosition = getPlayerPosition state.Board
@@ -34,10 +51,12 @@ type BoardScreen(client : IClient, server : IServer, screenManager : IScreenMana
 
     override this.OnShow () =
         this.boardWidget <- new Xna.Gui.Controls.Elements.Board(boardFrameSize.Width, boardFrameSize.Height)
+        this.hpIndicator <- new Xna.Gui.Controls.Elements.Label(panelPosition.X, panelPosition.Y, "")
+        this.turnIndicator <- new Xna.Gui.Controls.Elements.Label(panelPosition.X, panelPosition.Y + 20, "")
         Game.makeAction (System.ConsoleKeyInfo ('5', ConsoleKey.NumPad5, false, false, false))
-        this.Gui.Widgets <- [| this.boardWidget :> Widget |]
+        this.Gui.Widgets <- [| this.boardWidget :> Widget; this.hpIndicator; this.turnIndicator |]
 
-    member this.ShowBoard (state : State) =
+    member private this.ShowBoard (state : State) =
         let boardFramePosition = this.EvaluateBoardFramePosition(state)
         let board = state.Board
         for x in 0..boardFrameSize.Width - 1 do
@@ -54,6 +73,11 @@ type BoardScreen(client : IClient, server : IServer, screenManager : IScreenMana
                             |])
                 this.boardWidget.PutTile(x, y, tile)
     
+    member private this.ShowStats (state : State) =
+        this.hpIndicator.Value <- String.Format("HP: {0}/{1}", state.Player.CurrentHP, state.Player.MaxHP)
+        this.turnIndicator.Value <- String.Format("Turn: {0}", state.TurnNumber)
+
+
     [<DefaultValue>] val mutable keyBuffer : System.ConsoleKeyInfo
 
     override this.OnKeyDown _ e =
@@ -75,6 +99,7 @@ type BoardScreen(client : IClient, server : IServer, screenManager : IScreenMana
                     match msg with
                     | ShowBoard(state) -> 
                         this.ShowBoard (state)
+                        this.ShowStats (state)
                         return! loop ()
                     | ReadKey(reply) ->
                         reply.Reply { ConsoleKeyInfo = this.keyBuffer }
