@@ -11,13 +11,21 @@ open Xna.Gui.Controls.Elements
 open FunctionalRogue
 open FunctionalRogue.Board
 open FunctionalRogue.Screen
+open FunctionalRogue.State
 
 type BoardScreen(client : IClient, server : IServer, screenManager : IScreenManager, back) = 
     inherit Screen()
 
-    let boardFrameSize = new Size(60, 23)
+    let boardFrameSize = new Size(30, 23)
     [<DefaultValue>]
     val mutable boardWidget : Xna.Gui.Controls.Elements.Board
+
+    member private this.EvaluateBoardFramePosition (state : State) = 
+        let playerPosition = getPlayerPosition state.Board
+        
+        let x = inBoundary (playerPosition.X - (boardFrameSize.Width / 2)) 0 (boardWidth - boardFrameSize.Width) 
+        let y = inBoundary (playerPosition.Y - (boardFrameSize.Height / 2)) 0 (boardHeight - boardFrameSize.Height)
+        point x y                
 
     override this.OnInit () =
         Screen.agent.Agent <- this.MailboxProcessor ()
@@ -29,7 +37,9 @@ type BoardScreen(client : IClient, server : IServer, screenManager : IScreenMana
         Game.makeAction (System.ConsoleKeyInfo ('5', ConsoleKey.NumPad5, false, false, false))
         this.Gui.Widgets <- [| this.boardWidget :> Widget |]
 
-    member this.ShowBoard (board: Board, boardFramePosition: Point) =
+    member this.ShowBoard (state : State) =
+        let boardFramePosition = this.EvaluateBoardFramePosition(state)
+        let board = state.Board
         for x in 0..boardFrameSize.Width - 1 do
             for y in 0..boardFrameSize.Height - 1 do
                 // move board                                
@@ -64,7 +74,7 @@ type BoardScreen(client : IClient, server : IServer, screenManager : IScreenMana
                     let! msg = inbox.Receive ()
                     match msg with
                     | ShowBoard(state) -> 
-                        this.ShowBoard (state.Board, state.BoardFramePosition)
+                        this.ShowBoard (state)
                         return! loop ()
                     | ReadKey(reply) ->
                         reply.Reply { ConsoleKeyInfo = this.keyBuffer }

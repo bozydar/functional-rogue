@@ -263,7 +263,6 @@ module Game =
         Turn.subscribe handleMonsters
         Turn.subscribe clearCharacterStates
         Turn.subscribe setVisibilityStates
-        Turn.subscribe evaluateBoardFramePosition  
         Turn.subscribe evaluateTemporaryModifiers  
         Turn.subscribe (
             fun state -> 

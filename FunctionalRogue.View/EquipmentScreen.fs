@@ -15,9 +15,6 @@ open FunctionalRogue.Screen
 type EquipmentScreen(client : IClient, server : IServer, screenManager : IScreenManager, back) = 
     inherit Screen()
 
-    member private this.State
-        with get() = State.get ()
-
     override this.OnShow () =
         this.Gui.Widgets <-
             this.BuildEquipmentItems ()

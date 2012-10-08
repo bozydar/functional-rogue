@@ -631,15 +631,6 @@ module Screen =
             loop None <| Array2D.create screenSize.Width screenSize.Height empty
         )
 
-    let evaluateBoardFramePosition state = 
-        let playerPosition = getPlayerPosition state.Board
-        let frameView = new Rectangle(state.BoardFramePosition, boardFrameSize)
-        let preResult =
-            let x = inBoundary (playerPosition.X - (boardFrameSize.Width / 2)) 0 (boardWidth - boardFrameSize.Width) 
-            let y = inBoundary (playerPosition.Y - (boardFrameSize.Height / 2)) 0 (boardHeight - boardFrameSize.Height)
-            point x y                
-        { state with BoardFramePosition = preResult }
-
     type Facade () as this = 
         [<DefaultValue>] val mutable Agent : MailboxProcessor<ScreenAgentMessage> 
 

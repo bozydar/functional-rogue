@@ -7,6 +7,7 @@ open Xna.Gui
 open Xna.Gui.Rendering
 open Xna.Gui.Utils
 open Xna.Gui.Controls
+open FunctionalRogue
 
 [<AbstractClassAttribute>]
 type Screen () =
@@ -54,6 +55,8 @@ type Screen () =
                 match keyEventArgs.KeyCode with 
                 | keyCode when keyCode = key -> event sender
                 | _ -> ())
+    member this.State
+        with get() = State.get ()
 
 and public IClient = 
     abstract member Show : Screen -> unit
