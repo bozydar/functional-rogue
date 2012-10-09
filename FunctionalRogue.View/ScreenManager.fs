@@ -6,6 +6,7 @@ type ScreenManager (client, server) as this =
     let boardScreen = new BoardScreen(client, server, this, fun _ -> (this :> IScreenManager).Switch (ScreenManagerState.MainMenu)) 
     let equipmentScreen = new EquipmentScreen(client, server, this, fun _ -> (this :> IScreenManager).Switch (ScreenManagerState.BoardScreen))
     let usageScreen = new UsageScreen(client, server, fun _ -> (this :> IScreenManager).Switch (ScreenManagerState.EquipmentScreen))
+    let characterScreen = new CharacterScreen(client, server, this, fun _ -> (this :> IScreenManager).Switch (ScreenManagerState.BoardScreen))
     
     interface IScreenManager with
         member this.Switch item = 
@@ -16,6 +17,7 @@ type ScreenManager (client, server) as this =
             // equipmentScreen can be instatiated here if there would be a need to transprot some data
             // through "back" function 
             | ScreenManagerState.EquipmentScreen -> client.Show(equipmentScreen)
+            | ScreenManagerState.CharacterScreen -> client.Show(characterScreen)
             | ScreenManagerState.UsageScreen(item) -> 
                 usageScreen.EquipmentItem <- item
                 client.Show(usageScreen)

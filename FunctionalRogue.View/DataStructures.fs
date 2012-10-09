@@ -7,4 +7,5 @@ type ScreenManagerState =
     | OptionsMenu
     | BoardScreen
     | EquipmentScreen
+    | CharacterScreen
     | UsageScreen of Characters.Item

@@ -43,6 +43,7 @@
     <Compile Include="OptionScreens.fs" />
     <Compile Include="Instance.fs" />
     <Compile Include="EquipmentScreen.fs" />
+    <Compile Include="CharacterScreen.fs" />
     <Compile Include="ScreenManager.fs" />
     <None Include="packages.config" />
   </ItemGroup>

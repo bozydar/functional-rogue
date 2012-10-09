@@ -17,17 +17,13 @@ type BoardScreen(client : IClient, server : IServer, screenManager : IScreenMana
     inherit Screen()
 
     let boardFrameSize = new Size(30, 23)
-    let mutable boardWidget : Xna.Gui.Controls.Elements.Board = null
-    let mutable hpIndicator  : Xna.Gui.Controls.Elements.Label = null
-    let mutable ironIndicator  : Xna.Gui.Controls.Elements.Label = null
-    let mutable goldIndicator  : Xna.Gui.Controls.Elements.Label = null
-    let mutable uraniumIndicator  : Xna.Gui.Controls.Elements.Label = null
-    let mutable waterIndicator  : Xna.Gui.Controls.Elements.Label = null
-    let mutable turnIndicator  : Xna.Gui.Controls.Elements.Label = null
-    let mutable mapLevelIndicator  : Xna.Gui.Controls.Elements.Label = null
-
-    // TODO: Fix it
     let panelPosition = new Point(600, 20) 
+
+    let mutable boardWidget = new Xna.Gui.Controls.Elements.Board(boardFrameSize.Width, boardFrameSize.Height)
+    let mutable hpIndicator  : Xna.Gui.Controls.Elements.Label = new Xna.Gui.Controls.Elements.Label(panelPosition.X, panelPosition.Y + 20)
+    let mutable hungerIndicator  : Xna.Gui.Controls.Elements.Label = new Xna.Gui.Controls.Elements.Label(panelPosition.X, panelPosition.Y + 40)
+    let mutable turnIndicator  : Xna.Gui.Controls.Elements.Label = new Xna.Gui.Controls.Elements.Label(panelPosition.X, panelPosition.Y + 60)
+    let mutable mapLevelIndicator  : Xna.Gui.Controls.Elements.Label = new Xna.Gui.Controls.Elements.Label(panelPosition.X, panelPosition.Y + 80)
 
     member private this.EvaluateBoardFramePosition (state : State) = 
         let playerPosition = getPlayerPosition state.Board
@@ -42,11 +38,8 @@ type BoardScreen(client : IClient, server : IServer, screenManager : IScreenMana
         Game.initialize ()
 
     override this.OnShow () =
-        boardWidget <- new Xna.Gui.Controls.Elements.Board(boardFrameSize.Width, boardFrameSize.Height)
-        hpIndicator <- new Xna.Gui.Controls.Elements.Label(panelPosition.X, panelPosition.Y, "")
-        turnIndicator <- new Xna.Gui.Controls.Elements.Label(panelPosition.X, panelPosition.Y + 20, "")
         Game.makeAction (System.ConsoleKeyInfo ('5', ConsoleKey.NumPad5, false, false, false))
-        this.Gui.Widgets <- [| boardWidget :> Widget; hpIndicator; turnIndicator |]
+        this.Gui.Widgets <- [| boardWidget :> Widget; hpIndicator; hungerIndicator; turnIndicator; mapLevelIndicator |]
 
     member private this.ShowBoard (state : State) =
         let boardFramePosition = this.EvaluateBoardFramePosition(state)
@@ -67,6 +60,7 @@ type BoardScreen(client : IClient, server : IServer, screenManager : IScreenMana
     
     member private this.ShowStats (state : State) =
         hpIndicator.Value <- String.Format("HP: {0}/{1}", state.Player.CurrentHP, state.Player.MaxHP)
+        hungerIndicator.Value <- Screen.hungerLevelDescription state.Player 
         turnIndicator.Value <- String.Format("Turn: {0}", state.TurnNumber)
 
 
@@ -76,6 +70,7 @@ type BoardScreen(client : IClient, server : IServer, screenManager : IScreenMana
         match e.KeyCode with 
         | Input.Keys.Escape -> back ()
         | Input.Keys.I -> screenManager.Switch(ScreenManagerState.EquipmentScreen)
+        | Input.Keys.C -> screenManager.Switch(ScreenManagerState.CharacterScreen)
         | _ ->
             let keyInfo = new System.ConsoleKeyInfo (Convert.ToChar(0), enum (int e.KeyCode), false, false, false)
             Game.makeAction keyInfo

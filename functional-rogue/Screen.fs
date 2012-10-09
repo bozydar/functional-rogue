@@ -96,6 +96,11 @@ module Screen =
                     result
         else empty
         
+    let hungerLevelDescription (character : Character) =
+        if character.HungerLevel = 1 then "Hungry"
+        elif character.HungerLevel = 2 then "Very hungry"
+        elif character.HungerLevel = 3 then "Starving"
+        else "Full"
 
     type ScreenContentBuilder (maxWidth: int, theme: ColorTheme) =
         let mutable textelArraysList = List.empty<textel[]>
