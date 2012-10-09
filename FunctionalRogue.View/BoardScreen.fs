@@ -17,22 +17,14 @@ type BoardScreen(client : IClient, server : IServer, screenManager : IScreenMana
     inherit Screen()
 
     let boardFrameSize = new Size(30, 23)
-    [<DefaultValue>]
-    val mutable boardWidget : Xna.Gui.Controls.Elements.Board
-    [<DefaultValue>]
-    val mutable hpIndicator  : Xna.Gui.Controls.Elements.Label
-    [<DefaultValue>]
-    val mutable ironIndicator  : Xna.Gui.Controls.Elements.Label
-    [<DefaultValue>]
-    val mutable goldIndicator  : Xna.Gui.Controls.Elements.Label
-    [<DefaultValue>]
-    val mutable uraniumIndicator  : Xna.Gui.Controls.Elements.Label
-    [<DefaultValue>]
-    val mutable waterIndicator  : Xna.Gui.Controls.Elements.Label
-    [<DefaultValue>]
-    val mutable turnIndicator  : Xna.Gui.Controls.Elements.Label
-    [<DefaultValue>]
-    val mutable mapLevelIndicator  : Xna.Gui.Controls.Elements.Label
+    let mutable boardWidget : Xna.Gui.Controls.Elements.Board = null
+    let mutable hpIndicator  : Xna.Gui.Controls.Elements.Label = null
+    let mutable ironIndicator  : Xna.Gui.Controls.Elements.Label = null
+    let mutable goldIndicator  : Xna.Gui.Controls.Elements.Label = null
+    let mutable uraniumIndicator  : Xna.Gui.Controls.Elements.Label = null
+    let mutable waterIndicator  : Xna.Gui.Controls.Elements.Label = null
+    let mutable turnIndicator  : Xna.Gui.Controls.Elements.Label = null
+    let mutable mapLevelIndicator  : Xna.Gui.Controls.Elements.Label = null
 
     // TODO: Fix it
     let panelPosition = new Point(600, 20) 
@@ -50,11 +42,11 @@ type BoardScreen(client : IClient, server : IServer, screenManager : IScreenMana
         Game.initialize ()
 
     override this.OnShow () =
-        this.boardWidget <- new Xna.Gui.Controls.Elements.Board(boardFrameSize.Width, boardFrameSize.Height)
-        this.hpIndicator <- new Xna.Gui.Controls.Elements.Label(panelPosition.X, panelPosition.Y, "")
-        this.turnIndicator <- new Xna.Gui.Controls.Elements.Label(panelPosition.X, panelPosition.Y + 20, "")
+        boardWidget <- new Xna.Gui.Controls.Elements.Board(boardFrameSize.Width, boardFrameSize.Height)
+        hpIndicator <- new Xna.Gui.Controls.Elements.Label(panelPosition.X, panelPosition.Y, "")
+        turnIndicator <- new Xna.Gui.Controls.Elements.Label(panelPosition.X, panelPosition.Y + 20, "")
         Game.makeAction (System.ConsoleKeyInfo ('5', ConsoleKey.NumPad5, false, false, false))
-        this.Gui.Widgets <- [| this.boardWidget :> Widget; this.hpIndicator; this.turnIndicator |]
+        this.Gui.Widgets <- [| boardWidget :> Widget; hpIndicator; turnIndicator |]
 
     member private this.ShowBoard (state : State) =
         let boardFramePosition = this.EvaluateBoardFramePosition(state)
@@ -71,11 +63,11 @@ type BoardScreen(client : IClient, server : IServer, screenManager : IScreenMana
                             [| 
                                 textel.Char.ToString()
                             |])
-                this.boardWidget.PutTile(x, y, tile)
+                boardWidget.PutTile(x, y, tile)
     
     member private this.ShowStats (state : State) =
-        this.hpIndicator.Value <- String.Format("HP: {0}/{1}", state.Player.CurrentHP, state.Player.MaxHP)
-        this.turnIndicator.Value <- String.Format("Turn: {0}", state.TurnNumber)
+        hpIndicator.Value <- String.Format("HP: {0}/{1}", state.Player.CurrentHP, state.Player.MaxHP)
+        turnIndicator.Value <- String.Format("Turn: {0}", state.TurnNumber)
 
 
     [<DefaultValue>] val mutable keyBuffer : System.ConsoleKeyInfo
